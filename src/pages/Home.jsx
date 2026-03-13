@@ -6,33 +6,33 @@ import SEO from '../components/SEO.jsx'
 const FEATURES = [
   {
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-    title: 'Guest Chat — No Registration',
-    desc: 'Join instantly without email or phone. 100% anonymous guest chatroom access. No signup needed, just pick a name and start chatting!',
+    title: "Guest Chat — No Registration",
+    desc: "Join instantly without email or phone. 100% anonymous guest chatroom access. No signup needed, just pick a name and start chatting!',
   },
   {
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>,
-    title: 'HD Video & Audio Calls',
-    desc: 'Crystal clear free video calls and audio calls powered by WebRTC technology. Free public cam chat with no downloads required.',
+    title: "HD Video & Audio Calls",
+    desc: "Crystal clear free video calls and audio calls powered by WebRTC technology. Free public cam chat with no downloads required.',
   },
   {
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>,
-    title: 'Live Chatrooms 24/7',
-    desc: 'Active free chatrooms running around the clock. Always someone online — day, night, weekends. Never a quiet room on ChatsGenZ.',
+    title: "Live Chatrooms 24/7",
+    desc: "Active free chatrooms running around the clock. Always someone online — day, night, weekends. Never a quiet room on ChatsGenZ.',
   },
   {
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,
-    title: 'VIP & Premium Chatrooms',
-    desc: 'Unlock exclusive VIP chat rooms and premium chatroom access with special rank privileges as you level up your profile.',
+    title: "VIP & Premium Chatrooms",
+    desc: "Unlock exclusive VIP chat rooms and premium chatroom access with special rank privileges as you level up your profile.',
   },
   {
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
-    title: 'Safe & Secured Chat',
-    desc: '24/7 moderation, spam filters, block and report features. Our secured chat environment keeps every user safe and respected.',
+    title: "Safe & Secured Chat",
+    desc: "24/7 moderation, spam filters, block and report features. Our secured chat environment keeps every user safe and respected.',
   },
   {
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
-    title: 'Quiz Rooms & Games',
-    desc: 'Play live quiz games, win gold coins, roll dice, spin the wheel, and compete with other chatters in real-time quiz room challenges.',
+    title: "Quiz Rooms & Games",
+    desc: "Play live quiz games, win gold coins, roll dice, spin the wheel, and compete with other chatters in real-time quiz room challenges.',
   },
 ]
 
