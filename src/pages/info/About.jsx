@@ -5,7 +5,12 @@ export default function About() {
   
   
   return (
-    <PageLayout seo={{ title: 'About Us – ChatsGenZ Free Chat Platform', description: 'Learn about ChatsGenZ — India's fastest growing free live chat platform. Our mission, story, values, and commitment to safe free chatting.', keywords: 'about chatsgenz, chatsgenz team, free chat india, chatsgenz mission', canonical: '/about' }}>
+    <PageLayout seo={{
+      title: "About Us – ChatsGenZ Free Chat Platform",
+      description: "Learn about ChatsGenZ — India's fastest growing free live chat platform. Our mission, story, values, and commitment to safe free chatting.",
+      keywords: "about chatsgenz, chatsgenz team, free chat india, chatsgenz mission",
+      canonical: "/about"
+    }}>
       <div className="page-container">
         <h1 className="page-title">About Us</h1>
         <p className="page-subtitle">The story behind India's next generation free chat community</p>
