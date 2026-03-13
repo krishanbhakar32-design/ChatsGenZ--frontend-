@@ -34,10 +34,10 @@ export default function Contact() {
 
   return (
     <PageLayout seo={{
-      title: 'Contact Us – ChatsGenZ Support & Feedback',
-      description: 'Contact ChatsGenZ team. Send us your questions, feedback, bug reports, DMCA requests, or partnership enquiries. We respond within 24–48 hours.',
-      keywords: 'chatsgenz contact, chat support, free chat help, chatsgenz feedback, chatsgenz email',
-      canonical: '/contact'
+      title: "Contact Us – ChatsGenZ Support & Feedback",
+      description: "Contact ChatsGenZ team. Send us your questions, feedback, bug reports, DMCA requests, or partnership enquiries. We respond within 24–48 hours.",
+      keywords: "chatsgenz contact, chat support, free chat help, chatsgenz feedback, chatsgenz email",
+      canonical: "/contact"
     }}>
       <div className="page-container">
         <h1 className="page-title">Contact Us</h1>
@@ -99,10 +99,10 @@ export default function Contact() {
           {/* INFO */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {[
-              { icon: '⏱️', title: 'Response Time', text: 'We aim to respond to all messages within 24–48 hours on business days.' },
-              { icon: '🛡️', title: 'Moderation Issues', text: 'For urgent moderation concerns, use the in-platform report button for the fastest response.' },
-              { icon: '⚖️', title: 'Legal Requests', text: 'For DMCA, RTI, and legal requests, please specify in the subject line for priority routing.' },
-              { icon: '🤝', title: 'Business Enquiries', text: 'Interested in advertising, partnerships, or collaboration? Select "Business Enquiry" in the subject.' },
+              { icon: '⏱️', title: "Response Time", text: "We aim to respond to all messages within 24–48 hours on business days.' },
+              { icon: '🛡️', title: "Moderation Issues", text: "For urgent moderation concerns, use the in-platform report button for the fastest response.' },
+              { icon: '⚖️', title: "Legal Requests", text: "For DMCA, RTI, and legal requests, please specify in the subject line for priority routing.' },
+              { icon: '🤝', title: "Business Enquiries", text: "Interested in advertising, partnerships, or collaboration? Select "Business Enquiry" in the subject.' },
             ].map(i => (
               <div key={i.title} style={{ background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '16px 18px', display: 'flex', gap: 14 }}>
                 <span style={{ fontSize: 22, flexShrink: 0 }}>{i.icon}</span>
