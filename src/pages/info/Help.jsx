@@ -2,23 +2,23 @@ import { Link } from 'react-router-dom'
 import PageLayout from '../../components/PageLayout.jsx'
 
 const TOPICS = [
-  { emoji: '👤', title: 'Account & Login', desc: 'Registering, logging in, guest access, password reset, profile setup', link: '/faq' },
-  { emoji: '💬', title: 'Chatrooms & Messaging', desc: 'Joining rooms, sending messages, private chat, reactions, file sharing', link: '/faq' },
-  { emoji: '📹', title: 'Video & Audio Calls', desc: 'Starting a call, cam setup, WebRTC troubleshooting, call quality', link: '/faq' },
-  { emoji: '🏆', title: 'Ranks & Gold Coins', desc: 'How ranks work, earning XP, spending gold, rank perks, levelling up', link: '/ranks' },
-  { emoji: '🛡️', title: 'Safety & Reporting', desc: 'Blocking users, reporting content, understanding bans, staying safe', link: '/safety' },
-  { emoji: '⚙️', title: 'Account Settings', desc: 'Changing username, avatar, privacy settings, notifications, password', link: '/faq' },
-  { emoji: '📜', title: 'Rules & Policies', desc: 'Chat rules, terms of service, privacy policy, legal information', link: '/chat-rules' },
-  { emoji: '✉️', title: 'Contact Support', desc: 'Can\'t find your answer? Reach out to our team directly', link: '/contact' },
+  { emoji: '👤', title: "Account & Login", desc: "Registering, logging in, guest access, password reset, profile setup', link: '/faq' },
+  { emoji: '💬', title: "Chatrooms & Messaging", desc: "Joining rooms, sending messages, private chat, reactions, file sharing', link: '/faq' },
+  { emoji: '📹', title: "Video & Audio Calls", desc: "Starting a call, cam setup, WebRTC troubleshooting, call quality', link: '/faq' },
+  { emoji: '🏆', title: "Ranks & Gold Coins", desc: "How ranks work, earning XP, spending gold, rank perks, levelling up', link: '/ranks' },
+  { emoji: '🛡️', title: "Safety & Reporting", desc: "Blocking users, reporting content, understanding bans, staying safe', link: '/safety' },
+  { emoji: '⚙️', title: "Account Settings", desc: "Changing username, avatar, privacy settings, notifications, password', link: '/faq' },
+  { emoji: '📜', title: "Rules & Policies", desc: "Chat rules, terms of service, privacy policy, legal information', link: '/chat-rules' },
+  { emoji: '✉️', title: "Contact Support", desc: "Can\'t find your answer? Reach out to our team directly', link: '/contact' },
 ]
 
 export default function Help() {
   return (
     <PageLayout seo={{
-      title: 'Help Center – ChatsGenZ Support & Guides',
-      description: 'ChatsGenZ Help Center. Find answers to common questions, guides for using our free chat platform, and how to contact our support team.',
-      keywords: 'chatsgenz help, chat support center, free chat guide, chatsgenz how to, chat help india',
-      canonical: '/help'
+      title: "Help Center – ChatsGenZ Support & Guides",
+      description: "ChatsGenZ Help Center. Find answers to common questions, guides for using our free chat platform, and how to contact our support team.",
+      keywords: "chatsgenz help, chat support center, free chat guide, chatsgenz how to, chat help india",
+      canonical: "/help"
     }}>
       <div className="page-container">
         <h1 className="page-title">Help Center</h1>
