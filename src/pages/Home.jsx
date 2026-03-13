@@ -7,39 +7,39 @@ const FEATURES = [
   {
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
     title: "Guest Chat — No Registration",
-    desc: "Join instantly without email or phone. 100% anonymous guest chatroom access. No signup needed, just pick a name and start chatting!',
+    desc: "Join instantly without email or phone. 100% anonymous guest chatroom access. No signup needed, just pick a name and start chatting.",
   },
   {
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>,
-    title: "HD Video & Audio Calls",
-    desc: "Crystal clear free video calls and audio calls powered by WebRTC technology. Free public cam chat with no downloads required.',
+    title: "HD Video and Audio Calls",
+    desc: "Crystal clear free video calls and audio calls powered by WebRTC technology. Free public cam chat with no downloads required.",
   },
   {
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>,
     title: "Live Chatrooms 24/7",
-    desc: "Active free chatrooms running around the clock. Always someone online — day, night, weekends. Never a quiet room on ChatsGenZ.',
+    desc: "Active free chatrooms running around the clock. Always someone online day, night, weekends. Never a quiet room on ChatsGenZ.",
   },
   {
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,
-    title: "VIP & Premium Chatrooms",
-    desc: "Unlock exclusive VIP chat rooms and premium chatroom access with special rank privileges as you level up your profile.',
+    title: "VIP and Premium Chatrooms",
+    desc: "Unlock exclusive VIP chat rooms and premium chatroom access with special rank privileges as you level up your profile.",
   },
   {
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
-    title: "Safe & Secured Chat",
-    desc: "24/7 moderation, spam filters, block and report features. Our secured chat environment keeps every user safe and respected.',
+    title: "Safe and Secured Chat",
+    desc: "24/7 moderation, spam filters, block and report features. Our secured chat environment keeps every user safe and respected.",
   },
   {
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
-    title: "Quiz Rooms & Games",
-    desc: "Play live quiz games, win gold coins, roll dice, spin the wheel, and compete with other chatters in real-time quiz room challenges.',
+    title: "Quiz Rooms and Games",
+    desc: "Play live quiz games, win gold coins, roll dice, spin the wheel, and compete with other chatters in real-time quiz room challenges.",
   },
 ]
 
 const STATS = [
   { num: '100%', label: 'Free Forever' },
-  { num: 'No Reg',  label: 'Guest Login' },
-  { num: 'HD',   label: 'Video Calls' },
+  { num: 'No Reg', label: 'Guest Login' },
+  { num: 'HD', label: 'Video Calls' },
   { num: '24/7', label: 'Live Rooms' },
 ]
 
@@ -48,128 +48,124 @@ export default function Home() {
     <>
       <SEO
         title="Free Live Chat Rooms | Talk to Strangers Online | No Registration"
-        description="ChatsGenZ — India's fastest growing free live chat site. Join free chatrooms, talk to strangers, make friends, video call, audio call without registration. Best free chatting site in India 2024."
-        keywords="live chatting site, free chat, stranger chat, no registration chat, indian chatroom, hindi chat, desi chat, free video call, guest chat"
+        description="ChatsGenZ is a 100% free live chat platform. Join public chat rooms, talk to strangers worldwide, video chat, earn ranks and play games. No registration required."
+        keywords="free chat rooms, talk to strangers, live chat, video chat, online chat, no registration chat, free chatting, chat with strangers worldwide"
         canonical="/"
       />
       <Header />
 
-      {/* ── HERO ── */}
-      <section style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 20px 32px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center' }}
-               className="hero-section">
-        {/* LEFT — Image */}
-        <div className="hero-img-wrap">
-          {/* When couple photo is ready, replace this div with:
-              <img src="/images/hero-couple.jpg" alt="Chat and make friends on ChatsGenZ" style={...} /> */}
-          <div style={{
-            width: '100%', height: 420, borderRadius: 20,
-            background: 'linear-gradient(135deg, #e8f0fe 0%, #fce4ec 50%, #e8f5e9 100%)',
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            gap: 12, border: '2px dashed var(--border)', position: 'relative', overflow: 'hidden',
-          }}>
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" strokeWidth="1" opacity=".3">
-              <rect x="3" y="3" width="18" height="18" rx="2"/>
-              <circle cx="8.5" cy="8.5" r="1.5"/>
-              <polyline points="21,15 16,10 5,21"/>
-            </svg>
-            <p style={{ color: 'var(--text-3)', fontSize: 13, textAlign: 'center', padding: '0 20px' }}>
-              Add your couple photo here<br />
-              <small>→ Place in <code>public/images/hero-couple.jpg</code></small>
-            </p>
-          </div>
-        </div>
-
-        {/* RIGHT — Text */}
-        <div className="hero-text" style={{ animationDelay: '0.1s' }}>
-          <h1 style={{ fontSize: 32, fontWeight: 900, lineHeight: 1.2, color: 'var(--text)', marginBottom: 16, letterSpacing: -1 }}>
-            India's Best <span style={{ color: 'var(--primary)' }}>Free Chat Rooms</span> — No Registration Needed
-          </h1>
-          <p style={{ fontFamily: 'var(--font-2)', fontSize: 15, lineHeight: 1.85, color: 'var(--text-2)', marginBottom: 28 }}>
-            Welcome to <strong>ChatsGenZ</strong> — the next generation of free online chatting.
-            Whether you're looking for a friendly conversation, want to meet strangers from India and worldwide,
-            or simply enjoy our <strong>free chatrooms</strong>, we have it all. Enjoy <strong>live chatting</strong>,
-            <strong> public cam chat</strong>, <strong>video calls</strong>, <strong>audio calls</strong>, and
-            exciting <strong>quiz rooms</strong> — completely free. No registration — just enter as a
-            <strong> guest</strong> and start instantly. India's <strong>fastest growing chat site</strong>
-            built for the new generation!
-          </p>
-
-          <Link to="/login" className="btn-primary" style={{ marginBottom: 32, display: 'inline-flex', fontSize: 16 }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>
-            Start Chatting Free
-          </Link>
-
-          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-            {STATS.map(s => (
-              <div key={s.num} style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--primary)', lineHeight: 1 }}>{s.num}</span>
-                <span style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{s.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── AD BOX 1 ── */}
-      <div style={{ maxWidth: 1200, margin: '0 auto 8px', padding: '0 20px' }}>
-        <div className="ad-placeholder" style={{ height: 90 }}>Advertisement</div>
-      </div>
-
-      {/* ── WHY CHATSGENZ ── */}
-      <section style={{ maxWidth: 1200, margin: '24px auto', padding: '0 20px' }}>
-        <h2 className="section-heading">Why You Should Choose ChatsGenZ?</h2>
-        <div style={{ background: 'var(--bg-2)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', padding: '28px 32px' }} className="prose">
-          <p>In a world full of social media platforms and messaging services, finding a truly <strong>free chatting site</strong> that respects your privacy, offers genuine connections, and delivers real fun is surprisingly difficult. Most platforms require lengthy registrations, charge for features that should be free, or bombard you with intrusive ads. <strong>ChatsGenZ</strong> was built to solve all these problems — offering a complete, feature-rich chat experience at absolutely zero cost.</p>
-          <p>At ChatsGenZ, we are proud to be one of the very few <strong>new chatting sites</strong> that combines traditional chatroom culture with modern technology. Our platform supports <strong>live chatting</strong> in real time, meaning every message is delivered instantly. Whether you want a one-on-one <strong>private chat</strong>, a public room discussion, or a lively group conversation with strangers, we have the infrastructure to support it all.</p>
-          <p>One of our most loved features is the ability to join as a <strong>guest chatroom</strong> user — no email, no phone number, no personal information required. This makes ChatsGenZ the safest and most accessible <strong>stranger chatting site</strong> available today. You can protect your identity, stay anonymous, and still enjoy full chatting features. For those who prefer a personalised experience, registering unlocks <strong>VIP chat</strong>, <strong>premium chatroom</strong> access, friend lists, gold coins, and exclusive ranks.</p>
-          <p>ChatsGenZ takes safety seriously. Our platform features trained moderators available around the clock. Our <strong>secured chat</strong> environment uses advanced filtering to prevent spam and harassment. Every user can report, block, or mute others, giving complete control over your experience. We maintain strict <strong>chat rules</strong> and a zero-tolerance policy for abuse, ensuring both <strong>adult chat</strong> spaces and general rooms remain comfortable for their audiences.</p>
-          <p>Beyond text messaging, ChatsGenZ offers <strong>public cam chat</strong>, <strong>video call</strong>, and <strong>audio call</strong> features powered by WebRTC technology for crystal-clear HD communication. Our rooms include special spaces for <strong>quiz room</strong> games, music, Bollywood, sports, and regional communities covering <strong>Hindi chat</strong>, Tamil chat, Telugu chat, Punjabi chat, and many more. Whether you are in India, the USA, UK, or anywhere in the world, there is always a room for you.</p>
-          <p>Our unique rank and rewards system sets ChatsGenZ apart from every other <strong>free chat</strong> platform. Users earn XP points, level up, collect gold coins, send and receive virtual gifts, and unlock special ranks including Legend, Fairy, Ninja, Butterfly, and VIP. These features create a gamified social experience that keeps the community active and engaged — making ChatsGenZ one of the most rewarding <strong>friendly chatroom</strong> experiences available anywhere online.</p>
-          <p>ChatsGenZ is the <strong>fastest growing chat</strong> platform in India right now, with a rapidly expanding community of genuine users. We continuously add new features, rooms, and events based on user feedback. If you are tired of boring, outdated chat platforms and want something fresh, exciting, and truly free — <strong>ChatsGenZ is your answer</strong>. Join thousands of users who have already made it their favourite place to <strong>make friends</strong>, connect, and enjoy real conversations every single day.</p>
-        </div>
-
-        {/* Features Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginTop: 24 }} className="features-grid">
-          {FEATURES.map(f => (
-            <div key={f.title} className="card">
-              <div style={{
-                width: 40, height: 40, borderRadius: 10,
-                background: 'var(--primary-l)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                marginBottom: 12, color: 'var(--primary)',
-              }}>
-                <svg style={{ width: 22, height: 22 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  {f.icon.props.children}
-                </svg>
-              </div>
-              <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)', marginBottom: 6 }}>{f.title}</div>
-              <div style={{ fontSize: 13, color: 'var(--text-3)', lineHeight: 1.5, fontFamily: 'var(--font-2)' }}>{f.desc}</div>
+      <main>
+        {/* HERO */}
+        <section style={{
+          background: 'linear-gradient(135deg, #0a1420 0%, #0f2744 50%, #0a1420 100%)',
+          padding: '80px 20px 60px', textAlign: 'center', position: 'relative', overflow: 'hidden',
+        }}>
+          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(26,115,232,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(77,163,255,0.1) 0%, transparent 50%)', pointerEvents: 'none' }} />
+          <div style={{ maxWidth: 780, margin: '0 auto', position: 'relative' }}>
+            <div style={{ display: 'inline-block', background: 'rgba(26,115,232,0.15)', border: '1px solid rgba(26,115,232,0.3)', borderRadius: 20, padding: '5px 16px', fontSize: '0.8rem', color: '#4da3ff', fontWeight: 600, marginBottom: 24, letterSpacing: '0.04em' }}>
+              FREE WORLDWIDE CHAT PLATFORM
             </div>
-          ))}
-        </div>
-      </section>
+            <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.2rem)', fontWeight: 900, color: '#fff', lineHeight: 1.15, marginBottom: 20, fontFamily: "'Outfit', sans-serif", letterSpacing: '-0.5px' }}>
+              Chat With Anyone,<br />
+              <span style={{ background: 'linear-gradient(90deg, #4da3ff, #1a73e8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                Anywhere in the World
+              </span>
+            </h1>
+            <p style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.65)', maxWidth: 560, margin: '0 auto 36px', lineHeight: 1.7 }}>
+              Join free public chat rooms, meet new people worldwide, video chat, earn ranks, send gifts and play games. No registration needed to start.
+            </p>
+            <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Link to="/login" style={{
+                padding: '14px 32px', borderRadius: 10,
+                background: 'linear-gradient(135deg, #1a73e8, #1557b0)',
+                color: '#fff', fontWeight: 700, fontSize: '1rem',
+                textDecoration: 'none', boxShadow: '0 4px 20px rgba(26,115,232,0.5)',
+              }}>
+                Start Chatting Free
+              </Link>
+              <Link to="/chat-directory" style={{
+                padding: '14px 32px', borderRadius: 10,
+                border: '1.5px solid rgba(255,255,255,0.2)',
+                color: '#fff', fontWeight: 600, fontSize: '1rem',
+                textDecoration: 'none', background: 'rgba(255,255,255,0.06)',
+              }}>
+                Browse Chat Rooms
+              </Link>
+            </div>
 
-      {/* ── AD BANNER 2 ── */}
-      <div style={{ maxWidth: 1200, margin: '24px auto', padding: '0 20px' }}>
-        <div className="ad-placeholder" style={{ height: 120 }}>Advertisement Banner</div>
-      </div>
+            {/* Stats */}
+            <div style={{ display: 'flex', gap: 32, justifyContent: 'center', flexWrap: 'wrap', marginTop: 52, paddingTop: 40, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+              {STATS.map(s => (
+                <div key={s.label} style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#4da3ff', fontFamily: "'Outfit', sans-serif" }}>{s.num}</div>
+                  <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)', marginTop: 4, fontWeight: 500 }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* FEATURES */}
+        <section style={{ padding: '72px 20px', background: '#fff' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: 52 }}>
+              <h2 style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.2rem)', fontWeight: 800, color: '#202124', fontFamily: "'Outfit', sans-serif", marginBottom: 12 }}>
+                Everything You Need to Chat
+              </h2>
+              <p style={{ color: '#5f6368', fontSize: '1rem', maxWidth: 500, margin: '0 auto' }}>
+                Completely free features available to every user — no hidden costs, no subscriptions.
+              </p>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
+              {FEATURES.map((f, i) => (
+                <div key={i} style={{
+                  padding: '28px 24px', borderRadius: 14,
+                  border: '1px solid #e8eaed', background: '#fff',
+                  boxShadow: '0 1px 6px rgba(60,64,67,0.08)',
+                  transition: 'box-shadow 0.2s, transform 0.2s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 20px rgba(26,115,232,0.12)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+                onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 1px 6px rgba(60,64,67,0.08)'; e.currentTarget.style.transform = 'none' }}
+                >
+                  <div style={{ width: 46, height: 46, background: '#e8f0fe', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, color: '#1a73e8' }}>
+                    <div style={{ width: 22, height: 22 }}>{f.icon}</div>
+                  </div>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#202124', marginBottom: 8, fontFamily: "'Outfit', sans-serif" }}>{f.title}</h3>
+                  <p style={{ fontSize: '0.875rem', color: '#5f6368', lineHeight: 1.65 }}>{f.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* SEO TEXT SECTION */}
+        <section style={{ padding: '64px 20px', background: '#f8f9fa' }}>
+          <div style={{ maxWidth: 900, margin: '0 auto' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#202124', fontFamily: "'Outfit', sans-serif", marginBottom: 20 }}>
+              The World is Waiting — Start a Free Chat Now
+            </h2>
+            <div style={{ color: '#3c4043', lineHeight: 1.8, fontSize: '0.95rem', display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <p>ChatsGenZ is a completely free live chat platform where you can talk to strangers from any country in the world. Whether you want to make new friends, practice a language, find people with similar interests, or simply have a fun conversation, ChatsGenZ has a chat room for you. Our platform is built for everyone — no registration required to get started.</p>
+              <p>Our public chat rooms are organized by topics, languages, regions, and interests, making it easy to find conversations you genuinely enjoy. From general chat rooms and language-specific rooms to interest-based communities and regional groups, every user can find their space. You can also join adult chat rooms once age verification is complete.</p>
+              <p>ChatsGenZ offers HD video calls, audio calls, public cam chat, a rich gifting system, an XP and rank progression system, quiz room games, dice and spin games, and much more. As you chat, you earn experience points and climb through ranks — from Guest all the way up to Legend, Fairy, Ninja, Butterfly, and beyond. Premium rank users enjoy exclusive privileges and VIP room access.</p>
+              <p>Our platform is hosted on high-performance infrastructure and deployed across global regions to ensure fast, stable connections for users in Asia, Europe, the Americas, the Middle East, and beyond. Your safety is our priority — all rooms are actively moderated by our dedicated team, and every user has access to block, report, and privacy controls.</p>
+              <p>Join thousands of chatters online right now. It is 100% free, works on any device, and takes less than 10 seconds to start. No email, no phone number, no credit card — just pick a username and dive in.</p>
+            </div>
+            <div style={{ marginTop: 32 }}>
+              <Link to="/login" style={{
+                display: 'inline-block', padding: '13px 28px', borderRadius: 9,
+                background: 'linear-gradient(135deg, #1a73e8, #1557b0)',
+                color: '#fff', fontWeight: 700, fontSize: '0.95rem',
+                textDecoration: 'none', boxShadow: '0 2px 12px rgba(26,115,232,0.35)',
+              }}>
+                Join Free Chat Now
+              </Link>
+            </div>
+          </div>
+        </section>
+      </main>
 
       <Footer />
-
-      <style>{`
-        @media (max-width: 768px) {
-          .hero-section { grid-template-columns: 1fr !important; padding: 24px 16px 20px !important; gap: 24px !important; }
-          .hero-img-wrap div { height: 260px !important; }
-          .features-grid { grid-template-columns: 1fr 1fr !important; }
-        }
-        @media (max-width: 480px) {
-          .features-grid { grid-template-columns: 1fr !important; }
-          .hero-section h1 { font-size: 24px !important; }
-        }
-      `}</style>
     </>
   )
 }
