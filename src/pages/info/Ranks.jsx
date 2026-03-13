@@ -1,105 +1,220 @@
 import PageLayout from '../../components/PageLayout.jsx'
-import { RANKS_LIST, ROOM_ROLES } from '../../constants.js'
+
+const FREE_RANKS = [
+  {
+    key: 'guest',
+    label: 'Guest',
+    color: '#888888',
+    icon: '/icons/ranks/guest.svg',
+    level: 1,
+    type: 'free',
+    how: 'Default rank for unregistered users',
+    perks: ['Access to public chat rooms', 'Can send text messages', 'Limited features'],
+  },
+  {
+    key: 'user',
+    label: 'User',
+    color: '#CCCCCC',
+    icon: '/icons/ranks/user.svg',
+    level: 2,
+    type: 'free',
+    how: 'Register an account',
+    perks: ['Full messaging features', 'Send gifts', 'Earn XP and gold', 'Profile customization'],
+  },
+  {
+    key: 'vipfemale',
+    label: 'VIP Female',
+    color: '#FF4488',
+    icon: '/icons/ranks/vipfemale.svg',
+    level: 3,
+    type: 'free',
+    how: 'Awarded by site owners to verified female users',
+    perks: ['VIP badge displayed in chat', 'Access to VIP Female rooms', 'Special name color', 'Priority in user lists'],
+  },
+  {
+    key: 'vipmale',
+    label: 'VIP Male',
+    color: '#4488FF',
+    icon: '/icons/ranks/vipmale.svg',
+    level: 4,
+    type: 'free',
+    how: 'Awarded by site owners to verified male users',
+    perks: ['VIP badge displayed in chat', 'Access to VIP Male rooms', 'Special name color', 'Priority in user lists'],
+  },
+  {
+    key: 'butterfly',
+    label: 'Butterfly',
+    color: '#FF66AA',
+    icon: '/icons/ranks/butterfly.svg',
+    level: 5,
+    type: 'free',
+    how: 'Selected and awarded by site owners based on activity and community contribution',
+    perks: ['Exclusive Butterfly badge', 'Access to special rooms', 'Unique name styling', 'Recognized community member'],
+  },
+  {
+    key: 'ninja',
+    label: 'Ninja',
+    color: '#444444',
+    icon: '/icons/ranks/ninja.svg',
+    level: 6,
+    type: 'free',
+    how: 'Selected and awarded by site owners based on loyalty and platform use',
+    perks: ['Exclusive Ninja badge', 'Access to Ninja rooms', 'Special dark name style', 'Elite community status'],
+  },
+  {
+    key: 'fairy',
+    label: 'Fairy',
+    color: '#FF88CC',
+    icon: '/icons/ranks/fairy.svg',
+    level: 7,
+    type: 'free',
+    how: 'Selected and awarded by site owners to active and positive community members',
+    perks: ['Exclusive Fairy badge', 'Access to Fairy rooms', 'Pink glowing name', 'High community recognition'],
+  },
+  {
+    key: 'legend',
+    label: 'Legend',
+    color: '#FF8800',
+    icon: '/icons/ranks/legend.png',
+    level: 8,
+    type: 'free',
+    how: 'Selected and awarded by site owners to the most respected long-term community members',
+    perks: ['Exclusive Legend badge', 'Access to all Legend rooms', 'Golden name color', 'Highest earnable community rank'],
+  },
+]
+
+const PAID_RANKS = [
+  {
+    key: 'premium',
+    label: 'Premium',
+    color: '#AA44FF',
+    icon: '/icons/ranks/premium.svg',
+    level: 10,
+    type: 'paid',
+    how: 'Purchase a Premium subscription from the store',
+    perks: ['Purple Premium badge', 'Access to all Premium rooms', 'Exclusive premium emoticons', 'Priority support', 'Extra gold rewards', 'Premium profile frame', 'Send Ruby gifts'],
+  },
+]
+
+function RankCard({ rank }) {
+  return (
+    <div style={{
+      background: '#fff',
+      border: `2px solid ${rank.color}22`,
+      borderLeft: `4px solid ${rank.color}`,
+      borderRadius: 14,
+      padding: '24px 20px',
+      display: 'flex',
+      gap: 18,
+      alignItems: 'flex-start',
+      boxShadow: '0 1px 6px rgba(60,64,67,0.07)',
+      transition: 'box-shadow 0.2s, transform 0.2s',
+    }}
+    onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 4px 20px ${rank.color}22`; e.currentTarget.style.transform = 'translateY(-1px)' }}
+    onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 1px 6px rgba(60,64,67,0.07)'; e.currentTarget.style.transform = 'none' }}
+    >
+      <div style={{
+        width: 52, height: 52, borderRadius: 12, flexShrink: 0,
+        background: `${rank.color}15`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        border: `1.5px solid ${rank.color}33`,
+      }}>
+        <img src={rank.icon} alt={rank.label} style={{ width: 30, height: 30 }} onError={e => { e.target.style.display = 'none' }} />
+      </div>
+      <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
+          <span style={{ fontWeight: 800, fontSize: '1rem', color: rank.color, fontFamily: "'Outfit', sans-serif" }}>
+            {rank.label}
+          </span>
+          <span style={{ fontSize: '0.72rem', background: `${rank.color}15`, color: rank.color, padding: '2px 8px', borderRadius: 10, fontWeight: 600 }}>
+            Level {rank.level}
+          </span>
+          {rank.type === 'paid' && (
+            <span style={{ fontSize: '0.72rem', background: '#AA44FF15', color: '#AA44FF', padding: '2px 8px', borderRadius: 10, fontWeight: 700, border: '1px solid #AA44FF33' }}>
+              PAID
+            </span>
+          )}
+        </div>
+        <p style={{ fontSize: '0.82rem', color: '#5f6368', marginBottom: 10, lineHeight: 1.5 }}>
+          <strong style={{ color: '#3c4043' }}>How to get it:</strong> {rank.how}
+        </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {rank.perks.map((p, i) => (
+            <span key={i} style={{
+              fontSize: '0.75rem', padding: '3px 10px', borderRadius: 20,
+              background: '#f1f3f4', color: '#3c4043', fontWeight: 500,
+            }}>{p}</span>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function Ranks() {
   return (
     <PageLayout seo={{
-      title: 'Ranks & Levels – ChatsGenZ Rank System Guide',
-      description: 'ChatsGenZ complete rank guide. Learn all 14 ranks, how to level up, what perks each rank unlocks.',
-      keywords: 'chatsgenz ranks, chat ranks guide, vip rank chat, premium rank chat, chatsgenz levels',
-      canonical: '/ranks'
+      title: "Ranks and Levels — ChatsGenZ Chat Platform",
+      description: "Learn about all chat ranks on ChatsGenZ. From Guest to Legend, discover free ranks, the Premium paid rank, and staff ranks. See how to earn and unlock each rank.",
+      keywords: "chatsgenz ranks, chat levels, vip rank chat, legend rank, premium rank, chat platform ranks, chatsgenz levels",
+      canonical: "/ranks",
     }}>
       <div className="page-container">
-        <h1 className="page-title">Ranks & Levels</h1>
-        <p className="page-subtitle">14 site-wide ranks — earn them by levelling up, gifting, and contributing to the community</p>
+        <h1 className="page-title">Ranks and Levels</h1>
+        <p className="page-subtitle">Your journey from Guest to Legend — every rank, explained.</p>
 
-        <div style={{ background: 'var(--primary-l)', border: '1px solid #b3d1fc', borderRadius: 'var(--radius)', padding: '16px 20px', marginBottom: 24 }}>
-          <p style={{ fontSize: 14, color: 'var(--primary-d)', margin: 0, fontFamily: 'var(--font-2)' }}>
-            <strong>XP System:</strong> Every 100 XP = 1 Level Up → Reward = Level × 20 Gold.
-            Earn XP: send messages (+1), daily bonus (+10), quiz easy/medium/hard (+10/20/40), dice/spin wins (+5–8).
-            <strong> Staff ranks</strong> (Moderator, Admin, Superadmin, Owner) are assigned by management — not earned by XP.
-          </p>
+        {/* Info banner */}
+        <div style={{ background: '#e8f0fe', border: '1px solid #c5d8fd', borderRadius: 12, padding: '16px 20px', marginBottom: 36, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+          <span style={{ fontSize: '1.2rem' }}>ℹ️</span>
+          <div style={{ fontSize: '0.875rem', color: '#1a56c4', lineHeight: 1.6 }}>
+            <strong>Free Ranks</strong> (Guest through Legend) are either default or awarded by site owners. The criteria for VIP, Butterfly, Ninja, Fairy and Legend ranks are reviewed and selected by the platform owners — keep chatting, stay active, and be a positive community member. <strong>Premium</strong> is the only paid rank and can be purchased from the store.
+          </div>
         </div>
 
-        <h2 className="section-heading">Site-Wide Ranks</h2>
-        <div style={{ overflowX: 'auto', marginBottom: 32 }}>
-          <table className="ranks-table">
-            <thead>
-              <tr>
-                <th>Icon</th>
-                <th>DB Key (exact)</th>
-                <th>Display Name</th>
-                <th>Level</th>
-                <th>Colour</th>
-                <th>How to Get</th>
-              </tr>
-            </thead>
-            <tbody>
-              {RANKS_LIST.map(r => (
-                <tr key={r.key}>
-                  <td>
-                    <img src={`/icons/ranks/${r.icon}`} width={24} height={24} alt={r.label}
-                      onError={e => { e.target.style.display='none' }} style={{ display:'block' }} />
-                  </td>
-                  <td><code style={{ background:'var(--bg-3)', padding:'2px 6px', borderRadius:4, fontSize:12 }}>{r.key}</code></td>
-                  <td><span style={{ fontWeight:700, color:r.color }}>{r.label}</span></td>
-                  <td style={{ fontWeight:700 }}>{r.level}</td>
-                  <td>
-                    <span style={{ width:14, height:14, borderRadius:'50%', background:r.color, display:'inline-block', verticalAlign:'middle', marginRight:6 }} />
-                    <code style={{ fontSize:11 }}>{r.color}</code>
-                  </td>
-                  <td style={{ fontSize:12, color:'var(--text-3)' }}>
-                    {r.key==='owner'      && 'Platform owner — full control'}
-                    {r.key==='superadmin' && 'Assigned by owner only'}
-                    {r.key==='admin'      && 'Staff — assigned by superadmin/owner'}
-                    {r.key==='moderator'  && 'Staff — assigned by admin+'}
-                    {r.key==='premium'    && 'Assigned by admin or on purchase'}
-                    {r.key==='bot'        && 'System bots — GenZBot, SuperBot'}
-                    {r.key==='legend'     && 'Earned — high XP level'}
-                    {r.key==='fairy'      && 'Earned — XP level'}
-                    {r.key==='ninja'      && 'Earned — XP level'}
-                    {r.key==='butterfly'  && 'Earned — XP level'}
-                    {r.key==='vipmale'    && 'VIP Male — XP or gifted by admin'}
-                    {r.key==='vipfemale'  && 'VIP Female — XP or gifted by admin'}
-                    {r.key==='user'       && 'Default — all registered users'}
-                    {r.key==='guest'      && 'No registration — temporary session'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* Free Ranks */}
+        <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#202124', marginBottom: 4, fontFamily: "'Outfit', sans-serif" }}>
+          Free Ranks
+        </h2>
+        <p style={{ color: '#5f6368', fontSize: '0.875rem', marginBottom: 20 }}>These ranks are completely free. No purchase required.</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 48 }}>
+          {FREE_RANKS.map(r => <RankCard key={r.key} rank={r} />)}
         </div>
 
-        <h2 className="section-heading">Room Roles (per-room, not global)</h2>
-        <p style={{ fontSize:14, color:'var(--text-2)', marginBottom:12, fontFamily:'var(--font-2)' }}>
-          These are stored in the RoomStaff collection. They do NOT change the user's site-wide rank.
-        </p>
-        <div style={{ overflowX:'auto', marginBottom:24 }}>
-          <table className="ranks-table">
-            <thead>
-              <tr><th>Icon</th><th>ID</th><th>Name</th><th>Icon File</th></tr>
-            </thead>
-            <tbody>
-              {Object.entries(ROOM_ROLES).map(([id, r]) => (
-                <tr key={id}>
-                  <td>
-                    <img src={`/icons/rooms/${r.icon}`} width={24} height={24} alt={r.label}
-                      onError={e => { e.target.style.display='none' }} style={{ display:'block' }} />
-                  </td>
-                  <td><code style={{ background:'var(--bg-3)', padding:'2px 6px', borderRadius:4, fontSize:12 }}>{id}</code></td>
-                  <td style={{ fontWeight:700 }}>{r.label}</td>
-                  <td><code style={{ fontSize:12 }}>{r.icon}</code></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* Bot rank note */}
+        <div style={{ background: '#f8f9fa', border: '1px solid #e8eaed', borderRadius: 12, padding: '16px 20px', marginBottom: 48, fontSize: '0.875rem', color: '#5f6368' }}>
+          <strong style={{ color: '#202124' }}>Bot Rank:</strong> Assigned to automated chat bots operated by the platform. Users cannot obtain this rank.
         </div>
 
-        <div style={{ background:'#fff8e1', border:'1px solid #fbbc04', borderRadius:'var(--radius)', padding:'14px 18px' }}>
-          <p style={{ fontSize:13, color:'#92400e', margin:0, fontFamily:'var(--font-2)' }}>
-            <strong>Dev Note:</strong> DB key like <code>vipmale</code> / <code>superadmin</code> is the exact string in MongoDB.
-            Frontend uses <code>/icons/ranks/[icon]</code>. Backend specifies <code>legend.png</code> — frontend has <code>legend.svg</code> — rename if needed.
-          </p>
+        {/* Paid Rank */}
+        <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#202124', marginBottom: 4, fontFamily: "'Outfit', sans-serif" }}>
+          Paid Rank
+        </h2>
+        <p style={{ color: '#5f6368', fontSize: '0.875rem', marginBottom: 20 }}>Unlock exclusive features with a Premium subscription.</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 48 }}>
+          {PAID_RANKS.map(r => <RankCard key={r.key} rank={r} />)}
+        </div>
+
+        {/* XP Info */}
+        <div style={{ background: 'linear-gradient(135deg, #f0f7ff, #e8f0fe)', border: '1px solid #c5d8fd', borderRadius: 14, padding: '24px' }}>
+          <h3 style={{ fontWeight: 800, color: '#1a56c4', marginBottom: 14, fontFamily: "'Outfit', sans-serif" }}>
+            XP and Gold System
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12, fontSize: '0.85rem', color: '#3c4043' }}>
+            {[
+              ['Send a message', '+1 XP'],
+              ['Daily login bonus', '+10 XP'],
+              ['Easy quiz correct', '+10 XP'],
+              ['Medium quiz correct', '+20 XP'],
+              ['Hard quiz correct', '+40 XP'],
+              ['Dice / Spin game', '+1 to +8 XP'],
+              ['Every 100 XP = 1 Level', 'Level reward = Level x 20 Gold'],
+            ].map(([action, reward], i) => (
+              <div key={i} style={{ background: '#fff', padding: '10px 14px', borderRadius: 8, border: '1px solid #dce8fc', display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                <span>{action}</span>
+                <strong style={{ color: '#1a73e8', whiteSpace: 'nowrap' }}>{reward}</strong>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </PageLayout>
