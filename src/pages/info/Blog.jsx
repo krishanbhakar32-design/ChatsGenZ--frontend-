@@ -5,7 +5,12 @@ export default function Blog() {
   
   
   return (
-    <PageLayout seo={{ title: 'Blog – ChatsGenZ News, Updates & Chat Tips', description: 'ChatsGenZ official blog. Latest news, platform updates, chat tips, safety guides, and community stories from India's fastest growing free chat site.', keywords: 'chatsgenz blog, chat tips, free chat news, chatsgenz updates', canonical: '/blog' }}>
+    <PageLayout seo={{
+      title: "Blog – ChatsGenZ News, Updates & Chat Tips",
+      description: "ChatsGenZ official blog. Latest news, platform updates, chat tips, safety guides, and community stories from India's fastest growing free chat site.",
+      keywords: "chatsgenz blog, chat tips, free chat news, chatsgenz updates",
+      canonical: "/blog"
+    }}>
       <div className="page-container">
         <h1 className="page-title">Blog</h1>
         <p className="page-subtitle">Latest news, updates, and stories from the ChatsGenZ community</p>
