@@ -1,50 +1,121 @@
 import PageLayout from '../../components/PageLayout.jsx'
 
 const RULES = [
-  { num: '01', title: "Respect All Users", desc: "Treat every person on ChatsGenZ with basic human respect. Harassment, bullying, name-calling, personal attacks, or any form of abusive behaviour will result in an immediate mute or ban. This applies in all rooms — public, private, and VIP chatrooms.' },
-  { num: '02', title: "No Hate Speech", desc: "Content that promotes hatred, discrimination, or violence based on race, religion, gender, sexual orientation, nationality, caste, disability, or any other characteristic is strictly prohibited and will result in a permanent ban.' },
-  { num: '03', title: "No Illegal Content", desc: "Sharing, requesting, or promoting any illegal content including but not limited to pirated material, illegal substances, weapons, or financial fraud is absolutely prohibited. Such violations will be reported to relevant authorities.' },
-  { num: '04', title: "No Minors in Adult Rooms", desc: "Adult rooms are strictly for users aged 18+. Minors must not access adult content areas. Any user found to be a minor in an adult room will be immediately removed. Adults who knowingly engage with minors in adult spaces will be permanently banned.' },
-  { num: '05', title: "No Spam or Flooding", desc: "Do not flood chatrooms with repeated messages, symbols, or links. Do not use bots or automated scripts to post messages. Spam disrupts the experience for all users and will result in muting or removal.' },
-  { num: '06', title: "No Sharing Personal Information", desc: "Do not share your own or others\' personal contact information (phone numbers, home addresses, social media handles) in public rooms. Protect yourself and others\' privacy at all times.' },
-  { num: '07', title: "No Impersonation", desc: "Impersonating ChatsGenZ staff, moderators, admins, or other users is strictly forbidden. This includes using similar usernames to confuse or deceive other users.' },
-  { num: '08', title: "Appropriate Language", desc: "While ChatsGenZ supports adult rooms with mature content, general chatrooms must maintain an appropriate level of language. Excessive profanity or sexually explicit language in non-adult rooms is not permitted.' },
-  { num: '09', title: "No Commercial Advertising", desc: "Advertising products, services, other websites, or platforms without express written permission from ChatsGenZ is prohibited. This includes promoting paid services, onlyfans links, referral schemes, and similar content.' },
-  { num: '10', title: "Follow Cam Rules", desc: "Cam users must follow all cam-specific rules including no sexual content in non-adult cam rooms, no showing of minors on camera, and no recording of other users\' cam feeds without consent.' },
+  {
+    num: '01',
+    title: 'Respect Everyone',
+    color: '#1a73e8',
+    body: 'Treat every user with basic human respect regardless of their nationality, gender, religion, race, age, sexual orientation, or background. Hate speech, slurs, discrimination, and derogatory language are strictly prohibited and will result in an immediate ban.',
+  },
+  {
+    num: '02',
+    title: 'No Harassment or Bullying',
+    color: '#ea4335',
+    body: 'Targeting, threatening, intimidating, or repeatedly harassing another user is not tolerated. This includes sending unsolicited offensive messages, following users across rooms to provoke them, or coordinating group harassment. First offence may result in a temporary ban; repeated offences result in a permanent ban.',
+  },
+  {
+    num: '03',
+    title: 'No Spam or Flooding',
+    color: '#fbbc04',
+    body: 'Do not spam the chat with repetitive messages, random characters, excessive emojis, or unsolicited advertisements. Flooding the chat to disrupt conversations or drawing attention to external websites, products, or services is prohibited.',
+  },
+  {
+    num: '04',
+    title: 'No Explicit or Illegal Content',
+    color: '#ea4335',
+    body: 'Sharing, linking to, or requesting sexually explicit content outside of designated adult rooms is strictly prohibited. Sharing content that depicts or promotes illegal activities, violence, self-harm, or exploitation of any kind is banned on this platform and may be reported to authorities.',
+  },
+  {
+    num: '05',
+    title: 'Protect Minors at All Times',
+    color: '#ea4335',
+    body: 'ChatsGenZ has a zero-tolerance policy for any content, behaviour, or conversation that sexualises, exploits, harms, or endangers minors in any way. Users found violating this rule will be permanently banned and reported to the appropriate law enforcement authorities without exception.',
+  },
+  {
+    num: '06',
+    title: 'No Sharing of Personal Information',
+    color: '#34a853',
+    body: 'For your own safety, avoid sharing your real name, address, phone number, school or workplace, financial details, or any other identifying personal information in public chat rooms. ChatsGenZ is not responsible for any harm resulting from users voluntarily sharing their personal information.',
+  },
+  {
+    num: '07',
+    title: 'Use Appropriate Usernames',
+    color: '#1a73e8',
+    body: 'Your username must not contain offensive words, impersonate staff members or other users, or imitate any brand or public figure. Usernames that are sexual, hateful, or otherwise inappropriate will be removed by staff.',
+  },
+  {
+    num: '08',
+    title: 'No Impersonating Staff',
+    color: '#ff6d00',
+    body: 'Impersonating a Moderator, Admin, Super Admin, Owner, or any platform staff member is a serious offence. If you believe you have encountered a fake staff member, please report them immediately. Genuine staff always have an official badge visible in chat.',
+  },
+  {
+    num: '09',
+    title: 'Follow Room-Specific Rules',
+    color: '#00897b',
+    body: 'Each chat room may have additional rules set by the Room Owner or Admin. These rules are displayed in the room description. Users are expected to read and follow room rules in addition to these global platform rules. Failure to follow room rules may result in removal from that room.',
+  },
+  {
+    num: '10',
+    title: 'Respect Moderation Decisions',
+    color: '#5c6bc0',
+    body: 'If a Moderator or Admin takes action against you (warning, mute, kick, or ban), do not argue or attempt to evade the action by creating new accounts. If you believe an action was unjust, use the official appeal process. Creating multiple accounts to evade a ban will result in all accounts being permanently banned.',
+  },
 ]
 
 export default function ChatRules() {
   return (
     <PageLayout seo={{
-      title: "Chat Rules – ChatsGenZ Community Guidelines",
-      description: "ChatsGenZ Chat Rules and community guidelines. Understand the rules that keep our free chatrooms safe, friendly, and enjoyable for everyone.",
-      keywords: "chatsgenz chat rules, free chat rules, chatroom guidelines, chat community rules india",
-      canonical: "/chat-rules"
+      title: "Chat Rules — Community Guidelines | ChatsGenZ",
+      description: "Read the official ChatsGenZ chat rules and community guidelines. All users must follow these rules to maintain a safe, respectful, and enjoyable chat environment for everyone.",
+      keywords: "chatsgenz rules, chat guidelines, community rules, safe chat rules, chatsgenz terms of use",
+      canonical: "/chat-rules",
     }}>
       <div className="page-container">
         <h1 className="page-title">Chat Rules</h1>
-        <p className="page-subtitle">These rules apply to all users in all rooms — read them, know them, follow them</p>
+        <p className="page-subtitle">These rules apply to all users across every chat room on ChatsGenZ. Please read them carefully.</p>
 
-        <div style={{ background: '#fffde7', border: '1px solid #fbbc04', borderRadius: 'var(--radius)', padding: '14px 18px', marginBottom: 28, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          <p style={{ fontSize: 14, color: '#92400e', margin: 0, fontFamily: 'var(--font-2)' }}>Violation of these rules may result in muting, kicking, temporary banning, or permanent removal from ChatsGenZ depending on severity.</p>
+        <div style={{ background: '#fef3e2', border: '1px solid #f9ab00', borderRadius: 12, padding: '14px 18px', marginBottom: 36, fontSize: '0.875rem', color: '#7a4500', lineHeight: 1.65 }}>
+          <strong>Important:</strong> Violating these rules may result in a warning, temporary mute, temporary ban, or a permanent ban depending on the severity of the violation. ChatsGenZ staff have final authority on all moderation decisions. By using this platform you agree to abide by these rules.
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {RULES.map(r => (
-            <div key={r.num} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '18px 22px', display: 'flex', gap: 18, alignItems: 'flex-start' }}>
-              <span style={{ fontSize: 20, fontWeight: 900, color: 'var(--primary)', fontVariantNumeric: 'tabular-nums', flexShrink: 0, lineHeight: 1.3 }}>{r.num}</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {RULES.map(rule => (
+            <div key={rule.num} style={{
+              background: '#fff', borderRadius: 14,
+              border: '1.5px solid #e8eaed',
+              borderLeft: `5px solid ${rule.color}`,
+              padding: '22px 22px 22px 20px',
+              display: 'flex', gap: 18, alignItems: 'flex-start',
+              boxShadow: '0 1px 4px rgba(60,64,67,0.07)',
+            }}>
+              <div style={{
+                minWidth: 40, height: 40, borderRadius: 10,
+                background: `${rule.color}12`, display: 'flex',
+                alignItems: 'center', justifyContent: 'center',
+                fontSize: '0.8rem', fontWeight: 900, color: rule.color,
+                fontFamily: "'Outfit', sans-serif", flexShrink: 0,
+              }}>
+                {rule.num}
+              </div>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', marginBottom: 6 }}>{r.title}</div>
-                <div style={{ fontSize: 14, color: 'var(--text-2)', fontFamily: 'var(--font-2)', lineHeight: 1.7 }}>{r.desc}</div>
+                <h3 style={{ fontSize: '0.975rem', fontWeight: 800, color: '#202124', marginBottom: 8, fontFamily: "'Outfit', sans-serif" }}>
+                  {rule.title}
+                </h3>
+                <p style={{ fontSize: '0.875rem', color: '#5f6368', lineHeight: 1.7 }}>
+                  {rule.body}
+                </p>
               </div>
             </div>
           ))}
         </div>
 
-        <div style={{ background: 'var(--primary-l)', border: '1px solid #b3d1fc', borderRadius: 'var(--radius)', padding: '16px 20px', marginTop: 28 }}>
-          <p style={{ fontSize: 14, color: 'var(--primary-d)', margin: 0, fontFamily: 'var(--font-2)' }}>
-            <strong>Remember:</strong> Rules are enforced to ensure ChatsGenZ remains a safe and enjoyable <strong>free chatroom</strong> for everyone. If you see a rule violation, use the report button. Our moderation team reviews all reports promptly. Thank you for helping keep our community great!
+        <div style={{ marginTop: 40, background: '#e8f0fe', border: '1px solid #c5d8fd', borderRadius: 12, padding: '20px 22px' }}>
+          <h3 style={{ fontWeight: 800, color: '#1a56c4', marginBottom: 10, fontFamily: "'Outfit', sans-serif" }}>
+            Questions About These Rules?
+          </h3>
+          <p style={{ fontSize: '0.875rem', color: '#1a56c4', lineHeight: 1.65 }}>
+            If you have questions about what is or is not allowed, or you want to report a violation, reach out to our moderation team via the Contact page or use the in-app report button. We review all reports seriously.
           </p>
         </div>
       </div>
