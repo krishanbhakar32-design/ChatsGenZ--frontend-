@@ -3,13 +3,13 @@ import PageLayout from '../../components/PageLayout.jsx'
 
 const SECTIONS = [
   {
-    title: '🏠 Main',
-    links: [{ to: '/', label: 'Home — ChatsGenZ Free Chat' }]
+    title: "🏠 Main",
+    links: [{ to: "/', label: 'Home — ChatsGenZ Free Chat' }]
   },
   {
-    title: '📋 Information',
+    title: "📋 Information",
     links: [
-      { to: '/about',          label: 'About Us' },
+      { to: "/about',          label: 'About Us' },
       { to: '/rti',            label: 'Right to Information (RTI)' },
       { to: '/blog',           label: 'Blog' },
       { to: '/forum',          label: 'Forum' },
@@ -21,17 +21,17 @@ const SECTIONS = [
     ]
   },
   {
-    title: '🆘 Support',
+    title: "🆘 Support",
     links: [
-      { to: '/contact',        label: 'Contact Us' },
+      { to: "/contact',        label: 'Contact Us' },
       { to: '/help',           label: 'Help Center' },
       { to: '/faq',            label: 'FAQ' },
     ]
   },
   {
-    title: '⚖️ Legal',
+    title: "⚖️ Legal",
     links: [
-      { to: '/privacy-policy', label: 'Privacy Policy' },
+      { to: "/privacy-policy', label: 'Privacy Policy' },
       { to: '/terms',          label: 'Terms of Service' },
       { to: '/dmca',           label: 'DMCA Policy' },
       { to: '/chat-rules',     label: 'Chat Rules' },
@@ -45,10 +45,10 @@ const SECTIONS = [
 export default function Sitemap() {
   return (
     <PageLayout seo={{
-      title: 'Sitemap – All Pages on ChatsGenZ',
-      description: 'ChatsGenZ sitemap — a complete list of all pages on our free live chat platform including all information, legal, and support pages.',
-      keywords: 'chatsgenz sitemap, chatsgenz all pages, free chat site map',
-      canonical: '/sitemap'
+      title: "Sitemap – All Pages on ChatsGenZ",
+      description: "ChatsGenZ sitemap — a complete list of all pages on our free live chat platform including all information, legal, and support pages.",
+      keywords: "chatsgenz sitemap, chatsgenz all pages, free chat site map",
+      canonical: "/sitemap"
     }}>
       <div className="page-container">
         <h1 className="page-title">Sitemap</h1>
