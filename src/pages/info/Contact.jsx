@@ -1,124 +1,159 @@
 import { useState } from 'react'
 import PageLayout from '../../components/PageLayout.jsx'
-import { notify } from '../../components/Notification.jsx'
-
-const API = import.meta.env.VITE_API_URL || 'https://chatsgenz-backend-production.up.railway.app'
-
-const INFO = [
-  { icon: 'fi fi-sr-clock',     color: '#1a73e8', title: 'Response Time',      text: 'We aim to respond to all messages within 24 to 48 hours on business days.' },
-  { icon: 'fi fi-sr-shield',    color: '#ea4335', title: 'Moderation Issues',   text: 'For urgent moderation concerns, use the in-platform report button for the fastest response.' },
-  { icon: 'fi fi-sr-scale',     color: '#34a853', title: 'Legal Requests',      text: 'For DMCA, RTI, and legal requests, please specify in the subject line for priority routing.' },
-  { icon: 'fi fi-sr-handshake', color: '#fbbc04', title: 'Business Enquiries',  text: 'Interested in advertising, partnerships, or collaboration? Select Business Enquiry in the subject.' },
-]
 
 export default function Contact() {
   const [form, setForm]       = useState({ username: '', email: '', subject: '', message: '' })
   const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
+  const [sent, setSent]       = useState(false)
+  const [error, setError]     = useState('')
 
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const set = (k, v) => { setForm(f => ({ ...f, [k]: v })); setError(''); setSent(false) }
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!form.username || !form.email || !form.subject || !form.message) {
-      notify('Please fill in all required fields.', 'warning'); return
+    const { username, email, subject, message } = form
+    if (!username.trim() || !email.trim() || !subject.trim() || !message.trim()) {
+      setError('Please fill in all fields.'); return
     }
-    setLoading(true)
+    setLoading(true); setError('')
+
+    // Use Web3Forms - free, no backend needed, sends to any email
     try {
-      const res  = await fetch(`${API}/api/contact`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+      const res = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          access_key: '00000000-0000-0000-0000-000000000000', // placeholder - replace with real key
+          subject: `[ChatsGenZ Contact] ${subject}`,
+          from_name: username,
+          email: email,
+          message: `Name: ${username}\nEmail: ${email}\nSubject: ${subject}\n\nMessage:\n${message}`,
+          replyto: email,
+        }),
+      })
       const data = await res.json()
-      if (res.ok && data.success) {
-        setSuccess(true)
+      if (data.success) {
+        setSent(true)
         setForm({ username: '', email: '', subject: '', message: '' })
-        notify('Message sent! We will reply within 24 hours.', 'success', 5000)
       } else {
-        notify(data.error || 'Failed to send. Please try again.', 'error')
+        // Fallback - try backend
+        await tryBackend({ username, email, subject, message })
       }
     } catch {
-      notify('Network error. Please check your connection.', 'error')
-    } finally { setLoading(false) }
+      await tryBackend({ username, email, subject, message })
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const inp = { onFocus: e => e.target.style.borderColor = '#1a73e8', onBlur: e => e.target.style.borderColor = '#dadce0' }
+  async function tryBackend({ username, email, subject, message }) {
+    const API = import.meta.env.VITE_API_URL || 'https://chatsgenz-backend-production.up.railway.app'
+    try {
+      const res  = await fetch(`${API}/api/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, email, subject, message }),
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setSent(true)
+        setForm({ username: '', email: '', subject: '', message: '' })
+      } else {
+        setError('Failed to send. Please email us directly at helpchatsgenz@gmail.com')
+      }
+    } catch {
+      setError('Failed to send. Please email us directly at helpchatsgenz@gmail.com')
+    }
+  }
+
+  const inp = {
+    display:'block', width:'100%', padding:'11px 14px',
+    border:'1.5px solid #dadce0', borderRadius:9,
+    fontSize:'0.9rem', color:'#202124', fontFamily:'inherit',
+    outline:'none', boxSizing:'border-box', background:'#fff',
+    transition:'border-color .15s',
+  }
 
   return (
     <PageLayout seo={{
-      title: 'Contact Us — ChatsGenZ Support and Feedback',
-      description: 'Contact the ChatsGenZ team. Send questions, feedback, bug reports, DMCA requests, or partnership enquiries. ChatsGenZ support responds within 24 to 48 hours.',
-      keywords: 'ChatsGenZ contact, ChatsGenZ support, ChatsGenZ help, ChatsGenZ feedback, contact ChatsGenZ team',
+      title: 'Contact Us — ChatsGenZ Support',
+      description: 'Contact the ChatsGenZ team for help, bug reports, account issues, DMCA requests, or any enquiry. We reply within 24 to 48 hours.',
+      keywords: 'ChatsGenZ contact, ChatsGenZ support, contact ChatsGenZ, ChatsGenZ help',
       canonical: '/contact',
     }}>
-      <div className="page-container">
-        <h1 className="page-title">Contact Us</h1>
-        <p className="page-subtitle">Questions, feedback, or need help? We would love to hear from you.</p>
+      <div style={{ maxWidth: 600, margin: '0 auto', padding: '28px 18px 48px' }}>
+        <h1 style={{ fontFamily:'Outfit,sans-serif', fontWeight:900, fontSize:'clamp(1.4rem,4vw,1.9rem)', color:'#202124', marginBottom:8 }}>Contact Us</h1>
+        <p style={{ color:'#5f6368', fontSize:'0.9rem', marginBottom:10, lineHeight:1.7 }}>Have a question or need help? Fill the form below and we'll get back to you within 24–48 hours.</p>
+        <p style={{ color:'#5f6368', fontSize:'0.88rem', marginBottom:28, lineHeight:1.7 }}>Contact us for account issues, moderation complaints, DMCA requests, RTI queries, bugs, or business enquiries.</p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 32, alignItems: 'start' }} className="contact-grid">
-
-          {/* FORM */}
-          <div style={{ background: '#fff', border: '1px solid #e8eaed', borderRadius: 16, padding: 28 }}>
-            {success && (
-              <div className="info-green" style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
-                <i className="fi fi-sr-check-circle" style={{ fontSize: 18 }} />
-                Your message has been sent! We will reply within 24 hours.
-              </div>
-            )}
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              <div>
-                <label className="form-label">Name or Username <span style={{ color: '#ea4335' }}>*</span></label>
-                <input className="form-input" placeholder="Your name or username" value={form.username} onChange={e => set('username', e.target.value)} required {...inp} />
-              </div>
-              <div>
-                <label className="form-label">Email Address <span style={{ color: '#ea4335' }}>*</span></label>
-                <input className="form-input" type="email" placeholder="your@email.com" value={form.email} onChange={e => set('email', e.target.value)} required {...inp} />
-              </div>
-              <div>
-                <label className="form-label">Subject <span style={{ color: '#ea4335' }}>*</span></label>
-                <select className="form-select" value={form.subject} onChange={e => set('subject', e.target.value)} required {...inp}>
-                  <option value="">Select a topic...</option>
-                  <option value="General Question">General Question</option>
-                  <option value="Technical Issue / Bug Report">Technical Issue / Bug Report</option>
-                  <option value="Account Problem">Account Problem</option>
-                  <option value="Report a User / Content">Report a User / Content</option>
-                  <option value="DMCA / Copyright Request">DMCA / Copyright Request</option>
-                  <option value="RTI Request">RTI Request</option>
-                  <option value="Business Enquiry">Business Enquiry</option>
-                  <option value="Feedback / Suggestion">Feedback / Suggestion</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-              <div>
-                <label className="form-label">Message <span style={{ color: '#ea4335' }}>*</span></label>
-                <textarea className="form-textarea" placeholder="Write your message here..." value={form.message} onChange={e => set('message', e.target.value)} required rows={5} {...inp} />
-              </div>
-              <button type="submit" disabled={loading} className="btn-primary" style={{ justifyContent: 'center', opacity: loading ? 0.7 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}>
-                {loading
-                  ? <><span style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,.4)', borderTop: '2px solid #fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} /> Sending...</>
-                  : <><i className="fi fi-sr-paper-plane" /> Send Message</>
-                }
-              </button>
-            </form>
+        {sent && (
+          <div style={{ display:'flex', alignItems:'center', gap:10, background:'#e6f4ea', border:'1px solid #b7dfbf', borderRadius:10, padding:'14px 18px', marginBottom:24 }}>
+            <span style={{ fontSize:20 }}>✅</span>
+            <span style={{ fontSize:'0.9rem', color:'#1e4620', fontWeight:600 }}>Message sent! We will reply within 24–48 hours.</span>
           </div>
+        )}
 
-          {/* INFO */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {INFO.map((item, i) => (
-              <div key={i} style={{ background: '#fff', border: '1px solid #e8eaed', borderRadius: 12, padding: '18px 18px', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                <div style={{ width: 38, height: 38, background: item.color + '15', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color, fontSize: 18, flexShrink: 0 }}>
-                  <i className={item.icon} />
-                </div>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#202124', marginBottom: 4 }}>{item.title}</div>
-                  <div style={{ fontSize: '0.83rem', color: '#5f6368', lineHeight: 1.6 }}>{item.text}</div>
-                </div>
-              </div>
-            ))}
+        {error && (
+          <div style={{ background:'#fce8e6', border:'1px solid #f5c6c2', borderRadius:10, padding:'12px 16px', marginBottom:20, fontSize:'0.875rem', color:'#c62828' }}>
+            {error}
           </div>
-        </div>
+        )}
+
+        <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:16 }}>
+          <div>
+            <label style={{ display:'block', fontSize:'0.84rem', fontWeight:700, color:'#3c4043', marginBottom:6 }}>Name / Username <span style={{ color:'#ea4335' }}>*</span></label>
+            <input style={inp} placeholder="Your name or username" value={form.username}
+              onChange={e => set('username', e.target.value)}
+              onFocus={e => e.target.style.borderColor='#1a73e8'}
+              onBlur={e => e.target.style.borderColor='#dadce0'} required />
+          </div>
+          <div>
+            <label style={{ display:'block', fontSize:'0.84rem', fontWeight:700, color:'#3c4043', marginBottom:6 }}>Email Address <span style={{ color:'#ea4335' }}>*</span></label>
+            <input type="email" style={inp} placeholder="your@email.com" value={form.email}
+              onChange={e => set('email', e.target.value)}
+              onFocus={e => e.target.style.borderColor='#1a73e8'}
+              onBlur={e => e.target.style.borderColor='#dadce0'} required />
+          </div>
+          <div>
+            <label style={{ display:'block', fontSize:'0.84rem', fontWeight:700, color:'#3c4043', marginBottom:6 }}>Subject <span style={{ color:'#ea4335' }}>*</span></label>
+            <select style={{ ...inp, appearance:'none', cursor:'pointer' }} value={form.subject}
+              onChange={e => set('subject', e.target.value)}
+              onFocus={e => e.target.style.borderColor='#1a73e8'}
+              onBlur={e => e.target.style.borderColor='#dadce0'} required>
+              <option value="">Select a topic...</option>
+              <option>General Question</option>
+              <option>Technical Issue / Bug Report</option>
+              <option>Account Problem</option>
+              <option>Report a User / Content</option>
+              <option>DMCA / Copyright Request</option>
+              <option>RTI Request</option>
+              <option>Business Enquiry</option>
+              <option>Feedback / Suggestion</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div>
+            <label style={{ display:'block', fontSize:'0.84rem', fontWeight:700, color:'#3c4043', marginBottom:6 }}>Message <span style={{ color:'#ea4335' }}>*</span></label>
+            <textarea style={{ ...inp, resize:'vertical', minHeight:120 }} placeholder="Write your message..."
+              value={form.message} onChange={e => set('message', e.target.value)}
+              onFocus={e => e.target.style.borderColor='#1a73e8'}
+              onBlur={e => e.target.style.borderColor='#dadce0'} required rows={5} />
+          </div>
+          <button type="submit" disabled={loading} style={{
+            display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+            padding:'13px', borderRadius:10, border:'none',
+            background: loading ? '#9aa0a6' : 'linear-gradient(135deg,#1a73e8,#1557b0)',
+            color:'#fff', fontWeight:800, fontSize:'0.95rem',
+            fontFamily:'Outfit,sans-serif', cursor: loading ? 'not-allowed' : 'pointer',
+            boxShadow: loading ? 'none' : '0 3px 12px rgba(26,115,232,.32)',
+          }}>
+            {loading
+              ? <><span style={{ width:15,height:15,border:'2px solid rgba(255,255,255,.4)',borderTop:'2px solid #fff',borderRadius:'50%',animation:'spin .8s linear infinite',display:'inline-block' }} /> Sending...</>
+              : <><i className="fi fi-sr-paper-plane" /> Send Message</>}
+          </button>
+        </form>
       </div>
-      <style>{`
-        @media (max-width: 680px) { .contact-grid { grid-template-columns: 1fr !important; } }
-        @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </PageLayout>
   )
 }
