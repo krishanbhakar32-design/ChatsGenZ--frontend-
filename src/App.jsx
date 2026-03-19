@@ -3,6 +3,7 @@ import { Suspense, lazy } from 'react'
 import ScrollToTop from './components/ScrollToTop.jsx'
 
 const Home          = lazy(() => import('./pages/Home.jsx'))
+const Login         = lazy(() => import('./pages/Login.jsx'))
 const NotFound      = lazy(() => import('./pages/NotFound.jsx'))
 const About         = lazy(() => import('./pages/info/About.jsx'))
 const Blog          = lazy(() => import('./pages/info/Blog.jsx'))
@@ -27,8 +28,8 @@ const Terms         = lazy(() => import('./pages/legal/Terms.jsx'))
 
 function Loader() {
   return (
-    <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: 36, height: 36, border: '3px solid #e8f0fe', borderTop: '3px solid #1a73e8', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f1923' }}>
+      <div style={{ width: 36, height: 36, border: '3px solid rgba(255,255,255,.15)', borderTop: '3px solid #1a73e8', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
@@ -41,6 +42,7 @@ export default function App() {
       <Suspense fallback={<Loader />}>
         <Routes>
           <Route path="/"               element={<Home />} />
+          <Route path="/login"          element={<Login />} />
           <Route path="/about"          element={<About />} />
           <Route path="/blog"           element={<Blog />} />
           <Route path="/chat-directory" element={<ChatDirectory />} />
