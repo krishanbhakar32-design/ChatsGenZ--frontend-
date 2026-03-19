@@ -1,113 +1,102 @@
-import { Helmet } from 'react-helmet-async'
 import PageLayout from '../../components/PageLayout.jsx'
 
-const RANKS = [
-  { key:'guest',      label:'Guest',      level:1,  color:'#888888', ext:'svg', type:'Free',   how:'Default rank for all visitors. No registration needed.' },
-  { key:'user',       label:'User',       level:2,  color:'#aaaaaa', ext:'svg', type:'Free',   how:'Automatically given on free account registration.' },
-  { key:'vipfemale',  label:'VIP Female', level:3,  color:'#FF4488', ext:'svg', type:'Free',   how:'Awarded by Room Owners to verified female members.' },
-  { key:'vipmale',    label:'VIP Male',   level:4,  color:'#4488FF', ext:'svg', type:'Free',   how:'Awarded by Room Owners to verified male members.' },
-  { key:'butterfly',  label:'Butterfly',  level:5,  color:'#FF66AA', ext:'svg', type:'Free',   how:'Awarded by Room Owners to active contributors.' },
-  { key:'ninja',      label:'Ninja',      level:6,  color:'#777777', ext:'svg', type:'Free',   how:'Awarded by Room Owners to loyal trusted members.' },
-  { key:'fairy',      label:'Fairy',      level:7,  color:'#FF88CC', ext:'svg', type:'Free',   how:'Awarded by Room Owners to outstanding members.' },
-  { key:'legend',     label:'Legend',     level:8,  color:'#FF8800', ext:'png', type:'Free',   how:'Highest free rank. Awarded by Room Owners to elite members.' },
-  { key:'bot',        label:'Bot',        level:9,  color:'#00cc88', ext:'svg', type:'System', how:'Reserved for official platform bots only.' },
-  { key:'premium',    label:'Premium',    level:10, color:'#aa44ff', ext:'svg', type:'Paid',   how:'Paid rank unlocking exclusive features and cosmetics.' },
-  { key:'moderator',  label:'Moderator',  level:11, color:'#00AAFF', ext:'svg', type:'Staff',  how:'Platform moderator. Appointed by Admin or above.' },
-  { key:'admin',      label:'Admin',      level:12, color:'FF4444',  ext:'svg', type:'Staff',  how:'Senior staff. Appointed by Superadmin or Owner.' },
-  { key:'superadmin', label:'Superadmin', level:13, color:'#FF00FF', ext:'svg', type:'Staff',  how:'Platform administrator. Appointed by Owner only.' },
-  { key:'owner',      label:'Owner',      level:14, color:'#FFD700', ext:'svg', type:'Staff',  how:'Platform founder with full authority. Cannot be granted.' },
+// Only these ranks shown - as per requirement
+// Female ranks: vipfemale, butterfly, fairy
+// Male ranks: vipmale, ninja, legend
+// Paid rank: premium
+const FEMALE_RANKS = [
+  {
+    key: 'vipfemale', label: 'VIP Female', color: '#FF4488', ext: 'svg',
+    desc: 'VIP Female is an exclusive rank for verified female members of ChatsGenZ. To earn this rank, a female member must be an active part of the community and get verified by a Room Owner. Once verified, the Room Owner awards this rank which gives the member a special pink badge, priority cam slots in chat rooms, and a distinctive colour for their username in chat. This is a completely free rank — it is earned through community presence and verification.',
+  },
+  {
+    key: 'butterfly', label: 'Butterfly', color: '#FF66AA', ext: 'svg',
+    desc: 'Butterfly is a special female rank on ChatsGenZ awarded to active, helpful, and friendly female members. If you are a regular contributor in chat rooms, always positive, and a good presence in the community, a Room Owner may award you the Butterfly rank. Butterfly members get a unique badge, extended cam time, and a special coloured username in all chat rooms. This rank is free and given purely based on your activity and personality.',
+  },
+  {
+    key: 'fairy', label: 'Fairy', color: '#FF88CC', ext: 'svg',
+    desc: 'Fairy is a prestigious female rank on ChatsGenZ given to truly outstanding female members who have made a positive impact in the community. Fairy rank holders are known for being kind, active, and genuinely loved by other members. A Room Owner awards this rank to members who go above and beyond in making chat rooms a better place. Fairy members enjoy a beautiful exclusive badge, a special entrance effect, and a coloured chat name.',
+  },
 ]
 
-const XP = [
-  ['Send a message',         '+1 XP'],
-  ['Daily login bonus',      '+10 XP'],
-  ['Quiz Room — Easy',       '+10 XP'],
-  ['Quiz Room — Medium',     '+20 XP'],
-  ['Quiz Room — Hard',       '+40 XP'],
-  ['Dice / Spin Wheel win',  '+5 XP'],
-  ['Dice / Spin Wheel loss', '+1 XP'],
+const MALE_RANKS = [
+  {
+    key: 'vipmale', label: 'VIP Male', color: '#4488FF', ext: 'svg',
+    desc: 'VIP Male is an exclusive rank for verified male members of ChatsGenZ. Similar to VIP Female, this rank is awarded by Room Owners to active and verified male members. VIP Male members receive a special blue badge, priority cam slots, and a distinctive colour for their username in chat rooms. This is a completely free rank earned through consistent presence and verification by a Room Owner who recognises your contribution to the community.',
+  },
+  {
+    key: 'ninja', label: 'Ninja', color: '#555555', ext: 'svg',
+    desc: 'Ninja is a rank awarded to loyal, trusted, and long-standing male members of ChatsGenZ. If you have been a dependable and respected figure in the chat community, a Room Owner may recognise your loyalty by granting you the Ninja rank. Ninja members get a unique dark badge, extended message length, and a coloured chat name. This rank is free and reflects the trust and loyalty you have built within the ChatsGenZ community over time.',
+  },
+  {
+    key: 'legend', label: 'Legend', color: '#FF8800', ext: 'png',
+    desc: 'Legend is the highest free rank a male member can achieve on ChatsGenZ. It is an extremely prestigious rank awarded only to the most elite and respected male members by a Room Owner. Becoming a Legend means you are one of the most valued members of the entire platform. Legend members enjoy maximum cam priority, a gold chat name colour, a special entrance effect when entering rooms, and the exclusive Legend badge that is recognised and respected across all of ChatsGenZ.',
+  },
 ]
 
-const TYPE_STYLE = {
-  Free:   { bg:'#e8f0fe', color:'#1557b0' },
-  Paid:   { bg:'#f3e8ff', color:'#7b1fa2' },
-  Staff:  { bg:'#fce8e6', color:'#c62828' },
-  System: { bg:'#e6f4ea', color:'#2e7d32' },
+const PREMIUM = {
+  key: 'premium', label: 'Premium', color: '#aa44ff', ext: 'svg',
+  desc: 'Premium is the only paid rank on ChatsGenZ. By upgrading to Premium, you unlock a range of exclusive features that are not available to free members. Premium members enjoy an exclusive purple badge, access to Premium-only chat rooms, special cosmetic effects, extended cam time, priority support, the ability to customise their profile further, and more features that are regularly added. Premium is not required to enjoy ChatsGenZ — the platform is free forever — but it enhances your experience significantly for those who choose to upgrade.',
+}
+
+function RankCard({ r, femaleLabel }) {
+  return (
+    <div style={{
+      background: '#fff', border: '1px solid #e8eaed', borderRadius: 14,
+      padding: '20px 18px', marginBottom: 18,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+        <img
+          src={`/icons/ranks/${r.key}.${r.ext}`}
+          alt={r.label}
+          style={{ width: 36, height: 36, objectFit: 'contain', flexShrink: 0 }}
+          onError={e => { e.target.style.display = 'none' }}
+        />
+        <div>
+          <div style={{ fontWeight: 800, fontSize: '1rem', color: r.color, fontFamily: 'Outfit,sans-serif' }}>{r.label}</div>
+          {femaleLabel && <div style={{ fontSize: '0.72rem', color: '#ea4335', fontWeight: 600, marginTop: 1 }}>Female Rank · Free</div>}
+        </div>
+      </div>
+      <p style={{ fontSize: '0.875rem', color: '#5f6368', lineHeight: 1.75, margin: 0 }}>{r.desc}</p>
+    </div>
+  )
 }
 
 export default function Ranks() {
   return (
     <PageLayout seo={{
-      title: 'Ranks — ChatsGenZ Rank System and XP Guide',
-      description: 'Complete guide to all ChatsGenZ ranks from Guest to Owner. XP system, gold coin rewards, free ranks, premium rank, and staff ranks explained on ChatsGenZ.',
-      keywords: 'ChatsGenZ ranks, ChatsGenZ XP system, chat ranks, ChatsGenZ legend rank, ChatsGenZ premium rank, ChatsGenZ gold coins, rank guide, staff ranks chatsgenz',
+      title: 'Ranks — ChatsGenZ Rank System Guide',
+      description: 'Learn about all ChatsGenZ ranks — VIP Female, Butterfly, Fairy, VIP Male, Ninja, Legend, and Premium. Free and paid ranks explained with details on how to earn them on ChatsGenZ.',
+      keywords: 'ChatsGenZ ranks, VIP Female rank, Butterfly rank, Fairy rank, VIP Male rank, Ninja rank, Legend rank, Premium rank ChatsGenZ, how to get rank chatsgenz',
       canonical: '/ranks',
     }}>
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 20px 48px' }}>
-        <h1 style={{ fontFamily:'Outfit,sans-serif', fontWeight:900, fontSize:'clamp(1.5rem,4vw,2rem)', color:'#202124', marginBottom:8 }}>Rank System</h1>
-        <p style={{ color:'#5f6368', fontSize:'0.95rem', marginBottom:28, lineHeight:1.6 }}>
-          ChatsGenZ has 14 ranks — from Guest all the way to Owner. Chat, play games, and send gifts to earn XP and level up.
+      <div style={{ maxWidth: 860, margin: '0 auto', padding: '28px 18px 48px' }}>
+        <h1 style={{ fontFamily:'Outfit,sans-serif', fontWeight:900, fontSize:'clamp(1.4rem,4vw,1.9rem)', color:'#202124', marginBottom:8 }}>Ranks on ChatsGenZ</h1>
+        <p style={{ color:'#5f6368', fontSize:'0.92rem', marginBottom:32, lineHeight:1.65 }}>
+          ChatsGenZ has a unique rank system to recognise active and valued community members. Ranks are awarded by Room Owners — they are a mark of respect, not just a badge. Below are all available ranks and how to earn them.
         </p>
 
-        {/* XP BOX */}
-        <div style={{ background:'#f8f9fa', border:'1px solid #e8eaed', borderRadius:10, padding:'14px 18px', marginBottom:28 }}>
-          <p style={{ margin:0, fontSize:'0.875rem', color:'#3c4043', lineHeight:1.8 }}>
-            <strong>XP System:</strong> Every <strong>100 XP = 1 Level</strong>. Level-up reward = <strong>Level × 20 Gold Coins</strong>.
-            &emsp;
-            {XP.map(([a,x],i) => (
-              <span key={i} style={{ marginRight:16, whiteSpace:'nowrap' }}>
-                <span style={{ color:'#1a73e8', fontWeight:700 }}>{x}</span> — {a}
-              </span>
-            ))}
-          </p>
-        </div>
+        {/* FEMALE RANKS */}
+        <h2 style={{ fontFamily:'Outfit,sans-serif', fontWeight:800, fontSize:'1rem', color:'#ea4335', marginBottom:14, display:'flex', alignItems:'center', gap:8 }}>
+          <span style={{ fontSize:'1.1rem' }}>👑</span> Female Ranks <span style={{ fontSize:'0.75rem', fontWeight:600, color:'#9aa0a6', marginLeft:4 }}>Free — Awarded by Room Owner</span>
+        </h2>
+        {FEMALE_RANKS.map(r => <RankCard key={r.key} r={r} femaleLabel />)}
 
-        {/* TABLE */}
-        <div style={{ background:'#fff', border:'1px solid #e8eaed', borderRadius:12, overflow:'hidden' }}>
-          <div style={{ overflowX:'auto' }}>
-            <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'0.875rem' }}>
-              <thead>
-                <tr style={{ background:'#f8f9fa', borderBottom:'2px solid #e8eaed' }}>
-                  <th style={{ padding:'12px 16px', textAlign:'left', fontWeight:700, color:'#202124' }}>Rank</th>
-                  <th style={{ padding:'12px 16px', textAlign:'center', fontWeight:700, color:'#202124', width:60 }}>Level</th>
-                  <th style={{ padding:'12px 16px', textAlign:'left', fontWeight:700, color:'#202124', width:80 }}>Type</th>
-                  <th style={{ padding:'12px 16px', textAlign:'left', fontWeight:700, color:'#202124' }}>How to Get</th>
-                </tr>
-              </thead>
-              <tbody>
-                {RANKS.map((r,i) => (
-                  <tr key={r.key} style={{ borderBottom:'1px solid #f1f3f4', background: i%2===0?'#fff':'#fafafa' }}>
-                    <td style={{ padding:'12px 16px' }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                        <img
-                          src={`/icons/ranks/${r.key}.${r.ext}`}
-                          alt={r.label}
-                          style={{ width:26, height:26, objectFit:'contain', flexShrink:0 }}
-                          onError={e => { e.target.style.display='none' }}
-                        />
-                        <span style={{ fontWeight:700, color:r.color }}>{r.label}</span>
-                      </div>
-                    </td>
-                    <td style={{ padding:'12px 16px', textAlign:'center', fontWeight:700, color:'#202124' }}>{r.level}</td>
-                    <td style={{ padding:'12px 16px' }}>
-                      <span style={{
-                        display:'inline-block', padding:'2px 9px', borderRadius:20,
-                        fontSize:'0.75rem', fontWeight:700,
-                        background: TYPE_STYLE[r.type].bg,
-                        color: TYPE_STYLE[r.type].color,
-                      }}>{r.type}</span>
-                    </td>
-                    <td style={{ padding:'12px 16px', color:'#5f6368', lineHeight:1.5 }}>{r.how}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        {/* MALE RANKS */}
+        <h2 style={{ fontFamily:'Outfit,sans-serif', fontWeight:800, fontSize:'1rem', color:'#1a73e8', marginBottom:14, marginTop:8, display:'flex', alignItems:'center', gap:8 }}>
+          <span style={{ fontSize:'1.1rem' }}>⚡</span> Male Ranks <span style={{ fontSize:'0.75rem', fontWeight:600, color:'#9aa0a6', marginLeft:4 }}>Free — Awarded by Room Owner</span>
+        </h2>
+        {MALE_RANKS.map(r => <RankCard key={r.key} r={r} />)}
 
-        <p style={{ marginTop:16, fontSize:'0.82rem', color:'#80868b' }}>
-          Room Staff roles (Room Moderator, Room Admin, Room Owner) are separate from platform ranks and are managed by each room's owner.
-        </p>
+        {/* PREMIUM */}
+        <h2 style={{ fontFamily:'Outfit,sans-serif', fontWeight:800, fontSize:'1rem', color:'#aa44ff', marginBottom:14, marginTop:8, display:'flex', alignItems:'center', gap:8 }}>
+          <span style={{ fontSize:'1.1rem' }}>💎</span> Premium Rank <span style={{ fontSize:'0.75rem', fontWeight:600, color:'#9aa0a6', marginLeft:4 }}>Paid Rank</span>
+        </h2>
+        <RankCard r={PREMIUM} />
+
+        <div style={{ background:'#f8f9fa', border:'1px solid #e8eaed', borderRadius:10, padding:'13px 16px', fontSize:'0.84rem', color:'#5f6368', lineHeight:1.6 }}>
+          <strong style={{ color:'#202124' }}>Note:</strong> All free ranks (VIP Female, Butterfly, Fairy, VIP Male, Ninja, Legend) are awarded solely at the discretion of Room Owners. ChatsGenZ staff do not directly award these ranks. To earn a rank, be active, respectful, and a positive presence in your chat room.
+        </div>
       </div>
     </PageLayout>
   )
