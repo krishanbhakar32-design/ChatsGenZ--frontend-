@@ -1,355 +1,492 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import Header from '../components/Header.jsx'
 import Footer from '../components/Footer.jsx'
-import SEO from '../components/SEO.jsx'
 import ScrollToTop from '../components/ScrollToTop.jsx'
 
 const API = import.meta.env.VITE_API_URL || 'https://chatsgenz-backend-production.up.railway.app'
 
-export default function Login() {
-  const [tab, setTab] = useState('login')
+// ── MODAL OVERLAY ─────────────────────────────────────────────
+function Modal({ onClose, children }) {
+  return (
+    <div onClick={onClose} style={{
+      position:'fixed', inset:0, zIndex:1000,
+      background:'rgba(0,0,0,.6)', backdropFilter:'blur(4px)',
+      display:'flex', alignItems:'center', justifyContent:'center',
+      padding:'16px',
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background:'#fff', borderRadius:16, width:'100%', maxWidth:420,
+        maxHeight:'90vh', overflowY:'auto',
+        boxShadow:'0 20px 60px rgba(0,0,0,.3)',
+      }}>
+        {children}
+      </div>
+    </div>
+  )
+}
 
-  const [loginForm, setLoginForm]     = useState({ email: '', password: '' })
-  const [loginError, setLoginError]   = useState('')
-  const [loginLoading, setLoginLoading] = useState(false)
+// ── INPUT STYLE ───────────────────────────────────────────────
+const inp = {
+  display:'block', width:'100%', padding:'10px 13px',
+  border:'1.5px solid #dadce0', borderRadius:8,
+  fontSize:'0.875rem', color:'#202124', fontFamily:'inherit',
+  outline:'none', boxSizing:'border-box', background:'#fff',
+  transition:'border-color .15s',
+}
+const onF = e => e.target.style.borderColor = '#1a73e8'
+const onB = e => e.target.style.borderColor = '#dadce0'
 
-  const [regForm, setRegForm]     = useState({ username: '', email: '', password: '', gender: '' })
-  const [regError, setRegError]   = useState('')
-  const [regLoading, setRegLoading] = useState(false)
-  const [regDone, setRegDone]     = useState(false)
+const Label = ({ children }) => (
+  <label style={{ display:'block', fontSize:'0.8rem', fontWeight:700, color:'#3c4043', marginBottom:5 }}>
+    {children}
+  </label>
+)
 
-  const [guestForm, setGuestForm]     = useState({ username: '', gender: '' })
-  const [guestError, setGuestError]   = useState('')
-  const [guestLoading, setGuestLoading] = useState(false)
+const Err = ({ msg }) => msg ? (
+  <div style={{ background:'#fce8e6', border:'1px solid #f5c6c2', borderRadius:8, padding:'9px 13px', fontSize:'0.83rem', color:'#c62828', marginBottom:12 }}>
+    {msg}
+  </div>
+) : null
 
-  async function handleLogin(e) {
+const Spinner = () => (
+  <span style={{ width:15, height:15, border:'2px solid rgba(255,255,255,.3)', borderTop:'2px solid #fff', borderRadius:'50%', animation:'spin .8s linear infinite', display:'inline-block' }} />
+)
+
+// ── LOGIN MODAL ───────────────────────────────────────────────
+function LoginModal({ onClose }) {
+  const [form, setForm]   = useState({ login: '', password: '' })
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  async function submit(e) {
     e.preventDefault()
-    setLoginLoading(true); setLoginError('')
+    setLoading(true); setError('')
     try {
       const res = await fetch(`${API}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(loginForm),
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ email: form.login, username: form.login, password: form.password }),
       })
       const d = await res.json()
       if (res.ok && d.token) {
         localStorage.setItem('cgz_token', d.token)
         window.location.href = '/chat'
       } else {
-        setLoginError(d.error || 'Invalid credentials. Please try again.')
+        setError(d.error || 'Invalid credentials. Please try again.')
       }
-    } catch { setLoginError('Network error. Please try again.') }
-    finally { setLoginLoading(false) }
+    } catch { setError('Network error. Please try again.') }
+    finally { setLoading(false) }
   }
 
-  async function handleRegister(e) {
-    e.preventDefault()
-    if (!regForm.gender) { setRegError('Please select your gender.'); return }
-    setRegLoading(true); setRegError('')
-    try {
-      const res = await fetch(`${API}/api/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(regForm),
-      })
-      const d = await res.json()
-      if (res.ok && d.success) {
-        setRegDone(true)
-      } else {
-        setRegError(d.error || 'Registration failed. Please try again.')
-      }
-    } catch { setRegError('Network error. Please try again.') }
-    finally { setRegLoading(false) }
-  }
+  return (
+    <Modal onClose={onClose}>
+      <div style={{ padding:'24px 22px' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <div style={{ width:38, height:38, background:'linear-gradient(135deg,#1a73e8,#1557b0)', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <i className="fi fi-sr-sign-in" style={{ color:'#fff', fontSize:16 }} />
+            </div>
+            <div>
+              <div style={{ fontFamily:'Outfit,sans-serif', fontWeight:900, fontSize:'1.05rem', color:'#202124' }}>Login</div>
+              <div style={{ fontSize:'0.75rem', color:'#80868b' }}>Welcome back!</div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'#80868b', fontSize:20, padding:4 }}>
+            <i className="fi fi-sr-cross" />
+          </button>
+        </div>
 
-  async function handleGuest(e) {
+        <Err msg={error} />
+
+        <form onSubmit={submit} style={{ display:'flex', flexDirection:'column', gap:13 }}>
+          <div>
+            <Label>Username or Email <span style={{ color:'#ea4335' }}>*</span></Label>
+            <input style={inp} placeholder="Enter username or email"
+              value={form.login} onChange={e => setForm(f=>({...f,login:e.target.value}))}
+              onFocus={onF} onBlur={onB} required />
+          </div>
+          <div>
+            <Label>Password <span style={{ color:'#ea4335' }}>*</span></Label>
+            <input type="password" style={inp} placeholder="Your password"
+              value={form.password} onChange={e => setForm(f=>({...f,password:e.target.value}))}
+              onFocus={onF} onBlur={onB} required />
+          </div>
+          <button type="submit" disabled={loading} style={{
+            display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+            padding:'12px', borderRadius:9, border:'none', marginTop:4,
+            background: loading?'#9aa0a6':'linear-gradient(135deg,#1a73e8,#1557b0)',
+            color:'#fff', fontWeight:800, fontSize:'0.9rem',
+            fontFamily:'Outfit,sans-serif', cursor:loading?'not-allowed':'pointer',
+            boxShadow:'0 3px 12px rgba(26,115,232,.35)',
+          }}>
+            {loading ? <><Spinner /> Logging in...</> : 'Login to ChatsGenZ'}
+          </button>
+        </form>
+      </div>
+    </Modal>
+  )
+}
+
+// ── GUEST MODAL ───────────────────────────────────────────────
+function GuestModal({ onClose }) {
+  const [form, setForm]   = useState({ username: '', gender: '' })
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  async function submit(e) {
     e.preventDefault()
-    if (!guestForm.username.trim()) { setGuestError('Please enter a username.'); return }
-    if (!guestForm.gender) { setGuestError('Please select your gender.'); return }
-    setGuestLoading(true); setGuestError('')
+    if (!form.gender) { setError('Please select your gender.'); return }
+    setLoading(true); setError('')
     try {
       const res = await fetch(`${API}/api/auth/guest`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(guestForm),
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(form),
       })
       const d = await res.json()
       if (res.ok && d.token) {
         localStorage.setItem('cgz_token', d.token)
         window.location.href = '/chat'
       } else {
-        setGuestError(d.error || 'Failed to enter as guest. Please try again.')
+        setError(d.error || 'Failed to enter as guest.')
       }
-    } catch { setGuestError('Network error. Please try again.') }
-    finally { setGuestLoading(false) }
+    } catch { setError('Network error. Please try again.') }
+    finally { setLoading(false) }
   }
 
-  const inputStyle = {
-    display: 'block', width: '100%', padding: '11px 14px',
-    border: '1.5px solid rgba(255,255,255,.2)', borderRadius: 9,
-    fontSize: '0.9rem', color: '#fff', fontFamily: 'inherit',
-    outline: 'none', boxSizing: 'border-box',
-    background: 'rgba(255,255,255,.08)', transition: 'border-color .15s',
+  return (
+    <Modal onClose={onClose}>
+      <div style={{ padding:'24px 22px' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <div style={{ width:38, height:38, background:'linear-gradient(135deg,#34a853,#1e8e3e)', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <i className="fi fi-sr-user" style={{ color:'#fff', fontSize:16 }} />
+            </div>
+            <div>
+              <div style={{ fontFamily:'Outfit,sans-serif', fontWeight:900, fontSize:'1.05rem', color:'#202124' }}>Guest Entry</div>
+              <div style={{ fontSize:'0.75rem', color:'#80868b' }}>No registration needed</div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'#80868b', fontSize:20, padding:4 }}>
+            <i className="fi fi-sr-cross" />
+          </button>
+        </div>
+
+        <div style={{ background:'#fef7e0', border:'1px solid #fce18a', borderRadius:8, padding:'9px 13px', fontSize:'0.8rem', color:'#7d5e00', marginBottom:13, lineHeight:1.5 }}>
+          ⚠️ Guest sessions are temporary. Register free to save your profile.
+        </div>
+
+        <Err msg={error} />
+
+        <form onSubmit={submit} style={{ display:'flex', flexDirection:'column', gap:13 }}>
+          <div>
+            <Label>Username <span style={{ color:'#ea4335' }}>*</span></Label>
+            <input style={inp} placeholder="Pick any username"
+              value={form.username} onChange={e => setForm(f=>({...f,username:e.target.value}))}
+              onFocus={onF} onBlur={onB} required />
+          </div>
+          <div>
+            <Label>Gender <span style={{ color:'#ea4335' }}>*</span></Label>
+            <select style={{ ...inp, appearance:'none', cursor:'pointer' }}
+              value={form.gender} onChange={e => setForm(f=>({...f,gender:e.target.value}))}
+              onFocus={onF} onBlur={onB} required>
+              <option value="">Select gender...</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+              <option value="couple">Couple</option>
+            </select>
+            <p style={{ fontSize:'0.72rem', color:'#ea4335', marginTop:4 }}>⚠️ Gender cannot be changed once selected.</p>
+          </div>
+          <button type="submit" disabled={loading} style={{
+            display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+            padding:'12px', borderRadius:9, border:'none', marginTop:4,
+            background: loading?'#9aa0a6':'linear-gradient(135deg,#34a853,#1e8e3e)',
+            color:'#fff', fontWeight:800, fontSize:'0.9rem',
+            fontFamily:'Outfit,sans-serif', cursor:loading?'not-allowed':'pointer',
+            boxShadow:'0 3px 12px rgba(52,168,83,.3)',
+          }}>
+            {loading ? <><Spinner /> Entering...</> : 'Enter as Guest'}
+          </button>
+        </form>
+      </div>
+    </Modal>
+  )
+}
+
+// ── REGISTER MODAL ─────────────────────────────────────────────
+function RegisterModal({ onClose }) {
+  const [form, setForm] = useState({ username:'', email:'', password:'', confirmPassword:'', dob_day:'', dob_month:'', dob_year:'', gender:'' })
+  const [error, setError]   = useState('')
+  const [loading, setLoading] = useState(false)
+  const [done, setDone]     = useState(false)
+
+  const days   = Array.from({length:31}, (_,i) => i+1)
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December']
+  const currentYear = new Date().getFullYear()
+  const years  = Array.from({length:82}, (_,i) => currentYear - 18 - i)
+
+  async function submit(e) {
+    e.preventDefault()
+    const { username, email, password, confirmPassword, dob_day, dob_month, dob_year, gender } = form
+    if (!gender) { setError('Please select your gender.'); return }
+    if (!dob_day || !dob_month || !dob_year) { setError('Please enter your full date of birth.'); return }
+    if (password !== confirmPassword) { setError('Passwords do not match.'); return }
+    if (password.length < 6) { setError('Password must be at least 6 characters.'); return }
+    setLoading(true); setError('')
+    try {
+      const dob = `${dob_year}-${String(months.indexOf(dob_month)+1).padStart(2,'0')}-${String(dob_day).padStart(2,'0')}`
+      const res = await fetch(`${API}/api/auth/register`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ username, email, password, gender, dob }),
+      })
+      const d = await res.json()
+      if (res.ok && d.success) { setDone(true) }
+      else { setError(d.error || 'Registration failed. Please try again.') }
+    } catch { setError('Network error. Please try again.') }
+    finally { setLoading(false) }
   }
 
-  const onFocus = e => e.target.style.borderColor = 'rgba(26,115,232,.8)'
-  const onBlur  = e => e.target.style.borderColor = 'rgba(255,255,255,.2)'
+  const ss = { ...inp, padding:'10px 8px' } // small select style
+
+  return (
+    <Modal onClose={onClose}>
+      <div style={{ padding:'24px 22px' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <div style={{ width:38, height:38, background:'linear-gradient(135deg,#aa44ff,#7b2ff7)', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <i className="fi fi-sr-user-add" style={{ color:'#fff', fontSize:16 }} />
+            </div>
+            <div>
+              <div style={{ fontFamily:'Outfit,sans-serif', fontWeight:900, fontSize:'1.05rem', color:'#202124' }}>Create Account</div>
+              <div style={{ fontSize:'0.75rem', color:'#80868b' }}>Free forever</div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'#80868b', fontSize:20, padding:4 }}>
+            <i className="fi fi-sr-cross" />
+          </button>
+        </div>
+
+        {done ? (
+          <div style={{ textAlign:'center', padding:'16px 0' }}>
+            <div style={{ fontSize:40, marginBottom:10 }}>🎉</div>
+            <div style={{ fontWeight:800, color:'#202124', fontSize:'1rem', marginBottom:8 }}>Account Created!</div>
+            <p style={{ color:'#5f6368', fontSize:'0.875rem', lineHeight:1.7 }}>Check your email for a verification link. Once verified, you can login and start chatting!</p>
+            <button onClick={onClose} style={{ marginTop:16, padding:'10px 24px', borderRadius:9, border:'none', background:'linear-gradient(135deg,#1a73e8,#1557b0)', color:'#fff', fontWeight:700, cursor:'pointer', fontFamily:'Outfit,sans-serif' }}>
+              Close
+            </button>
+          </div>
+        ) : (
+          <>
+            <Err msg={error} />
+            <form onSubmit={submit} style={{ display:'flex', flexDirection:'column', gap:12 }}>
+              <div>
+                <Label>Username <span style={{ color:'#ea4335' }}>*</span></Label>
+                <input style={inp} placeholder="Choose a username"
+                  value={form.username} onChange={e => setForm(f=>({...f,username:e.target.value}))}
+                  onFocus={onF} onBlur={onB} required />
+              </div>
+              <div>
+                <Label>Email Address <span style={{ color:'#ea4335' }}>*</span></Label>
+                <input type="email" style={inp} placeholder="your@email.com"
+                  value={form.email} onChange={e => setForm(f=>({...f,email:e.target.value}))}
+                  onFocus={onF} onBlur={onB} required />
+              </div>
+              <div>
+                <Label>Password <span style={{ color:'#ea4335' }}>*</span></Label>
+                <input type="password" style={inp} placeholder="Min. 6 characters"
+                  value={form.password} onChange={e => setForm(f=>({...f,password:e.target.value}))}
+                  onFocus={onF} onBlur={onB} required />
+              </div>
+              <div>
+                <Label>Confirm Password <span style={{ color:'#ea4335' }}>*</span></Label>
+                <input type="password" style={inp} placeholder="Repeat your password"
+                  value={form.confirmPassword} onChange={e => setForm(f=>({...f,confirmPassword:e.target.value}))}
+                  onFocus={onF} onBlur={onB} required />
+              </div>
+              <div>
+                <Label>Date of Birth <span style={{ color:'#ea4335' }}>*</span> <span style={{ fontSize:'0.72rem', color:'#ea4335', fontWeight:600 }}>18+ only</span></Label>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr 1.5fr', gap:8 }}>
+                  <select style={{ ...ss, appearance:'none' }}
+                    value={form.dob_day} onChange={e => setForm(f=>({...f,dob_day:e.target.value}))}
+                    onFocus={onF} onBlur={onB} required>
+                    <option value="">Day</option>
+                    {days.map(d => <option key={d}>{d}</option>)}
+                  </select>
+                  <select style={{ ...ss, appearance:'none' }}
+                    value={form.dob_month} onChange={e => setForm(f=>({...f,dob_month:e.target.value}))}
+                    onFocus={onF} onBlur={onB} required>
+                    <option value="">Month</option>
+                    {months.map(m => <option key={m}>{m}</option>)}
+                  </select>
+                  <select style={{ ...ss, appearance:'none' }}
+                    value={form.dob_year} onChange={e => setForm(f=>({...f,dob_year:e.target.value}))}
+                    onFocus={onF} onBlur={onB} required>
+                    <option value="">Year</option>
+                    {years.map(y => <option key={y}>{y}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <Label>Gender <span style={{ color:'#ea4335' }}>*</span></Label>
+                <select style={{ ...inp, appearance:'none', cursor:'pointer' }}
+                  value={form.gender} onChange={e => setForm(f=>({...f,gender:e.target.value}))}
+                  onFocus={onF} onBlur={onB} required>
+                  <option value="">Select gender...</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                  <option value="couple">Couple</option>
+                </select>
+                <p style={{ fontSize:'0.72rem', color:'#ea4335', marginTop:4, fontWeight:600 }}>
+                  ⚠️ Gender cannot be changed after registration. This affects your rank eligibility permanently.
+                </p>
+              </div>
+              <button type="submit" disabled={loading} style={{
+                display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                padding:'12px', borderRadius:9, border:'none', marginTop:4,
+                background: loading?'#9aa0a6':'linear-gradient(135deg,#aa44ff,#7b2ff7)',
+                color:'#fff', fontWeight:800, fontSize:'0.9rem',
+                fontFamily:'Outfit,sans-serif', cursor:loading?'not-allowed':'pointer',
+                boxShadow:'0 3px 12px rgba(170,68,255,.3)',
+              }}>
+                {loading ? <><Spinner /> Creating account...</> : 'Create Free Account'}
+              </button>
+            </form>
+          </>
+        )}
+      </div>
+    </Modal>
+  )
+}
+
+// ── MAIN LOGIN PAGE ────────────────────────────────────────────
+export default function Login() {
+  const [modal, setModal] = useState(null) // 'login' | 'guest' | 'register' | null
 
   return (
     <>
       <ScrollToTop />
-      <SEO
-        title="Login — ChatsGenZ Free Chat | Guest or Register"
-        description="Login to ChatsGenZ, join as a guest without registration, or create a free account. Enter free live chat rooms, talk to strangers, video chat, earn ranks on ChatsGenZ."
-        keywords="ChatsGenZ login, ChatsGenZ register, ChatsGenZ guest login, join ChatsGenZ free, ChatsGenZ sign in, free chat login no registration"
-        canonical="/login"
-      />
       <Header />
 
-      <div style={{
-        minHeight: '80vh',
+      {/* ── DARK HERO SECTION ── */}
+      <section style={{
         background: 'linear-gradient(135deg,#0f1923 0%,#1a2535 60%,#0f1923 100%)',
-        position: 'relative', overflow: 'hidden',
+        position: 'relative', overflow: 'hidden', padding: '48px 18px 52px',
       }}>
-        {/* bg overlay */}
+        {/* bg image */}
         <div style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: 'url(/images/hero-couple.jpg)',
-          backgroundSize: 'cover', backgroundPosition: 'center',
-          opacity: 0.1, pointerEvents: 'none',
+          position:'absolute', inset:0,
+          backgroundImage:'url(/images/hero-couple.jpg)',
+          backgroundSize:'cover', backgroundPosition:'center',
+          opacity:0.1, pointerEvents:'none',
         }} />
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'radial-gradient(circle at 30% 50%,rgba(26,115,232,.1) 0%,transparent 60%)',
-          pointerEvents: 'none',
-        }} />
+        <div style={{ position:'absolute', inset:0, background:'radial-gradient(circle at 30% 50%,rgba(26,115,232,.1) 0%,transparent 60%)', pointerEvents:'none' }} />
 
-        <div style={{ position: 'relative', maxWidth: 500, margin: '0 auto', padding: '36px 18px 52px' }}>
+        <div style={{ position:'relative', maxWidth:520, margin:'0 auto', textAlign:'center' }}>
+          {/* live badge */}
+          <div style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(26,115,232,.15)', border:'1px solid rgba(26,115,232,.3)', borderRadius:20, padding:'5px 14px', marginBottom:20 }}>
+            <span style={{ width:7, height:7, background:'#34a853', borderRadius:'50%', display:'inline-block', animation:'pulse 1.5s infinite' }} />
+            <span style={{ fontSize:'0.78rem', fontWeight:600, color:'rgba(255,255,255,.8)' }}>Thousands chatting right now</span>
+          </div>
 
-          {/* Welcome */}
-          <div style={{ textAlign: 'center', marginBottom: 28 }}>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              background: 'rgba(26,115,232,.15)', border: '1px solid rgba(26,115,232,.3)',
-              borderRadius: 20, padding: '5px 14px', marginBottom: 16,
+          <h1 style={{ fontFamily:'Outfit,sans-serif', fontWeight:900, fontSize:'clamp(1.5rem,5vw,2.2rem)', color:'#fff', marginBottom:12, lineHeight:1.2 }}>
+            Welcome to{' '}
+            <span style={{ background:'linear-gradient(135deg,#1a73e8,#aa44ff)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
+              ChatsGenZ
+            </span>
+          </h1>
+
+          <p style={{ color:'rgba(255,255,255,.6)', fontSize:'clamp(0.85rem,2.5vw,0.95rem)', lineHeight:1.8, maxWidth:420, margin:'0 auto 32px' }}>
+            The next generation free live chat platform. Talk to strangers, make friends, video chat, earn ranks, send virtual gifts and play games — completely free. No registration required to start chatting right now.
+          </p>
+
+          {/* 3 BUTTONS */}
+          <div style={{ display:'flex', flexDirection:'column', gap:12, maxWidth:320, margin:'0 auto' }}>
+            <button onClick={() => setModal('login')} style={{
+              display:'flex', alignItems:'center', justifyContent:'center', gap:10,
+              padding:'14px 20px', borderRadius:11, border:'none', cursor:'pointer',
+              background:'linear-gradient(135deg,#1a73e8,#1557b0)',
+              color:'#fff', fontWeight:800, fontSize:'0.95rem',
+              fontFamily:'Outfit,sans-serif', boxShadow:'0 4px 18px rgba(26,115,232,.4)',
             }}>
-              <span style={{ width: 7, height: 7, background: '#34a853', borderRadius: '50%', display: 'inline-block', animation: 'pulse 1.5s infinite' }} />
-              <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'rgba(255,255,255,.8)' }}>Thousands chatting right now</span>
-            </div>
-            <h1 style={{
-              fontFamily: 'Outfit,sans-serif', fontWeight: 900,
-              fontSize: 'clamp(1.4rem,5vw,2rem)', color: '#fff',
-              marginBottom: 12, lineHeight: 1.25,
+              <i className="fi fi-sr-sign-in" /> Login to Your Account
+            </button>
+
+            <button onClick={() => setModal('guest')} style={{
+              display:'flex', alignItems:'center', justifyContent:'center', gap:10,
+              padding:'14px 20px', borderRadius:11, border:'1.5px solid rgba(255,255,255,.2)', cursor:'pointer',
+              background:'rgba(255,255,255,.08)',
+              color:'#fff', fontWeight:800, fontSize:'0.95rem',
+              fontFamily:'Outfit,sans-serif',
             }}>
-              Welcome to{' '}
-              <span style={{ background: 'linear-gradient(135deg,#1a73e8,#aa44ff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                ChatsGenZ
-              </span>
-            </h1>
-            <p style={{ color: 'rgba(255,255,255,.6)', fontSize: 'clamp(0.82rem,2.5vw,0.9rem)', lineHeight: 1.75, maxWidth: 400, margin: '0 auto' }}>
-              The next generation free live chat platform. Talk to strangers, make friends, video chat, earn ranks, send gifts and play games — all completely free. No registration required to get started. Join as a guest right now or create your free account.
+              <i className="fi fi-sr-user" /> Enter as Guest
+            </button>
+
+            <button onClick={() => setModal('register')} style={{
+              display:'flex', alignItems:'center', justifyContent:'center', gap:10,
+              padding:'14px 20px', borderRadius:11, border:'1.5px solid rgba(170,68,255,.4)', cursor:'pointer',
+              background:'rgba(170,68,255,.1)',
+              color:'rgba(255,255,255,.85)', fontWeight:700, fontSize:'0.9rem',
+              fontFamily:'Outfit,sans-serif',
+            }}>
+              <i className="fi fi-sr-user-add" /> New Here? Register Free
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── WHITE SEO SECTION ── */}
+      <section style={{ background:'#fff', padding:'40px 18px 52px' }}>
+        <div style={{ maxWidth:860, margin:'0 auto' }}>
+          <h2 style={{ fontFamily:'Outfit,sans-serif', fontWeight:900, fontSize:'clamp(1.1rem,3vw,1.4rem)', color:'#202124', marginBottom:20 }}>
+            Join ChatsGenZ — Free Live Chat for Everyone
+          </h2>
+          <div style={{ fontSize:'clamp(0.875rem,2vw,0.95rem)', color:'#3c4043', lineHeight:1.9 }}>
+            <p style={{ marginBottom:16 }}>
+              ChatsGenZ is a completely free <strong>live chatting site</strong> and <strong>stranger chatting site</strong> designed for the next generation of online social interaction. Whether you want to make new friends, explore <strong>adult chat</strong> rooms, or just have a friendly conversation with someone from the other side of the world — ChatsGenZ is the right place for you. You do not need to register, pay, or share your email to get started. Simply click Guest Entry, choose a username, select your gender, and you are inside a live chat room within seconds.
             </p>
-          </div>
+            <p style={{ marginBottom:16 }}>
+              For those who want the full experience, creating a free registered account on ChatsGenZ unlocks a permanent profile, a friends list, private messaging, gold coins, daily login bonuses, XP levels, rank eligibility, and much more. Registration takes less than a minute. However, there are some important things to keep in mind when registering on ChatsGenZ.
+            </p>
 
-          {/* Tabs */}
-          <div style={{
-            display: 'flex', background: 'rgba(255,255,255,.07)',
-            borderRadius: 12, padding: 4, marginBottom: 22, gap: 4,
-          }}>
-            {[['login','Login'], ['guest','Guest Entry'], ['register','Register']].map(([t, l]) => (
-              <button key={t} onClick={() => setTab(t)} style={{
-                flex: 1, padding: '10px 4px', borderRadius: 9,
-                border: 'none', cursor: 'pointer',
-                background: tab === t ? 'linear-gradient(135deg,#1a73e8,#1557b0)' : 'transparent',
-                color: tab === t ? '#fff' : 'rgba(255,255,255,.5)',
-                fontWeight: 700, fontSize: '0.82rem',
-                fontFamily: 'Outfit,sans-serif', transition: 'all .18s',
-                boxShadow: tab === t ? '0 2px 10px rgba(26,115,232,.35)' : 'none',
-              }}>{l}</button>
-            ))}
-          </div>
+            {/* Caution box */}
+            <div style={{ background:'#fef7e0', border:'1.5px solid #fce18a', borderRadius:12, padding:'18px 20px', marginBottom:18 }}>
+              <div style={{ fontWeight:800, color:'#7d5e00', fontSize:'0.95rem', marginBottom:10, display:'flex', alignItems:'center', gap:8 }}>
+                ⚠️ Important — Please Read Before Registering
+              </div>
+              <ul style={{ margin:0, paddingLeft:18, color:'#7d5e00', fontSize:'0.875rem', lineHeight:2 }}>
+                <li><strong>Gender cannot be changed after registration.</strong> It affects your rank eligibility, profile display, and room access permanently. Choose carefully.</li>
+                <li><strong>You must be 18 years or older</strong> to access adult chat rooms. Age is verified through your Date of Birth at registration.</li>
+                <li><strong>Your Date of Birth cannot be changed</strong> once set. Enter it accurately as it determines your access to age-restricted content.</li>
+                <li><strong>Username must be unique</strong> and appropriate. Offensive or impersonating usernames will be removed without notice.</li>
+                <li><strong>Your email must be valid</strong> — a verification link will be sent. Without verification your account will have limited features.</li>
+                <li><strong>One account per person.</strong> Creating multiple accounts to bypass bans is a violation and all accounts will be permanently banned.</li>
+              </ul>
+            </div>
 
-          {/* LOGIN */}
-          {tab === 'login' && (
-            <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {loginError && (
-                <div style={{ background: 'rgba(234,67,53,.15)', border: '1px solid rgba(234,67,53,.35)', borderRadius: 9, padding: '11px 14px', fontSize: '0.85rem', color: '#ff8a80' }}>
-                  {loginError}
-                </div>
-              )}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'rgba(255,255,255,.65)', marginBottom: 6 }}>Email Address</label>
-                <input type="email" style={inputStyle} placeholder="your@email.com"
-                  value={loginForm.email} onChange={e => setLoginForm(f => ({ ...f, email: e.target.value }))}
-                  onFocus={onFocus} onBlur={onBlur} required />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'rgba(255,255,255,.65)', marginBottom: 6 }}>Password</label>
-                <input type="password" style={inputStyle} placeholder="Your password"
-                  value={loginForm.password} onChange={e => setLoginForm(f => ({ ...f, password: e.target.value }))}
-                  onFocus={onFocus} onBlur={onBlur} required />
-              </div>
-              <button type="submit" disabled={loginLoading} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                padding: '13px', borderRadius: 10, border: 'none',
-                background: loginLoading ? '#555' : 'linear-gradient(135deg,#1a73e8,#1557b0)',
-                color: '#fff', fontWeight: 800, fontSize: '0.95rem',
-                fontFamily: 'Outfit,sans-serif', cursor: loginLoading ? 'not-allowed' : 'pointer',
-                boxShadow: '0 3px 14px rgba(26,115,232,.4)', marginTop: 4,
-              }}>
-                {loginLoading
-                  ? <><span style={{ width:15,height:15,border:'2px solid rgba(255,255,255,.3)',borderTop:'2px solid #fff',borderRadius:'50%',animation:'spin .8s linear infinite',display:'inline-block' }} /> Logging in...</>
-                  : 'Login'}
-              </button>
-              <p style={{ textAlign: 'center', fontSize: '0.84rem', color: 'rgba(255,255,255,.45)', marginTop: 4 }}>
-                New here?{' '}
-                <button type="button" onClick={() => setTab('register')} style={{ background: 'none', border: 'none', color: '#1a73e8', fontWeight: 700, fontSize: '0.84rem', cursor: 'pointer', padding: 0 }}>
-                  Register Now
-                </button>
-              </p>
-            </form>
-          )}
-
-          {/* GUEST */}
-          {tab === 'guest' && (
-            <form onSubmit={handleGuest} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div style={{ background: 'rgba(251,188,4,.1)', border: '1px solid rgba(251,188,4,.25)', borderRadius: 9, padding: '10px 14px', fontSize: '0.82rem', color: '#fbbc04', lineHeight: 1.6 }}>
-                ⚠️ Guest sessions are temporary. Register free to save your profile and history.
-              </div>
-              {guestError && (
-                <div style={{ background: 'rgba(234,67,53,.15)', border: '1px solid rgba(234,67,53,.35)', borderRadius: 9, padding: '11px 14px', fontSize: '0.85rem', color: '#ff8a80' }}>
-                  {guestError}
-                </div>
-              )}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'rgba(255,255,255,.65)', marginBottom: 6 }}>Choose a Username</label>
-                <input style={inputStyle} placeholder="Pick any username"
-                  value={guestForm.username} onChange={e => setGuestForm(f => ({ ...f, username: e.target.value }))}
-                  onFocus={onFocus} onBlur={onBlur} required />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'rgba(255,255,255,.65)', marginBottom: 6 }}>Gender</label>
-                <select style={{ ...inputStyle, appearance: 'none', cursor: 'pointer' }}
-                  value={guestForm.gender} onChange={e => setGuestForm(f => ({ ...f, gender: e.target.value }))}
-                  onFocus={onFocus} onBlur={onBlur} required>
-                  <option value="">Select gender...</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                </select>
-                <p style={{ fontSize: '0.73rem', color: 'rgba(255,255,255,.3)', marginTop: 5, lineHeight: 1.5 }}>
-                  ⚠️ Gender cannot be changed once selected. Fill carefully.
-                </p>
-              </div>
-              <button type="submit" disabled={guestLoading} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                padding: '13px', borderRadius: 10, border: '1.5px solid rgba(255,255,255,.2)',
-                background: guestLoading ? '#555' : 'rgba(255,255,255,.1)',
-                color: '#fff', fontWeight: 800, fontSize: '0.95rem',
-                fontFamily: 'Outfit,sans-serif', cursor: guestLoading ? 'not-allowed' : 'pointer', marginTop: 4,
-              }}>
-                {guestLoading
-                  ? <><span style={{ width:15,height:15,border:'2px solid rgba(255,255,255,.3)',borderTop:'2px solid #fff',borderRadius:'50%',animation:'spin .8s linear infinite',display:'inline-block' }} /> Entering...</>
-                  : 'Enter as Guest'}
-              </button>
-              <p style={{ textAlign: 'center', fontSize: '0.84rem', color: 'rgba(255,255,255,.45)', marginTop: 4 }}>
-                New here?{' '}
-                <button type="button" onClick={() => setTab('register')} style={{ background: 'none', border: 'none', color: '#1a73e8', fontWeight: 700, fontSize: '0.84rem', cursor: 'pointer', padding: 0 }}>
-                  Register Now
-                </button>
-              </p>
-            </form>
-          )}
-
-          {/* REGISTER */}
-          {tab === 'register' && (
-            regDone ? (
-              <div style={{ background: 'rgba(52,168,83,.12)', border: '1px solid rgba(52,168,83,.3)', borderRadius: 12, padding: '28px 20px', textAlign: 'center' }}>
-                <div style={{ fontSize: 40, marginBottom: 10 }}>🎉</div>
-                <div style={{ fontWeight: 800, color: '#fff', fontSize: '1rem', marginBottom: 8 }}>Account Created!</div>
-                <p style={{ color: 'rgba(255,255,255,.6)', fontSize: '0.875rem', lineHeight: 1.7 }}>
-                  Check your email for a verification link. Once verified, login and start chatting!
-                </p>
-                <button onClick={() => { setRegDone(false); setTab('login') }} style={{
-                  marginTop: 16, padding: '10px 24px', borderRadius: 9, border: 'none',
-                  background: 'linear-gradient(135deg,#1a73e8,#1557b0)',
-                  color: '#fff', fontWeight: 700, cursor: 'pointer', fontFamily: 'Outfit,sans-serif',
-                }}>Go to Login</button>
-              </div>
-            ) : (
-              <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {regError && (
-                  <div style={{ background: 'rgba(234,67,53,.15)', border: '1px solid rgba(234,67,53,.35)', borderRadius: 9, padding: '11px 14px', fontSize: '0.85rem', color: '#ff8a80' }}>
-                    {regError}
-                  </div>
-                )}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'rgba(255,255,255,.65)', marginBottom: 6 }}>Username</label>
-                  <input style={inputStyle} placeholder="Choose a username"
-                    value={regForm.username} onChange={e => setRegForm(f => ({ ...f, username: e.target.value }))}
-                    onFocus={onFocus} onBlur={onBlur} required />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'rgba(255,255,255,.65)', marginBottom: 6 }}>Email Address</label>
-                  <input type="email" style={inputStyle} placeholder="your@email.com"
-                    value={regForm.email} onChange={e => setRegForm(f => ({ ...f, email: e.target.value }))}
-                    onFocus={onFocus} onBlur={onBlur} required />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'rgba(255,255,255,.65)', marginBottom: 6 }}>Password</label>
-                  <input type="password" style={inputStyle} placeholder="Create a strong password"
-                    value={regForm.password} onChange={e => setRegForm(f => ({ ...f, password: e.target.value }))}
-                    onFocus={onFocus} onBlur={onBlur} required />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'rgba(255,255,255,.65)', marginBottom: 6 }}>Gender</label>
-                  <select style={{ ...inputStyle, appearance: 'none', cursor: 'pointer' }}
-                    value={regForm.gender} onChange={e => setRegForm(f => ({ ...f, gender: e.target.value }))}
-                    onFocus={onFocus} onBlur={onBlur} required>
-                    <option value="">Select gender...</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                  </select>
-                  <p style={{ fontSize: '0.73rem', color: 'rgba(255,255,255,.3)', marginTop: 5, lineHeight: 1.5 }}>
-                    ⚠️ Gender cannot be changed once set. This affects your rank eligibility permanently.
-                  </p>
-                </div>
-                <button type="submit" disabled={regLoading} style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  padding: '13px', borderRadius: 10, border: 'none',
-                  background: regLoading ? '#555' : 'linear-gradient(135deg,#34a853,#1e8e3e)',
-                  color: '#fff', fontWeight: 800, fontSize: '0.95rem',
-                  fontFamily: 'Outfit,sans-serif', cursor: regLoading ? 'not-allowed' : 'pointer',
-                  boxShadow: '0 3px 14px rgba(52,168,83,.3)', marginTop: 4,
-                }}>
-                  {regLoading
-                    ? <><span style={{ width:15,height:15,border:'2px solid rgba(255,255,255,.3)',borderTop:'2px solid #fff',borderRadius:'50%',animation:'spin .8s linear infinite',display:'inline-block' }} /> Creating account...</>
-                    : 'Create Free Account'}
-                </button>
-                <p style={{ textAlign: 'center', fontSize: '0.84rem', color: 'rgba(255,255,255,.45)', marginTop: 4 }}>
-                  Already have an account?{' '}
-                  <button type="button" onClick={() => setTab('login')} style={{ background: 'none', border: 'none', color: '#1a73e8', fontWeight: 700, fontSize: '0.84rem', cursor: 'pointer', padding: 0 }}>
-                    Login
-                  </button>
-                </p>
-              </form>
-            )
-          )}
-
-          {/* SEO paragraph */}
-          <div style={{ marginTop: 36, borderTop: '1px solid rgba(255,255,255,.07)', paddingTop: 24 }}>
-            <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,.3)', lineHeight: 1.85 }}>
-              ChatsGenZ is a <strong style={{ color: 'rgba(255,255,255,.45)' }}>free live chatting site</strong> and <strong style={{ color: 'rgba(255,255,255,.45)' }}>stranger chatting site</strong> built for the next generation. Join as a guest with no registration, or create a free account for full access to public cam chat, video call chat, audio call chat, quiz rooms, virtual gifts, ranks, and gold coins. When registering, please note that <strong style={{ color: 'rgba(255,255,255,.45)' }}>gender cannot be changed once selected</strong> — it affects your rank eligibility and profile permanently. ChatsGenZ is the fastest growing new chatting site — free forever, for everyone worldwide.
+            <p style={{ marginBottom:16 }}>
+              ChatsGenZ has hundreds of active <strong>free chat rooms</strong> organised by language, region, interest, and age group. From Hindi chat to USA chat, from music rooms to sports discussions, from <strong>friendly chatrooms</strong> to <strong>adult chat</strong> — there is a room for everyone. Our platform also offers <strong>public cam chat</strong>, <strong>video call chat</strong>, <strong>audio call chat</strong> powered by WebRTC, quiz rooms where you win gold coins, dice games, spin-the-wheel, virtual gifts, emoticons, stickers, and much more — all completely free.
+            </p>
+            <p style={{ marginBottom:16 }}>
+              The <strong>VIP chat</strong> and <strong>premium chatroom</strong> system on ChatsGenZ rewards active members. Earn XP through every message, level up your rank, and unlock privileges over time. Our platform is a fully <strong>secured chat</strong> environment — monitored 24/7 by a trained moderation team ensuring every room is safe, respectful, and enjoyable for all members. Whether you are here to <strong>make friends</strong>, <strong>date</strong>, or simply explore — ChatsGenZ welcomes you.
+            </p>
+            <p>
+              This is the <strong>fastest growing new chatting site</strong> with users from over 50 countries connecting every single day. Join thousands of people who are already chatting right now — for free, forever.
             </p>
           </div>
         </div>
-      </div>
+      </section>
 
       <Footer />
+
+      {/* MODALS */}
+      {modal === 'login'    && <LoginModal    onClose={() => setModal(null)} />}
+      {modal === 'guest'    && <GuestModal    onClose={() => setModal(null)} />}
+      {modal === 'register' && <RegisterModal onClose={() => setModal(null)} />}
+
       <style>{`
-        @keyframes spin { to { transform: rotate(360deg) } }
+        @keyframes spin  { to { transform: rotate(360deg) } }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-        select option { background: #1a2535; color: #fff; }
+        select option { background: #fff; color: #202124; }
       `}</style>
     </>
   )
