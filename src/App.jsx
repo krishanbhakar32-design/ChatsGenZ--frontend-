@@ -8,6 +8,7 @@ const Login         = lazy(() => import('./pages/Login.jsx'))
 const VerifyEmail   = lazy(() => import('./pages/VerifyEmail.jsx'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword.jsx'))
 const ChatLobby     = lazy(() => import('./pages/chat/ChatLobby.jsx'))
+const ChatRoom      = lazy(() => import('./pages/chat/ChatRoom.jsx'))
 const NotFound      = lazy(() => import('./pages/NotFound.jsx'))
 
 // Info pages
@@ -55,6 +56,7 @@ export default function App() {
           <Route path="/verify-email"   element={<VerifyEmail />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/chat"           element={<ChatLobby />} />
+          <Route path="/chat/:roomId"     element={<ChatRoom />} />
 
           {/* Info */}
           <Route path="/about"          element={<About />} />
