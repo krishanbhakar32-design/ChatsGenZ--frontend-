@@ -1,14 +1,16 @@
 import { Routes, Route } from 'react-router-dom'
 import { Suspense, lazy } from 'react'
-import { AuthProvider } from './context/AuthContext.jsx'
 import ScrollToTop from './components/ScrollToTop.jsx'
 
+// Pages
 const Home          = lazy(() => import('./pages/Home.jsx'))
 const Login         = lazy(() => import('./pages/Login.jsx'))
 const VerifyEmail   = lazy(() => import('./pages/VerifyEmail.jsx'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword.jsx'))
 const ChatLobby     = lazy(() => import('./pages/chat/ChatLobby.jsx'))
 const NotFound      = lazy(() => import('./pages/NotFound.jsx'))
+
+// Info pages
 const About         = lazy(() => import('./pages/info/About.jsx'))
 const Blog          = lazy(() => import('./pages/info/Blog.jsx'))
 const ChatDirectory = lazy(() => import('./pages/info/ChatDirectory.jsx'))
@@ -22,6 +24,8 @@ const Moderation    = lazy(() => import('./pages/info/Moderation.jsx'))
 const Ranks         = lazy(() => import('./pages/info/Ranks.jsx'))
 const RTI           = lazy(() => import('./pages/info/RTI.jsx'))
 const Sitemap       = lazy(() => import('./pages/info/Sitemap.jsx'))
+
+// Legal pages
 const ChatRules     = lazy(() => import('./pages/legal/ChatRules.jsx'))
 const CookiePolicy  = lazy(() => import('./pages/legal/CookiePolicy.jsx'))
 const DMCA          = lazy(() => import('./pages/legal/DMCA.jsx'))
@@ -41,38 +45,45 @@ function Loader() {
 
 export default function App() {
   return (
-    <AuthProvider>
+    <>
       <ScrollToTop />
       <Suspense fallback={<Loader />}>
         <Routes>
-          <Route path="/"                element={<Home />} />
-          <Route path="/login"           element={<Login />} />
-          <Route path="/verify-email"    element={<VerifyEmail />} />
-          <Route path="/reset-password"  element={<ResetPassword />} />
-          <Route path="/chat"            element={<ChatLobby />} />
-          <Route path="/about"           element={<About />} />
-          <Route path="/blog"            element={<Blog />} />
-          <Route path="/chat-directory"  element={<ChatDirectory />} />
-          <Route path="/community"       element={<Community />} />
-          <Route path="/contact"         element={<Contact />} />
-          <Route path="/disclaimer"      element={<Disclaimer />} />
-          <Route path="/faq"             element={<FAQ />} />
-          <Route path="/forum"           element={<Forum />} />
-          <Route path="/help"            element={<Help />} />
-          <Route path="/moderation"      element={<Moderation />} />
-          <Route path="/ranks"           element={<Ranks />} />
-          <Route path="/rti"             element={<RTI />} />
-          <Route path="/sitemap"         element={<Sitemap />} />
-          <Route path="/chat-rules"      element={<ChatRules />} />
-          <Route path="/cookie-policy"   element={<CookiePolicy />} />
-          <Route path="/dmca"            element={<DMCA />} />
-          <Route path="/legal"           element={<LegalTerms />} />
-          <Route path="/privacy-policy"  element={<PrivacyPolicy />} />
-          <Route path="/safety"          element={<SafetyTerms />} />
-          <Route path="/terms"           element={<Terms />} />
-          <Route path="*"                element={<NotFound />} />
+          {/* Main */}
+          <Route path="/"               element={<Home />} />
+          <Route path="/login"          element={<Login />} />
+          <Route path="/verify-email"   element={<VerifyEmail />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/chat"           element={<ChatLobby />} />
+
+          {/* Info */}
+          <Route path="/about"          element={<About />} />
+          <Route path="/blog"           element={<Blog />} />
+          <Route path="/chat-directory" element={<ChatDirectory />} />
+          <Route path="/community"      element={<Community />} />
+          <Route path="/contact"        element={<Contact />} />
+          <Route path="/disclaimer"     element={<Disclaimer />} />
+          <Route path="/faq"            element={<FAQ />} />
+          <Route path="/forum"          element={<Forum />} />
+          <Route path="/help"           element={<Help />} />
+          <Route path="/moderation"     element={<Moderation />} />
+          <Route path="/ranks"          element={<Ranks />} />
+          <Route path="/rti"            element={<RTI />} />
+          <Route path="/sitemap"        element={<Sitemap />} />
+
+          {/* Legal */}
+          <Route path="/chat-rules"     element={<ChatRules />} />
+          <Route path="/cookie-policy"  element={<CookiePolicy />} />
+          <Route path="/dmca"           element={<DMCA />} />
+          <Route path="/legal"          element={<LegalTerms />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/safety"         element={<SafetyTerms />} />
+          <Route path="/terms"          element={<Terms />} />
+
+          {/* 404 */}
+          <Route path="*"               element={<NotFound />} />
         </Routes>
       </Suspense>
-    </AuthProvider>
+    </>
   )
 }
