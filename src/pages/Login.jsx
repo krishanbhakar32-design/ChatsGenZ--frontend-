@@ -297,7 +297,16 @@ function RegisterModal({ onClose }) {
       const dob = `${form.year}-${String(months.indexOf(form.month)+1).padStart(2,'0')}-${String(form.day).padStart(2,'0')}`
       const res = await fetch(`${API}/api/auth/register`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ username:form.username.trim(), email:form.email.trim().toLowerCase(), password:form.password, gender:form.gender, dob }) })
       const d = await res.json()
-      if (res.ok && d.success) { setOtpData({ userId:d.userId, email:form.email.trim().toLowerCase(), username:d.username }); setStep('otp') }
+      if (res.ok && d.success) {
+        if (d.needsOTP) {
+          setOtpData({ userId:d.userId, email:form.email.trim().toLowerCase(), username:d.username })
+          setStep('otp')
+        } else {
+          // Verification OFF — direct to chat
+          localStorage.setItem('cgz_token', d.token)
+          window.location.href = '/chat'
+        }
+      }
       else setErr(d.error || 'Registration failed. Please try again.')
     } catch { setErr('Network error. Please try again.') }
     finally { setLoad(false) }
