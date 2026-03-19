@@ -5,474 +5,371 @@ import ScrollToTop from '../components/ScrollToTop.jsx'
 
 const API = import.meta.env.VITE_API_URL || 'https://chatsgenz-backend-production.up.railway.app'
 
-// ─── SHARED UI ────────────────────────────────────────────────
+// ── SHARED ────────────────────────────────────────────────────
 function Overlay({ onClose, children }) {
   return (
-    <div
-      onClick={onClose}
-      style={{ position:'fixed', inset:0, zIndex:1000, background:'rgba(10,15,25,.75)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{ background:'#fff', borderRadius:18, width:'100%', maxWidth:420, maxHeight:'92vh', overflowY:'auto', boxShadow:'0 24px 64px rgba(0,0,0,.4)' }}
-      >
+    <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:1000, background:'rgba(8,14,26,.8)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+      <div onClick={e=>e.stopPropagation()} style={{ background:'#fff', borderRadius:20, width:'100%', maxWidth:420, maxHeight:'94vh', overflowY:'auto', boxShadow:'0 28px 72px rgba(0,0,0,.45)' }}>
         {children}
       </div>
     </div>
   )
 }
 
-const IS = {
-  display:'block', width:'100%', padding:'11px 14px',
-  border:'1.5px solid #e0e3e8', borderRadius:9,
-  fontSize:'0.875rem', color:'#202124', fontFamily:'inherit',
-  outline:'none', boxSizing:'border-box', background:'#fafbfc',
-  transition:'all .15s',
-}
+const IS = { display:'block', width:'100%', padding:'11px 14px', border:'1.5px solid #e0e4ea', borderRadius:9, fontSize:'0.875rem', color:'#111827', fontFamily:'inherit', outline:'none', boxSizing:'border-box', background:'#f9fafb', transition:'all .15s' }
 const onF = e => { e.target.style.borderColor='#1a73e8'; e.target.style.background='#fff' }
-const onB = e => { e.target.style.borderColor='#e0e3e8'; e.target.style.background='#fafbfc' }
-const Lbl = ({ c }) => <label style={{ display:'block', fontSize:'0.79rem', fontWeight:700, color:'#5f6368', marginBottom:5, letterSpacing:'.2px' }}>{c}</label>
-const ErrBox = ({ m }) => m ? <div style={{ background:'#fef0f0', border:'1px solid #fccfcf', borderRadius:8, padding:'9px 13px', fontSize:'0.83rem', color:'#c62828', marginBottom:12, lineHeight:1.5 }}>{m}</div> : null
-const OkBox  = ({ m }) => m ? <div style={{ background:'#f0faf3', border:'1px solid #b7dfbf', borderRadius:8, padding:'9px 13px', fontSize:'0.83rem', color:'#1e7e34', marginBottom:12 }}>{m}</div> : null
-const Spin   = () => <span style={{ width:14, height:14, border:'2px solid rgba(255,255,255,.35)', borderTop:'2px solid #fff', borderRadius:'50%', animation:'spin .75s linear infinite', display:'inline-block', flexShrink:0 }} />
+const onB = e => { e.target.style.borderColor='#e0e4ea'; e.target.style.background='#f9fafb' }
+const Lbl = ({ c }) => <label style={{ display:'block', fontSize:'0.79rem', fontWeight:700, color:'#6b7280', marginBottom:5 }}>{c}</label>
+const Err = ({ m }) => m ? <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:9, padding:'10px 14px', fontSize:'0.83rem', color:'#dc2626', marginBottom:12, lineHeight:1.55, display:'flex', alignItems:'flex-start', gap:8 }}>
+  <span style={{ flexShrink:0, fontSize:14 }}>⚠️</span><span>{m}</span>
+</div> : null
+const Ok = ({ m }) => m ? <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:9, padding:'10px 14px', fontSize:'0.83rem', color:'#16a34a', marginBottom:12, display:'flex', alignItems:'center', gap:8 }}>
+  <span>✅</span><span>{m}</span>
+</div> : null
+const Spin = () => <span style={{ width:14, height:14, border:'2px solid rgba(255,255,255,.3)', borderTop:'2px solid #fff', borderRadius:'50%', animation:'spin .7s linear infinite', display:'inline-block', flexShrink:0 }} />
 
-function MHead({ bg, icon, title, sub, onClose, onBack }) {
+function Head({ bg, icon, title, sub, onClose, onBack }) {
   return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
-      <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-        {onBack && (
-          <button onClick={onBack} style={{ background:'none', border:'none', cursor:'pointer', color:'#80868b', fontSize:16, padding:'0 6px 0 0', display:'flex' }}>
-            <i className="fi fi-sr-angle-left" />
-          </button>
-        )}
-        <div style={{ width:38, height:38, background:bg, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-          <i className={`fi fi-sr-${icon}`} style={{ color:'#fff', fontSize:16 }} />
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:22 }}>
+      <div style={{ display:'flex', alignItems:'center', gap:11 }}>
+        {onBack && <button onClick={onBack} style={{ background:'none', border:'none', cursor:'pointer', color:'#9ca3af', fontSize:15, padding:'0 6px 0 0', display:'flex', alignItems:'center' }}><i className="fi fi-sr-angle-left" /></button>}
+        <div style={{ width:40, height:40, background:bg, borderRadius:11, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+          <i className={`fi fi-sr-${icon}`} style={{ color:'#fff', fontSize:17 }} />
         </div>
         <div>
-          <div style={{ fontFamily:'Outfit,sans-serif', fontWeight:900, fontSize:'1rem', color:'#202124' }}>{title}</div>
-          <div style={{ fontSize:'0.71rem', color:'#9aa0a6', marginTop:1 }}>{sub}</div>
+          <div style={{ fontFamily:'Outfit,sans-serif', fontWeight:900, fontSize:'1.05rem', color:'#111827' }}>{title}</div>
+          <div style={{ fontSize:'0.72rem', color:'#9ca3af', marginTop:1 }}>{sub}</div>
         </div>
       </div>
-      <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'#9aa0a6', fontSize:18, padding:4, lineHeight:1 }}>
+      <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'#9ca3af', fontSize:20, padding:4, lineHeight:1, display:'flex', alignItems:'center' }}>
         <i className="fi fi-sr-cross-small" />
       </button>
     </div>
   )
 }
 
-function PrimaryBtn({ loading, loadingText, children, color, ...props }) {
+function Btn({ loading, text, loadText, bg, color, shadow, onClick, type='submit', disabled }) {
   return (
-    <button {...props} disabled={loading || props.disabled} style={{
-      display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-      padding:'12px', borderRadius:10, border:'none', width:'100%',
-      background: (loading || props.disabled) ? '#c8cdd5' : (color || 'linear-gradient(135deg,#1a73e8,#1464cc)'),
-      color:'#fff', fontWeight:800, fontSize:'0.9rem',
-      fontFamily:'Outfit,sans-serif',
-      cursor: (loading || props.disabled) ? 'not-allowed' : 'pointer',
-      boxShadow: (loading || props.disabled) ? 'none' : '0 3px 14px rgba(26,115,232,.28)',
-      transition:'all .15s', marginTop:4,
-      ...props.style,
-    }}>
-      {loading ? <><Spin /> {loadingText || 'Please wait...'}</> : children}
+    <button type={type} onClick={onClick} disabled={loading||disabled} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'13px', borderRadius:10, border:'none', width:'100%', background:(loading||disabled)?'#d1d5db':bg, color:color||'#fff', fontWeight:800, fontSize:'0.9rem', fontFamily:'Outfit,sans-serif', cursor:(loading||disabled)?'not-allowed':'pointer', boxShadow:(loading||disabled)?'none':shadow||'0 3px 14px rgba(26,115,232,.28)', transition:'all .15s', marginTop:6 }}>
+      {loading ? <><Spin />{loadText||'Please wait...'}</> : text}
     </button>
   )
 }
 
-// ─── OTP STEP (shared between register and login-verify) ─────
-function OTPStep({ userId, email, username, onSuccess, onClose }) {
-  const [otp, setOtp]       = useState('')
-  const [error, setError]   = useState('')
-  const [ok, setOk]         = useState('')
-  const [loading, setLoad]  = useState(false)
-  const [rl, setRl]         = useState(false)
+// ── OTP STEP (shared) ──────────────────────────────────────────
+function OTPStep({ userId, email, username, onClose }) {
+  const [otp, setOtp]      = useState('')
+  const [err, setErr]      = useState('')
+  const [ok, setOk]        = useState('')
+  const [load, setLoad]    = useState(false)
+  const [rl, setRl]        = useState(false)
 
   async function submit(e) {
     e.preventDefault()
-    if (otp.length !== 6) { setError('Enter the full 6-digit code.'); return }
-    setLoad(true); setError(''); setOk('')
+    if (otp.length !== 6) { setErr('Please enter the full 6-digit code.'); return }
+    setLoad(true); setErr(''); setOk('')
     try {
-      const res = await fetch(`${API}/api/auth/verify-otp`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ userId, otp })
-      })
+      const res = await fetch(`${API}/api/auth/verify-otp`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ userId, otp }) })
       const d = await res.json()
-      if (res.ok && d.token) {
-        localStorage.setItem('cgz_token', d.token)
-        onSuccess ? onSuccess() : (window.location.href = '/chat')
-      } else {
-        setError(d.error || 'Wrong code. Try again.')
-      }
-    } catch { setError('Network error. Please try again.') }
+      if (res.ok && d.token) { localStorage.setItem('cgz_token', d.token); window.location.href='/chat' }
+      else setErr(d.error || 'Incorrect code. Please try again.')
+    } catch { setErr('Network error. Please try again.') }
     finally { setLoad(false) }
   }
 
   async function resend() {
-    setRl(true); setError(''); setOk('')
+    setRl(true); setErr(''); setOk('')
     try {
-      const res = await fetch(`${API}/api/auth/resend-otp`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ userId })
-      })
+      const res = await fetch(`${API}/api/auth/resend-otp`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ userId }) })
       const d = await res.json()
-      if (res.ok) setOk('New code sent! Check your email.')
-      else setError(d.error || 'Could not resend.')
-    } catch { setError('Network error.') }
+      if (res.ok) setOk('New code sent! Check your inbox and spam folder.')
+      else setErr(d.error || 'Could not resend.')
+    } catch { setErr('Network error.') }
     finally { setRl(false) }
   }
 
   return (
     <>
-      <MHead bg="linear-gradient(135deg,#1a73e8,#1464cc)" icon="shield-check" title="Verify Your Email" sub={`Code sent to ${email}`} onClose={onClose} />
-      <div style={{ textAlign:'center', marginBottom:18 }}>
-        <div style={{ fontSize:38, marginBottom:8 }}>📧</div>
-        <p style={{ fontSize:'0.875rem', color:'#5f6368', lineHeight:1.7 }}>
-          Hi <strong style={{ color:'#202124' }}>{username}</strong>! Enter the <strong>6-digit code</strong> sent to <strong style={{ color:'#1a73e8' }}>{email}</strong>
+      <Head bg="linear-gradient(135deg,#1a73e8,#1464cc)" icon="shield-check" title="Verify Email" sub={`Code sent to ${email}`} onClose={onClose} />
+      <div style={{ textAlign:'center', marginBottom:20 }}>
+        <div style={{ fontSize:44, marginBottom:10 }}>📧</div>
+        <p style={{ fontSize:'0.9rem', color:'#6b7280', lineHeight:1.75 }}>
+          Hi <strong style={{ color:'#111827' }}>{username}</strong>! A <strong style={{ color:'#1a73e8' }}>6-digit code</strong> has been sent to <strong style={{ color:'#111827' }}>{email}</strong>. Enter it below.
         </p>
+        <p style={{ fontSize:'0.8rem', color:'#9ca3af', marginTop:6 }}>Check your spam/junk folder if not in inbox.</p>
       </div>
-      <ErrBox m={error} />
-      <OkBox  m={ok} />
+      <Err m={err} />
+      <Ok  m={ok} />
       <form onSubmit={submit} style={{ display:'flex', flexDirection:'column', gap:14 }}>
         <div>
-          <Lbl c="6-Digit Code *" />
+          <Lbl c="6-Digit Verification Code" />
           <input
-            style={{ ...IS, fontSize:'2rem', textAlign:'center', letterSpacing:'14px', fontWeight:900, fontFamily:'monospace', padding:'14px 10px', background:'#fff', borderColor:'#e0e3e8' }}
-            placeholder="_ _ _ _ _ _"
+            style={{ ...IS, fontSize:'2.2rem', textAlign:'center', letterSpacing:'16px', fontWeight:900, fontFamily:'monospace', padding:'14px 8px', background:'#fff', borderColor:'#c7d2fe' }}
+            placeholder="——————"
             value={otp}
-            onChange={e => { setOtp(e.target.value.replace(/\D/g,'').slice(0,6)); setError('') }}
-            maxLength={6}
-            onFocus={onF} onBlur={onB}
-            required autoFocus
+            onChange={e => { setOtp(e.target.value.replace(/\D/g,'').slice(0,6)); setErr('') }}
+            maxLength={6} onFocus={onF} onBlur={onB} required autoFocus
           />
         </div>
-        <PrimaryBtn loading={loading} loadingText="Verifying...">
-          ✅ Verify &amp; Enter ChatsGenZ
-        </PrimaryBtn>
+        <Btn loading={load} text="✅ Verify & Enter ChatsGenZ" loadText="Verifying..." bg="linear-gradient(135deg,#1a73e8,#1464cc)" />
       </form>
-      <div style={{ textAlign:'center', marginTop:14 }}>
-        <span style={{ fontSize:'0.8rem', color:'#9aa0a6' }}>Didn't receive it? </span>
-        <button onClick={resend} disabled={rl} style={{ background:'none', border:'none', color:'#1a73e8', fontWeight:700, fontSize:'0.8rem', cursor:rl?'not-allowed':'pointer', padding:0 }}>
+      <div style={{ textAlign:'center', marginTop:14, fontSize:'0.82rem', color:'#9ca3af' }}>
+        Didn't receive it?{' '}
+        <button onClick={resend} disabled={rl} style={{ background:'none', border:'none', color:'#1a73e8', fontWeight:700, fontSize:'0.82rem', cursor:rl?'not-allowed':'pointer', padding:0 }}>
           {rl ? 'Sending...' : 'Resend Code'}
         </button>
       </div>
-      <p style={{ fontSize:'0.7rem', color:'#c5c9d0', textAlign:'center', marginTop:6 }}>Code expires in 15 minutes</p>
+      <p style={{ fontSize:'0.69rem', color:'#d1d5db', textAlign:'center', marginTop:6 }}>Code expires in 15 minutes</p>
     </>
   )
 }
 
-// ─── LOGIN MODAL ──────────────────────────────────────────────
+// ── LOGIN MODAL ────────────────────────────────────────────────
 function LoginModal({ onClose }) {
-  // step: login | forgot | forgot_sent | otp
-  const [step, setStep]     = useState('login')
-  const [form, setForm]     = useState({ login:'', password:'' })
+  const [step, setStep]       = useState('login')
+  const [form, setForm]       = useState({ login:'', password:'' })
   const [fpEmail, setFpEmail] = useState('')
-  const [error, setError]   = useState('')
-  const [ok, setOk]         = useState('')
-  const [loading, setLoad]  = useState(false)
-  const [otpData, setOtpData] = useState({ userId:'', email:'', username:'' })
+  const [err, setErr]         = useState('')
+  const [ok, setOk]           = useState('')
+  const [load, setLoad]       = useState(false)
+  const [otpData, setOtpData] = useState({})
 
-  function reset() { setError(''); setOk('') }
+  const reset = () => { setErr(''); setOk('') }
 
-  async function submitLogin(e) {
+  async function doLogin(e) {
     e.preventDefault(); setLoad(true); reset()
     try {
-      const res = await fetch(`${API}/api/auth/login`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ login: form.login, password: form.password })
-      })
+      const res = await fetch(`${API}/api/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ login:form.login.trim(), password:form.password }) })
       const d = await res.json()
-      if (res.ok && d.token) {
-        localStorage.setItem('cgz_token', d.token)
-        window.location.href = '/chat'
-      } else if (res.ok && d.needsVerification) {
-        // Email not verified — go to OTP step
-        setOtpData({ userId: d.userId, email: form.login, username: d.username })
-        setStep('otp')
-      } else {
-        setError(d.error || 'Invalid credentials. Please try again.')
-      }
-    } catch { setError('Network error. Please try again.') }
+      if (res.ok && d.token) { localStorage.setItem('cgz_token', d.token); window.location.href='/chat' }
+      else if (res.ok && d.needsVerification) { setOtpData({ userId:d.userId, email:form.login.trim(), username:d.username }); setStep('otp') }
+      else setErr(d.error || 'Invalid credentials. Please try again.')
+    } catch { setErr('Network error. Please check your connection.') }
     finally { setLoad(false) }
   }
 
-  async function submitForgot(e) {
+  async function doForgot(e) {
     e.preventDefault(); setLoad(true); reset()
     try {
-      const res = await fetch(`${API}/api/auth/forgot-password`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ email: fpEmail })
-      })
+      const res = await fetch(`${API}/api/auth/forgot-password`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ email:fpEmail.trim() }) })
       const d = await res.json()
       if (res.ok) setStep('forgot_sent')
-      else setError(d.error || 'Could not send reset email.')
-    } catch { setError('Network error.') }
+      else setErr(d.error || 'Could not send reset email.')
+    } catch { setErr('Network error.') }
     finally { setLoad(false) }
   }
 
   return (
     <Overlay onClose={onClose}>
       <div style={{ padding:'24px 22px' }}>
+        {step === 'login' && <>
+          <Head bg="linear-gradient(135deg,#1a73e8,#1464cc)" icon="sign-in" title="Login" sub="Welcome back to ChatsGenZ" onClose={onClose} />
+          <Err m={err} />
+          <form onSubmit={doLogin} style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            <div>
+              <Lbl c="Username or Email" />
+              <input style={IS} placeholder="Enter username or email (not case sensitive)"
+                value={form.login} onChange={e=>setForm(f=>({...f,login:e.target.value}))}
+                onFocus={onF} onBlur={onB} required />
+            </div>
+            <div>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:5 }}>
+                <Lbl c="Password" />
+                <button type="button" onClick={()=>{setStep('forgot');reset()}} style={{ background:'none', border:'none', color:'#1a73e8', fontSize:'0.77rem', fontWeight:700, cursor:'pointer', padding:0 }}>
+                  Forgot password?
+                </button>
+              </div>
+              <input type="password" style={IS} placeholder="Your password"
+                value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))}
+                onFocus={onF} onBlur={onB} required />
+            </div>
+            <Btn loading={load} text={<><i className="fi fi-sr-sign-in" /> Login to ChatsGenZ</>} loadText="Logging in..." bg="linear-gradient(135deg,#1a73e8,#1464cc)" />
+          </form>
+        </>}
 
-        {step === 'login' && (
-          <>
-            <MHead bg="linear-gradient(135deg,#1a73e8,#1464cc)" icon="sign-in" title="Login" sub="Welcome back to ChatsGenZ" onClose={onClose} />
-            <ErrBox m={error} />
-            <form onSubmit={submitLogin} style={{ display:'flex', flexDirection:'column', gap:13 }}>
-              <div>
-                <Lbl c="Username or Email *" />
-                <input style={IS} placeholder="Enter username or email"
-                  value={form.login} onChange={e => setForm(f=>({...f,login:e.target.value}))}
-                  onFocus={onF} onBlur={onB} required />
-              </div>
-              <div>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:5 }}>
-                  <Lbl c="Password *" />
-                  <button type="button" onClick={()=>{setStep('forgot');reset()}}
-                    style={{ background:'none', border:'none', color:'#1a73e8', fontSize:'0.77rem', fontWeight:700, cursor:'pointer', padding:0 }}>
-                    Forgot password?
-                  </button>
-                </div>
-                <input type="password" style={IS} placeholder="Your password"
-                  value={form.password} onChange={e => setForm(f=>({...f,password:e.target.value}))}
-                  onFocus={onF} onBlur={onB} required />
-              </div>
-              <PrimaryBtn loading={loading} loadingText="Logging in...">
-                <i className="fi fi-sr-sign-in" /> Login to ChatsGenZ
-              </PrimaryBtn>
-            </form>
-          </>
-        )}
-
-        {step === 'forgot' && (
-          <>
-            <MHead bg="linear-gradient(135deg,#fbbc04,#f9ab00)" icon="lock" title="Forgot Password" sub="Reset link sent to your email" onClose={onClose} onBack={()=>{setStep('login');reset()}} />
-            <p style={{ fontSize:'0.84rem', color:'#5f6368', marginBottom:16, lineHeight:1.65 }}>
-              Enter your registered email. We'll send a password reset link immediately.
-            </p>
-            <ErrBox m={error} />
-            <form onSubmit={submitForgot} style={{ display:'flex', flexDirection:'column', gap:13 }}>
-              <div>
-                <Lbl c="Registered Email *" />
-                <input type="email" style={IS} placeholder="your@email.com"
-                  value={fpEmail} onChange={e=>setFpEmail(e.target.value)}
-                  onFocus={onF} onBlur={onB} required autoFocus />
-              </div>
-              <PrimaryBtn loading={loading} loadingText="Sending..." color="linear-gradient(135deg,#fbbc04,#f9ab00)" style={{ color:'#202124', boxShadow:'0 3px 12px rgba(251,188,4,.3)' }}>
-                <i className="fi fi-sr-paper-plane" /> Send Reset Link
-              </PrimaryBtn>
-            </form>
-          </>
-        )}
+        {step === 'forgot' && <>
+          <Head bg="linear-gradient(135deg,#f59e0b,#d97706)" icon="lock" title="Forgot Password" sub="Reset link sent to your email" onClose={onClose} onBack={()=>{setStep('login');reset()}} />
+          <p style={{ fontSize:'0.875rem', color:'#6b7280', marginBottom:16, lineHeight:1.65 }}>Enter your registered email. We'll send a password reset link immediately.</p>
+          <Err m={err} />
+          <form onSubmit={doForgot} style={{ display:'flex', flexDirection:'column', gap:13 }}>
+            <div>
+              <Lbl c="Registered Email Address" />
+              <input type="email" style={IS} placeholder="your@email.com"
+                value={fpEmail} onChange={e=>setFpEmail(e.target.value)}
+                onFocus={onF} onBlur={onB} required autoFocus />
+            </div>
+            <Btn loading={load} text={<><i className="fi fi-sr-paper-plane" /> Send Reset Link</>} loadText="Sending..." bg="linear-gradient(135deg,#f59e0b,#d97706)" color="#111827" shadow="0 3px 12px rgba(245,158,11,.3)" />
+          </form>
+        </>}
 
         {step === 'forgot_sent' && (
-          <div style={{ textAlign:'center', padding:'8px 0' }}>
-            <div style={{ fontSize:50, marginBottom:12 }}>📧</div>
-            <h3 style={{ fontFamily:'Outfit,sans-serif', fontWeight:900, fontSize:'1.05rem', color:'#202124', marginBottom:8 }}>Check Your Email</h3>
-            <p style={{ fontSize:'0.875rem', color:'#5f6368', lineHeight:1.7, marginBottom:6 }}>
-              Reset link sent to <strong style={{ color:'#202124' }}>{fpEmail}</strong>
-            </p>
-            <p style={{ fontSize:'0.8rem', color:'#9aa0a6', marginBottom:22 }}>Link expires in 1 hour. Check spam folder too.</p>
-            <button onClick={()=>{setStep('login');reset();setFpEmail('')}}
-              style={{ padding:'10px 24px', borderRadius:9, border:'none', background:'linear-gradient(135deg,#1a73e8,#1464cc)', color:'#fff', fontWeight:700, cursor:'pointer', fontFamily:'Outfit,sans-serif', fontSize:'0.875rem' }}>
+          <div style={{ textAlign:'center', padding:'12px 0' }}>
+            <div style={{ fontSize:52, marginBottom:12 }}>📧</div>
+            <h3 style={{ fontFamily:'Outfit,sans-serif', fontWeight:900, fontSize:'1.1rem', color:'#111827', marginBottom:8 }}>Check Your Inbox</h3>
+            <p style={{ fontSize:'0.875rem', color:'#6b7280', lineHeight:1.7, marginBottom:6 }}>Reset link sent to <strong style={{ color:'#111827' }}>{fpEmail}</strong></p>
+            <p style={{ fontSize:'0.8rem', color:'#9ca3af', marginBottom:24 }}>Link expires in 1 hour. Check spam folder too.</p>
+            <button onClick={()=>{setStep('login');reset();setFpEmail('')}} style={{ padding:'11px 26px', borderRadius:9, border:'none', background:'linear-gradient(135deg,#1a73e8,#1464cc)', color:'#fff', fontWeight:700, cursor:'pointer', fontFamily:'Outfit,sans-serif' }}>
               Back to Login
             </button>
           </div>
         )}
 
-        {step === 'otp' && (
-          <OTPStep {...otpData} onClose={onClose} />
-        )}
-
+        {step === 'otp' && <OTPStep {...otpData} onClose={onClose} />}
       </div>
     </Overlay>
   )
 }
 
-// ─── GUEST MODAL ──────────────────────────────────────────────
+// ── GUEST MODAL ────────────────────────────────────────────────
 function GuestModal({ onClose }) {
-  const [form, setForm]    = useState({ username:'', gender:'' })
-  const [error, setError]  = useState('')
-  const [loading, setLoad] = useState(false)
+  const [form, setForm]  = useState({ username:'', gender:'' })
+  const [err, setErr]    = useState('')
+  const [load, setLoad]  = useState(false)
 
   async function submit(e) {
     e.preventDefault()
-    if (!form.gender) { setError('Please select your gender.'); return }
-    setLoad(true); setError('')
+    if (!form.gender) { setErr('Please select your gender.'); return }
+    setLoad(true); setErr('')
     try {
-      const res = await fetch(`${API}/api/auth/guest`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(form)
-      })
+      const res = await fetch(`${API}/api/auth/guest`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(form) })
       const d = await res.json()
-      if (res.ok && d.token) {
-        localStorage.setItem('cgz_token', d.token)
-        window.location.href = '/chat'
-      } else {
-        setError(d.error || 'Failed to enter as guest.')
-      }
-    } catch { setError('Network error.') }
+      if (res.ok && d.token) { localStorage.setItem('cgz_token', d.token); window.location.href='/chat' }
+      else setErr(d.error || 'Failed to enter. Please try again.')
+    } catch { setErr('Network error.') }
     finally { setLoad(false) }
   }
 
   return (
     <Overlay onClose={onClose}>
       <div style={{ padding:'24px 22px' }}>
-        <MHead bg="linear-gradient(135deg,#34a853,#1e8e3e)" icon="user" title="Guest Entry" sub="No registration needed" onClose={onClose} />
-        <div style={{ background:'#fffbea', border:'1px solid #fce18a', borderRadius:8, padding:'9px 13px', fontSize:'0.79rem', color:'#7d5e00', marginBottom:13, lineHeight:1.5 }}>
-          ⚠️ Guest sessions are temporary. Register free to save your profile.
+        <Head bg="linear-gradient(135deg,#16a34a,#15803d)" icon="user" title="Guest Entry" sub="No registration needed" onClose={onClose} />
+        <div style={{ background:'#fffbeb', border:'1px solid #fde68a', borderRadius:9, padding:'10px 14px', fontSize:'0.8rem', color:'#92400e', marginBottom:14, lineHeight:1.55 }}>
+          ⚠️ Guest sessions are temporary. Register free to save your profile and history.
         </div>
-        <ErrBox m={error} />
-        <form onSubmit={submit} style={{ display:'flex', flexDirection:'column', gap:12 }}>
+        <Err m={err} />
+        <form onSubmit={submit} style={{ display:'flex', flexDirection:'column', gap:13 }}>
           <div>
-            <Lbl c="Username *" />
-            <input style={IS} placeholder="Pick any username"
+            <Lbl c="Username" />
+            <input style={IS} placeholder="2-20 chars, letters/numbers only"
               value={form.username} onChange={e=>setForm(f=>({...f,username:e.target.value}))}
               onFocus={onF} onBlur={onB} required />
           </div>
           <div>
-            <Lbl c="Gender *" />
-            <select style={{...IS,appearance:'none',cursor:'pointer'}}
-              value={form.gender} onChange={e=>setForm(f=>({...f,gender:e.target.value}))}
-              onFocus={onF} onBlur={onB} required>
+            <Lbl c="Gender" />
+            <select style={{...IS,appearance:'none',cursor:'pointer'}} value={form.gender} onChange={e=>setForm(f=>({...f,gender:e.target.value}))} onFocus={onF} onBlur={onB} required>
               <option value="">Select gender...</option>
               <option value="male">Male</option>
               <option value="female">Female</option>
               <option value="other">Other</option>
               <option value="couple">Couple</option>
             </select>
-            <p style={{ fontSize:'0.71rem', color:'#ea4335', marginTop:4 }}>⚠️ Gender cannot be changed once selected.</p>
+            <p style={{ fontSize:'0.71rem', color:'#ef4444', marginTop:4, fontWeight:600 }}>⚠️ Gender cannot be changed once selected.</p>
           </div>
-          <PrimaryBtn loading={loading} loadingText="Entering..." color="linear-gradient(135deg,#34a853,#1e8e3e)" style={{ boxShadow:'0 3px 12px rgba(52,168,83,.28)' }}>
-            <i className="fi fi-sr-user" /> Enter as Guest
-          </PrimaryBtn>
+          <Btn loading={load} text={<><i className="fi fi-sr-user" /> Enter as Guest</>} loadText="Entering..." bg="linear-gradient(135deg,#16a34a,#15803d)" shadow="0 3px 12px rgba(22,163,74,.28)" />
         </form>
       </div>
     </Overlay>
   )
 }
 
-// ─── REGISTER MODAL ───────────────────────────────────────────
+// ── REGISTER MODAL ─────────────────────────────────────────────
 function RegisterModal({ onClose }) {
   const [step, setStep]       = useState('form')
-  const [otpData, setOtpData] = useState({ userId:'', email:'', username:'' })
-
-  const [form, setForm]    = useState({ username:'', email:'', password:'', confirmPassword:'', dob_day:'', dob_month:'', dob_year:'', gender:'' })
-  const [error, setError]  = useState('')
-  const [loading, setLoad] = useState(false)
+  const [otpData, setOtpData] = useState({})
+  const [form, setForm]       = useState({ username:'', email:'', password:'', confirm:'', day:'', month:'', year:'', gender:'' })
+  const [err, setErr]         = useState('')
+  const [load, setLoad]       = useState(false)
 
   const months  = ['January','February','March','April','May','June','July','August','September','October','November','December']
   const curYear = new Date().getFullYear()
-  const years   = Array.from({length:82}, (_,i) => curYear - 18 - i)
-  const days    = Array.from({length:31}, (_,i) => i + 1)
-  const ss      = { ...IS, padding:'10px 8px', appearance:'none' }
+  const years   = Array.from({length:82},(_,i)=>curYear-18-i)
+  const days    = Array.from({length:31},(_,i)=>i+1)
+  const ss      = {...IS, padding:'10px 8px', appearance:'none'}
 
   async function submit(e) {
     e.preventDefault()
-    const { username, email, password, confirmPassword, dob_day, dob_month, dob_year, gender } = form
-    if (!gender)                          { setError('Please select your gender.'); return }
-    if (!dob_day||!dob_month||!dob_year)  { setError('Please enter your full date of birth.'); return }
-    if (password !== confirmPassword)     { setError('Passwords do not match.'); return }
-    if (password.length < 6)             { setError('Password must be at least 6 characters.'); return }
-
-    setLoad(true); setError('')
+    if (!form.gender)                        { setErr('Please select your gender.'); return }
+    if (!form.day||!form.month||!form.year)  { setErr('Please enter your full date of birth.'); return }
+    if (form.password !== form.confirm)      { setErr('Passwords do not match.'); return }
+    if (form.password.length < 6)           { setErr('Password must be at least 6 characters.'); return }
+    setLoad(true); setErr('')
     try {
-      const dob = `${dob_year}-${String(months.indexOf(dob_month)+1).padStart(2,'0')}-${String(dob_day).padStart(2,'0')}`
-      const res = await fetch(`${API}/api/auth/register`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ username, email, password, gender, dob })
-      })
+      const dob = `${form.year}-${String(months.indexOf(form.month)+1).padStart(2,'0')}-${String(form.day).padStart(2,'0')}`
+      const res = await fetch(`${API}/api/auth/register`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ username:form.username.trim(), email:form.email.trim().toLowerCase(), password:form.password, gender:form.gender, dob }) })
       const d = await res.json()
-      if (res.ok && d.success) {
-        setOtpData({ userId: d.userId, email, username: d.username })
-        setStep('otp')
-      } else {
-        setError(d.error || 'Registration failed. Please try again.')
-      }
-    } catch { setError('Network error. Please try again.') }
+      if (res.ok && d.success) { setOtpData({ userId:d.userId, email:form.email.trim().toLowerCase(), username:d.username }); setStep('otp') }
+      else setErr(d.error || 'Registration failed. Please try again.')
+    } catch { setErr('Network error. Please try again.') }
     finally { setLoad(false) }
   }
 
-  if (step === 'otp') {
-    return (
-      <Overlay onClose={onClose}>
-        <div style={{ padding:'24px 22px' }}>
-          <OTPStep {...otpData} onClose={onClose} />
-        </div>
-      </Overlay>
-    )
-  }
+  if (step === 'otp') return (
+    <Overlay onClose={onClose}>
+      <div style={{ padding:'24px 22px' }}>
+        <OTPStep {...otpData} onClose={onClose} />
+      </div>
+    </Overlay>
+  )
 
   return (
     <Overlay onClose={onClose}>
       <div style={{ padding:'24px 22px' }}>
-        <MHead bg="linear-gradient(135deg,#aa44ff,#7b2ff7)" icon="user-add" title="Create Account" sub="Free forever — no credit card" onClose={onClose} />
-        <ErrBox m={error} />
+        <Head bg="linear-gradient(135deg,#7c3aed,#6d28d9)" icon="user-add" title="Create Account" sub="Free forever — no credit card" onClose={onClose} />
+        <Err m={err} />
         <form onSubmit={submit} style={{ display:'flex', flexDirection:'column', gap:11 }}>
           <div>
-            <Lbl c="Username *" />
+            <Lbl c="Username" />
             <input style={IS} placeholder="3-20 chars, letters/numbers/underscore"
-              value={form.username} onChange={e=>setForm(f=>({...f,username:e.target.value}))}
-              onFocus={onF} onBlur={onB} required />
+              value={form.username} onChange={e=>setForm(f=>({...f,username:e.target.value}))} onFocus={onF} onBlur={onB} required />
           </div>
           <div>
-            <Lbl c="Email Address *" />
+            <Lbl c="Email Address" />
             <input type="email" style={IS} placeholder="your@email.com"
-              value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))}
-              onFocus={onF} onBlur={onB} required />
+              value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} onFocus={onF} onBlur={onB} required />
           </div>
           <div>
-            <Lbl c="Password *" />
+            <Lbl c="Password" />
             <input type="password" style={IS} placeholder="Minimum 6 characters"
-              value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))}
-              onFocus={onF} onBlur={onB} required />
+              value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))} onFocus={onF} onBlur={onB} required />
           </div>
           <div>
-            <Lbl c="Confirm Password *" />
+            <Lbl c="Confirm Password" />
             <input type="password" style={IS} placeholder="Repeat your password"
-              value={form.confirmPassword} onChange={e=>setForm(f=>({...f,confirmPassword:e.target.value}))}
-              onFocus={onF} onBlur={onB} required />
+              value={form.confirm} onChange={e=>setForm(f=>({...f,confirm:e.target.value}))} onFocus={onF} onBlur={onB} required />
           </div>
           <div>
-            <Lbl c={<span>Date of Birth * <span style={{color:'#ea4335',fontSize:'0.69rem',fontWeight:700}}>18+ only</span></span>} />
+            <Lbl c={<span>Date of Birth &nbsp;<span style={{color:'#ef4444',fontSize:'0.69rem',fontWeight:700,background:'#fef2f2',padding:'1px 6px',borderRadius:4}}>18+ ONLY</span></span>} />
             <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr 1.5fr', gap:7 }}>
-              <select style={ss} value={form.dob_day}   onChange={e=>setForm(f=>({...f,dob_day:e.target.value}))}   onFocus={onF} onBlur={onB} required>
-                <option value="">Day</option>
-                {days.map(d=><option key={d}>{d}</option>)}
-              </select>
-              <select style={ss} value={form.dob_month} onChange={e=>setForm(f=>({...f,dob_month:e.target.value}))} onFocus={onF} onBlur={onB} required>
-                <option value="">Month</option>
-                {months.map(m=><option key={m}>{m}</option>)}
-              </select>
-              <select style={ss} value={form.dob_year}  onChange={e=>setForm(f=>({...f,dob_year:e.target.value}))}  onFocus={onF} onBlur={onB} required>
-                <option value="">Year</option>
-                {years.map(y=><option key={y}>{y}</option>)}
-              </select>
+              <select style={ss} value={form.day}   onChange={e=>setForm(f=>({...f,day:e.target.value}))}   onFocus={onF} onBlur={onB} required><option value="">Day</option>{days.map(d=><option key={d}>{d}</option>)}</select>
+              <select style={ss} value={form.month} onChange={e=>setForm(f=>({...f,month:e.target.value}))} onFocus={onF} onBlur={onB} required><option value="">Month</option>{months.map(m=><option key={m}>{m}</option>)}</select>
+              <select style={ss} value={form.year}  onChange={e=>setForm(f=>({...f,year:e.target.value}))}  onFocus={onF} onBlur={onB} required><option value="">Year</option>{years.map(y=><option key={y}>{y}</option>)}</select>
             </div>
           </div>
           <div>
-            <Lbl c="Gender *" />
-            <select style={{...IS,appearance:'none',cursor:'pointer'}}
-              value={form.gender} onChange={e=>setForm(f=>({...f,gender:e.target.value}))}
-              onFocus={onF} onBlur={onB} required>
+            <Lbl c="Gender" />
+            <select style={{...IS,appearance:'none',cursor:'pointer'}} value={form.gender} onChange={e=>setForm(f=>({...f,gender:e.target.value}))} onFocus={onF} onBlur={onB} required>
               <option value="">Select gender...</option>
               <option value="male">Male</option>
               <option value="female">Female</option>
               <option value="other">Other</option>
               <option value="couple">Couple</option>
             </select>
-            <p style={{ fontSize:'0.71rem', color:'#ea4335', marginTop:4, fontWeight:600 }}>
-              ⚠️ Gender cannot be changed after registration.
-            </p>
+            {/* IMPORTANT WARNING — highlighted */}
+            <div style={{ marginTop:8, background:'#fffbeb', border:'1.5px solid #fbbf24', borderRadius:8, padding:'9px 12px', display:'flex', alignItems:'flex-start', gap:8 }}>
+              <span style={{ fontSize:15, flexShrink:0 }}>⚠️</span>
+              <p style={{ fontSize:'0.75rem', color:'#92400e', margin:0, lineHeight:1.6, fontWeight:600 }}>
+                <strong>Gender cannot be changed after registration.</strong> It permanently affects your rank eligibility, profile, and room access. Please fill carefully.
+              </p>
+            </div>
           </div>
-          <PrimaryBtn loading={loading} loadingText="Creating account..." color="linear-gradient(135deg,#aa44ff,#7b2ff7)" style={{ boxShadow:'0 3px 12px rgba(170,68,255,.28)' }}>
-            <i className="fi fi-sr-user-add" /> Create Free Account
-          </PrimaryBtn>
+          <Btn loading={load} text={<><i className="fi fi-sr-user-add" /> Create Free Account</>} loadText="Creating account..." bg="linear-gradient(135deg,#7c3aed,#6d28d9)" shadow="0 3px 12px rgba(124,58,237,.28)" />
         </form>
       </div>
     </Overlay>
   )
 }
 
-// ─── MAIN PAGE ────────────────────────────────────────────────
+// ── MAIN PAGE ──────────────────────────────────────────────────
 export default function Login() {
   const [modal, setModal] = useState(null)
 
@@ -481,74 +378,78 @@ export default function Login() {
       <ScrollToTop />
       <Header />
 
-      {/* HERO — dark with bg image */}
-      <section style={{ background:'linear-gradient(160deg,#0d1520 0%,#162033 55%,#0d1520 100%)', position:'relative', overflow:'hidden', padding:'52px 20px 56px' }}>
-        {/* bg image — opacity 0.15 so buttons and text are clear */}
-        <div style={{
-          position:'absolute', inset:0,
-          backgroundImage:'url(/images/hero-couple.jpg)',
-          backgroundSize:'cover', backgroundPosition:'center top',
-          opacity:0.15, pointerEvents:'none',
-        }} />
-        {/* subtle gradient overlay so text always readable */}
-        <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom, rgba(13,21,32,.4) 0%, rgba(13,21,32,.2) 50%, rgba(13,21,32,.6) 100%)', pointerEvents:'none' }} />
+      {/* DARK HERO — bg pic opacity 0.15 */}
+      <section style={{ background:'linear-gradient(160deg,#0d1520 0%,#172035 55%,#0d1520 100%)', position:'relative', overflow:'hidden', padding:'52px 20px 56px' }}>
+        <div style={{ position:'absolute', inset:0, backgroundImage:'url(/images/hero-couple.jpg)', backgroundSize:'cover', backgroundPosition:'center 30%', opacity:0.15, pointerEvents:'none' }} />
+        <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom,rgba(13,21,32,.5) 0%,rgba(13,21,32,.1) 50%,rgba(13,21,32,.65) 100%)', pointerEvents:'none' }} />
 
         <div style={{ position:'relative', maxWidth:480, margin:'0 auto', textAlign:'center' }}>
-          {/* Live badge */}
-          <div style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(26,115,232,.18)', border:'1px solid rgba(26,115,232,.35)', borderRadius:20, padding:'5px 15px', marginBottom:22 }}>
-            <span style={{ width:7, height:7, background:'#34a853', borderRadius:'50%', display:'inline-block', animation:'pulse 1.5s infinite' }} />
-            <span style={{ fontSize:'0.77rem', fontWeight:600, color:'rgba(255,255,255,.85)' }}>Thousands chatting right now</span>
+          <div style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(26,115,232,.2)', border:'1px solid rgba(26,115,232,.4)', borderRadius:20, padding:'5px 15px', marginBottom:22 }}>
+            <span style={{ width:7, height:7, background:'#22c55e', borderRadius:'50%', display:'inline-block', animation:'pulse 1.5s infinite' }} />
+            <span style={{ fontSize:'0.77rem', fontWeight:600, color:'rgba(255,255,255,.88)' }}>Thousands chatting right now</span>
           </div>
 
-          <h1 style={{ fontFamily:'Outfit,sans-serif', fontWeight:900, fontSize:'clamp(1.6rem,5.5vw,2.4rem)', color:'#fff', marginBottom:14, lineHeight:1.18, textShadow:'0 2px 12px rgba(0,0,0,.4)' }}>
+          <h1 style={{ fontFamily:'Outfit,sans-serif', fontWeight:900, fontSize:'clamp(1.7rem,5.5vw,2.5rem)', color:'#fff', marginBottom:14, lineHeight:1.18, textShadow:'0 2px 16px rgba(0,0,0,.5)' }}>
             Welcome to{' '}
-            <span style={{ background:'linear-gradient(135deg,#4d9fff,#aa44ff)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
-              ChatsGenZ
-            </span>
+            <span style={{ background:'linear-gradient(135deg,#60a5fa,#a78bfa)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>ChatsGenZ</span>
           </h1>
 
-          <p style={{ color:'rgba(255,255,255,.72)', fontSize:'clamp(0.875rem,2.5vw,1rem)', lineHeight:1.8, maxWidth:400, margin:'0 auto 36px', textShadow:'0 1px 6px rgba(0,0,0,.3)' }}>
+          <p style={{ color:'rgba(255,255,255,.75)', fontSize:'clamp(0.875rem,2.5vw,1rem)', lineHeight:1.8, maxWidth:400, margin:'0 auto 36px', textShadow:'0 1px 8px rgba(0,0,0,.4)' }}>
             Next generation free live chat. Talk to strangers, make friends, video chat, earn ranks, send gifts and play games — no registration needed.
           </p>
 
-          {/* 3 BUTTONS */}
-          <div style={{ display:'flex', flexDirection:'column', gap:12, maxWidth:290, margin:'0 auto' }}>
-            <button onClick={()=>setModal('login')} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'14px 20px', borderRadius:12, border:'none', cursor:'pointer', background:'linear-gradient(135deg,#1a73e8,#1464cc)', color:'#fff', fontWeight:800, fontSize:'0.95rem', fontFamily:'Outfit,sans-serif', boxShadow:'0 6px 20px rgba(26,115,232,.45)', transition:'transform .15s' }}
-              onMouseEnter={e=>e.currentTarget.style.transform='translateY(-1px)'}
+          <div style={{ display:'flex', flexDirection:'column', gap:12, maxWidth:300, margin:'0 auto' }}>
+            <button onClick={()=>setModal('login')} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'14px 20px', borderRadius:12, border:'none', cursor:'pointer', background:'linear-gradient(135deg,#1a73e8,#1464cc)', color:'#fff', fontWeight:800, fontSize:'0.95rem', fontFamily:'Outfit,sans-serif', boxShadow:'0 6px 22px rgba(26,115,232,.5)', transition:'transform .15s' }}
+              onMouseEnter={e=>e.currentTarget.style.transform='translateY(-2px)'}
               onMouseLeave={e=>e.currentTarget.style.transform='translateY(0)'}>
-              <i className="fi fi-sr-sign-in" /> Login
+              <i className="fi fi-sr-sign-in" style={{ fontSize:16 }} /> Login
             </button>
-            <button onClick={()=>setModal('guest')} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'14px 20px', borderRadius:12, border:'1.5px solid rgba(255,255,255,.25)', cursor:'pointer', background:'rgba(255,255,255,.1)', color:'#fff', fontWeight:700, fontSize:'0.9rem', fontFamily:'Outfit,sans-serif', backdropFilter:'blur(4px)' }}>
-              <i className="fi fi-sr-user" /> Enter as Guest
+            <button onClick={()=>setModal('guest')} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'14px 20px', borderRadius:12, border:'1.5px solid rgba(255,255,255,.28)', cursor:'pointer', background:'rgba(255,255,255,.1)', color:'#fff', fontWeight:700, fontSize:'0.9rem', fontFamily:'Outfit,sans-serif', backdropFilter:'blur(4px)', transition:'all .15s' }}
+              onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,.18)'}
+              onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,.1)'}>
+              <i className="fi fi-sr-user" style={{ fontSize:16 }} /> Enter as Guest
             </button>
-            <button onClick={()=>setModal('register')} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'14px 20px', borderRadius:12, border:'1.5px solid rgba(170,68,255,.4)', cursor:'pointer', background:'rgba(170,68,255,.12)', color:'rgba(255,255,255,.88)', fontWeight:700, fontSize:'0.9rem', fontFamily:'Outfit,sans-serif' }}>
-              <i className="fi fi-sr-user-add" /> New Here? Register Free
+            <button onClick={()=>setModal('register')} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'14px 20px', borderRadius:12, border:'1.5px solid rgba(167,139,250,.45)', cursor:'pointer', background:'rgba(124,58,237,.15)', color:'rgba(255,255,255,.9)', fontWeight:700, fontSize:'0.9rem', fontFamily:'Outfit,sans-serif', transition:'all .15s' }}
+              onMouseEnter={e=>e.currentTarget.style.background='rgba(124,58,237,.28)'}
+              onMouseLeave={e=>e.currentTarget.style.background='rgba(124,58,237,.15)'}>
+              <i className="fi fi-sr-user-add" style={{ fontSize:16 }} /> New Here? Register Free
             </button>
           </div>
         </div>
       </section>
 
       {/* WHITE SEO SECTION */}
-      <section style={{ background:'#fff', padding:'40px 20px 52px' }}>
+      <section style={{ background:'#fff', padding:'44px 20px 56px' }}>
         <div style={{ maxWidth:860, margin:'0 auto' }}>
-          <h2 style={{ fontFamily:'Outfit,sans-serif', fontWeight:900, fontSize:'clamp(1.1rem,3vw,1.4rem)', color:'#202124', marginBottom:20 }}>
+          <h2 style={{ fontFamily:'Outfit,sans-serif', fontWeight:900, fontSize:'clamp(1.15rem,3vw,1.45rem)', color:'#111827', marginBottom:20 }}>
             Join ChatsGenZ — Free Live Chat for Everyone
           </h2>
-          <div style={{ fontSize:'clamp(0.875rem,2vw,0.95rem)', color:'#3c4043', lineHeight:1.9 }}>
+          <div style={{ fontSize:'clamp(0.875rem,2vw,0.95rem)', color:'#374151', lineHeight:1.9 }}>
             <p style={{ marginBottom:16 }}>
-              ChatsGenZ is a completely free <strong>live chatting site</strong> and <strong>stranger chatting site</strong>. Join as a guest instantly or create a free account to unlock your full profile, friends list, private messaging, gold coins, XP levels, and rank eligibility. Enjoy <strong>public cam chat</strong>, <strong>video call chat</strong>, <strong>audio call chat</strong>, quiz rooms, virtual gifts — all free.
+              ChatsGenZ is a completely free <strong>live chatting site</strong> and <strong>stranger chatting site</strong>. Join as a guest instantly or create a free account to unlock your full profile, friends list, private messaging, gold coins, XP levels, and rank eligibility. Enjoy <strong>public cam chat</strong>, <strong>video call chat</strong>, <strong>audio call chat</strong>, quiz rooms, virtual gifts — all free, forever.
             </p>
-            <div style={{ background:'#fffbea', border:'1.5px solid #fce18a', borderRadius:12, padding:'16px 18px', marginBottom:16 }}>
-              <div style={{ fontWeight:800, color:'#7d5e00', fontSize:'0.9rem', marginBottom:8 }}>⚠️ Important — Read Before Registering</div>
-              <ul style={{ margin:0, paddingLeft:16, color:'#7d5e00', fontSize:'0.85rem', lineHeight:2.1, listStyle:'disc' }}>
-                <li><strong>Gender cannot be changed</strong> after registration — affects rank eligibility permanently.</li>
-                <li><strong>You must be 18+</strong> to access adult chat rooms.</li>
-                <li><strong>A 6-digit OTP</strong> is sent to your email after registration — verify to access ChatsGenZ.</li>
-                <li><strong>One account per person.</strong> Multiple accounts to bypass bans = permanent ban on all.</li>
+
+            {/* HIGHLIGHTED WARNING BOX */}
+            <div style={{ background:'linear-gradient(135deg,#fffbeb,#fef3c7)', border:'2px solid #f59e0b', borderRadius:14, padding:'18px 20px', marginBottom:20, boxShadow:'0 2px 12px rgba(245,158,11,.15)' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
+                <div style={{ width:32, height:32, background:'#f59e0b', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                  <span style={{ fontSize:16 }}>⚠️</span>
+                </div>
+                <strong style={{ color:'#78350f', fontSize:'0.95rem', fontFamily:'Outfit,sans-serif', fontWeight:900 }}>
+                  Important — Please Read Before Registering
+                </strong>
+              </div>
+              <ul style={{ margin:0, paddingLeft:18, color:'#92400e', fontSize:'0.875rem', lineHeight:2.1 }}>
+                <li><strong>Gender cannot be changed after registration</strong> — it affects your rank eligibility, room access, and profile permanently. Choose carefully.</li>
+                <li><strong>You must be 18 years or older</strong> to register and access adult chat rooms on ChatsGenZ.</li>
+                <li><strong>A 6-digit OTP</strong> is sent to your email after registration — you must verify your email to access ChatsGenZ.</li>
+                <li><strong>One account per person.</strong> Multiple accounts to bypass bans will result in permanent bans on all accounts.</li>
+                <li><strong>Username must be appropriate.</strong> Offensive, impersonating, or spam usernames will be removed without notice.</li>
               </ul>
             </div>
+
             <p>
-              ChatsGenZ is the fastest growing <strong>new chatting site</strong> — users from 50+ countries, free forever for everyone.
+              ChatsGenZ is the fastest growing <strong>new chatting site</strong> with users from 50+ countries. From Hindi chat to USA chat, from <strong>friendly chatrooms</strong> to <strong>adult chat</strong> — join thousands chatting right now. Free forever, for everyone.
             </p>
           </div>
         </div>
@@ -556,14 +457,15 @@ export default function Login() {
 
       <Footer />
 
-      {modal === 'login'    && <LoginModal    onClose={()=>setModal(null)} />}
-      {modal === 'guest'    && <GuestModal    onClose={()=>setModal(null)} />}
-      {modal === 'register' && <RegisterModal onClose={()=>setModal(null)} />}
+      {modal==='login'    && <LoginModal    onClose={()=>setModal(null)} />}
+      {modal==='guest'    && <GuestModal    onClose={()=>setModal(null)} />}
+      {modal==='register' && <RegisterModal onClose={()=>setModal(null)} />}
 
       <style>{`
         @keyframes spin  { to { transform:rotate(360deg) } }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
-        select option    { background:#fff; color:#202124; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+        select option    { background:#fff; color:#111827; }
+        button:active    { transform:scale(.98) !important; }
       `}</style>
     </>
   )
