@@ -1,115 +1,96 @@
 import PageLayout from '../../components/PageLayout.jsx'
 
-const PLATFORM_STAFF = [
-  { key:'moderator',  label:'Moderator',  level:11, color:'#00AAFF',
-    desc:'Front-line platform moderator. Monitors chat rooms, enforces rules, handles reports.',
-    perms:['Mute users platform-wide','Kick users from any room','Issue temporary bans (up to 7 days)','Review and action user reports','Access moderation dashboard'] },
-  { key:'admin',      label:'Admin',      level:12, color:'#FF4444',
-    desc:'Senior staff with elevated privileges. Manages serious violations and staff.',
-    perms:['All Moderator permissions','Issue permanent bans','Manage Moderator accounts','Resolve escalated reports','Access full admin panel'] },
-  { key:'superadmin', label:'Superadmin', level:13, color:'#FF00FF',
-    desc:'Platform-level administrator. Responsible for platform-wide configuration.',
-    perms:['All Admin permissions','Manage Admin accounts','Platform-wide settings','Override any moderation decision','Access financial and user data reports'] },
-  { key:'owner',      label:'Owner',      level:14, color:'#FFD700',
-    desc:'Platform founder with absolute authority. Final decision on everything.',
-    perms:['Full platform control','All system permissions','Final authority on all decisions','Configure platform infrastructure'] },
+const ROOM_STAFF = [
+  {
+    key: 'mod', label: 'Room Moderator', color: '#00bb88', icon: 'moderator',
+    desc: 'Room Moderators are appointed by Room Owners to help manage day-to-day activity inside a specific chat room. A Room Moderator is trusted to maintain a positive and safe atmosphere in the room. They are usually long-standing members who know the room rules well and are respected by other members.',
+    perms: ['Mute disruptive users inside the room', 'Kick rule-breaking users from the room', 'Delete inappropriate messages', 'Manage webcam sessions in the room', 'Issue temporary room-level bans'],
+  },
+  {
+    key: 'admin_room', label: 'Room Admin', color: '#ff8800', icon: 'admin',
+    desc: 'Room Admins are senior room staff with extended control over the chat room. A Room Admin assists the Room Owner in managing the room and has the authority to make bigger decisions like banning users and appointing Room Moderators. Room Admins are highly trusted members of the room community.',
+    perms: ['All Room Moderator permissions', 'Issue longer and permanent room bans', 'Appoint and remove Room Moderators', 'Manage room announcements and notices', 'Edit room settings with Owner approval'],
+  },
+  {
+    key: 'owner_room', label: 'Room Owner', color: '#FFD700', icon: 'owner',
+    desc: 'The Room Owner has absolute authority over their individual chat room. They are responsible for everything that happens inside the room — from setting rules to managing staff. Room Owners are also the only people who can award special member ranks like VIP Female, Butterfly, Fairy, VIP Male, Ninja, and Legend to deserving members in their room.',
+    perms: ['Full control over the chat room', 'Appoint and remove Room Admins and Moderators', 'Award VIP, Butterfly, Fairy, Ninja, Legend ranks', 'Set room rules, restrictions, and entry requirements', 'Transfer room ownership to another user'],
+  },
 ]
 
-const ROOM_STAFF = [
-  { role:'Room Moderator', level:4, color:'#00bb88',
-    desc:'Appointed by Room Owners. Keeps individual rooms safe.',
-    perms:['Mute users in their room','Kick users from their room','Delete messages in room','Manage cam sessions'] },
-  { role:'Room Admin',     level:5, color:'#ff8800',
-    desc:'Senior room staff with extended room management powers.',
-    perms:['All Room Moderator permissions','Ban users from their room','Appoint Room Moderators','Manage room announcements'] },
-  { role:'Room Owner',     level:6, color:'#FFD700',
-    desc:'Creator or assigned owner of a chat room. Full authority in their room.',
-    perms:['All Room Admin permissions','Award VIP/Butterfly/Ninja/Fairy/Legend ranks','Set room rules and requirements','Transfer room ownership'] },
+const PLATFORM_STAFF = [
+  {
+    key: 'moderator', label: 'Moderator', color: '#00AAFF', icon: 'moderator',
+    desc: 'Platform Moderators are the front-line staff of ChatsGenZ. They monitor all chat rooms across the platform, handle user reports, enforce community rules, and ensure every room remains a safe and respectful place. Moderators are appointed by Admins or higher after a careful review of their activity and trustworthiness on the platform.',
+    perms: ['Mute users across the entire platform', 'Kick users from any chat room', 'Issue temporary bans (up to 7 days)', 'Review and take action on user reports', 'Access the moderation dashboard', 'Monitor all rooms for rule violations'],
+  },
+  {
+    key: 'admin', label: 'Admin', color: '#FF4444', icon: 'admin',
+    desc: 'Admins are senior platform staff with significantly elevated authority. They handle escalated cases that Moderators cannot resolve, manage the Moderator team, and work closely with Superadmins to maintain the platform. Admins have access to the full Admin Panel and can take serious actions like issuing permanent bans. They are appointed by Superadmins or the Owner.',
+    perms: ['All Moderator permissions', 'Issue permanent platform bans', 'Manage and appoint Moderators', 'Resolve escalated reports and appeals', 'Access full admin panel and user management', 'Review and remove harmful content across all rooms'],
+  },
+  {
+    key: 'superadmin', label: 'Superadmin', color: '#FF00FF', icon: 'superadmin',
+    desc: 'Superadmins are the highest level of platform staff on ChatsGenZ below the Owner. They have near-complete control over the platform and are responsible for managing the Admin team, configuring platform-wide settings, and making high-level moderation decisions. Superadmins are appointed exclusively by the Owner and are deeply trusted individuals within the ChatsGenZ organisation.',
+    perms: ['All Admin permissions', 'Manage and appoint Admins', 'Configure platform-wide settings and features', 'Override any moderation decision', 'Access all reports, financial data, and user analytics', 'Manage platform announcements and updates'],
+  },
 ]
+
+function StaffCard({ r }) {
+  return (
+    <div style={{ background:'#fff', border:'1px solid #e8eaed', borderRadius:14, padding:'20px 18px', marginBottom:18 }}>
+      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:12 }}>
+        <img
+          src={`/icons/ranks/${r.icon}.svg`}
+          alt={r.label}
+          style={{ width:34, height:34, objectFit:'contain', flexShrink:0 }}
+          onError={e => { e.target.style.display='none' }}
+        />
+        <span style={{ fontWeight:800, fontSize:'1rem', color:r.color, fontFamily:'Outfit,sans-serif' }}>{r.label}</span>
+      </div>
+      <p style={{ fontSize:'0.875rem', color:'#3c4043', lineHeight:1.75, marginBottom:14 }}>{r.desc}</p>
+      <div style={{ background:'#f8f9fa', borderRadius:9, padding:'12px 14px' }}>
+        <div style={{ fontSize:'0.78rem', fontWeight:700, color:'#5f6368', marginBottom:8, textTransform:'uppercase', letterSpacing:'0.5px' }}>Permissions</div>
+        <ul style={{ margin:0, padding:0, listStyle:'none' }}>
+          {r.perms.map((p,i) => (
+            <li key={i} style={{ display:'flex', alignItems:'flex-start', gap:8, fontSize:'0.84rem', color:'#3c4043', marginBottom:i<r.perms.length-1?6:0 }}>
+              <span style={{ color:'#34a853', marginTop:2, flexShrink:0 }}>✓</span>{p}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  )
+}
 
 export default function Moderation() {
   return (
     <PageLayout seo={{
-      title: 'Moderation — ChatsGenZ Staff Roles and Permissions',
-      description: 'ChatsGenZ moderation structure. Platform staff ranks from Moderator to Owner, room staff roles, and complete permissions system that keeps ChatsGenZ safe.',
-      keywords: 'ChatsGenZ moderation, chat moderator, ChatsGenZ staff ranks, ChatsGenZ admin, room moderator, platform staff chatsgenz, chat safety team',
+      title: 'Moderation — ChatsGenZ Staff Roles and Platform Safety',
+      description: 'ChatsGenZ moderation structure explained. Room Moderators, Room Admins, Room Owners, platform Moderators, Admins, and Superadmins — all roles and permissions described in detail.',
+      keywords: 'ChatsGenZ moderation, ChatsGenZ moderator, ChatsGenZ admin, room moderator chatsgenz, platform staff chatsgenz, ChatsGenZ safety team, chat moderation',
       canonical: '/moderation',
     }}>
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 20px 48px' }}>
-        <h1 style={{ fontFamily:'Outfit,sans-serif', fontWeight:900, fontSize:'clamp(1.5rem,4vw,2rem)', color:'#202124', marginBottom:8 }}>Moderation</h1>
-        <p style={{ color:'#5f6368', fontSize:'0.95rem', marginBottom:32, lineHeight:1.6 }}>
-          ChatsGenZ uses a two-tier moderation system — Platform Staff who manage the entire platform, and Room Staff who manage individual chat rooms.
+      <div style={{ maxWidth: 860, margin: '0 auto', padding: '28px 18px 48px' }}>
+        <h1 style={{ fontFamily:'Outfit,sans-serif', fontWeight:900, fontSize:'clamp(1.4rem,4vw,1.9rem)', color:'#202124', marginBottom:8 }}>Moderation</h1>
+        <p style={{ color:'#5f6368', fontSize:'0.92rem', marginBottom:32, lineHeight:1.65 }}>
+          ChatsGenZ takes safety and community management seriously. We have a two-tier moderation system — Room Staff who manage individual chat rooms, and Platform Staff who manage the entire ChatsGenZ platform. Every staff member is carefully selected and trusted.
         </p>
 
-        {/* PLATFORM STAFF */}
-        <h2 style={{ fontFamily:'Outfit,sans-serif', fontWeight:800, fontSize:'1.1rem', color:'#202124', marginBottom:14 }}>Platform Staff</h2>
-        <div style={{ background:'#fff', border:'1px solid #e8eaed', borderRadius:12, overflow:'hidden', marginBottom:36 }}>
-          <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'0.875rem' }}>
-            <thead>
-              <tr style={{ background:'#f8f9fa', borderBottom:'2px solid #e8eaed' }}>
-                <th style={{ padding:'11px 16px', textAlign:'left', fontWeight:700, color:'#202124' }}>Rank</th>
-                <th style={{ padding:'11px 16px', textAlign:'center', fontWeight:700, color:'#202124', width:60 }}>Level</th>
-                <th style={{ padding:'11px 16px', textAlign:'left', fontWeight:700, color:'#202124' }}>Description</th>
-                <th style={{ padding:'11px 16px', textAlign:'left', fontWeight:700, color:'#202124' }}>Key Permissions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {PLATFORM_STAFF.map((s,i) => (
-                <tr key={s.key} style={{ borderBottom:'1px solid #f1f3f4', background:i%2===0?'#fff':'#fafafa', verticalAlign:'top' }}>
-                  <td style={{ padding:'13px 16px' }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                      <img src={`/icons/ranks/${s.key}.svg`} alt={s.label} style={{ width:24, height:24 }}
-                        onError={e => { e.target.style.display='none' }} />
-                      <span style={{ fontWeight:700, color:s.color }}>{s.label}</span>
-                    </div>
-                  </td>
-                  <td style={{ padding:'13px 16px', textAlign:'center', fontWeight:700, color:'#202124' }}>{s.level}</td>
-                  <td style={{ padding:'13px 16px', color:'#5f6368', lineHeight:1.55, maxWidth:200 }}>{s.desc}</td>
-                  <td style={{ padding:'13px 16px' }}>
-                    <ul style={{ margin:0, padding:'0 0 0 16px', color:'#5f6368', lineHeight:1.8 }}>
-                      {s.perms.map((p,j) => <li key={j} style={{ fontSize:'0.82rem' }}>{p}</li>)}
-                    </ul>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
         {/* ROOM STAFF */}
-        <h2 style={{ fontFamily:'Outfit,sans-serif', fontWeight:800, fontSize:'1.1rem', color:'#202124', marginBottom:14 }}>Room Staff</h2>
-        <p style={{ fontSize:'0.875rem', color:'#5f6368', marginBottom:14, lineHeight:1.6 }}>Room Staff have authority only within their assigned room. They are appointed by Room Owners.</p>
-        <div style={{ background:'#fff', border:'1px solid #e8eaed', borderRadius:12, overflow:'hidden', marginBottom:28 }}>
-          <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'0.875rem' }}>
-            <thead>
-              <tr style={{ background:'#f8f9fa', borderBottom:'2px solid #e8eaed' }}>
-                <th style={{ padding:'11px 16px', textAlign:'left', fontWeight:700, color:'#202124' }}>Role</th>
-                <th style={{ padding:'11px 16px', textAlign:'center', fontWeight:700, color:'#202124', width:60 }}>Level</th>
-                <th style={{ padding:'11px 16px', textAlign:'left', fontWeight:700, color:'#202124' }}>Description</th>
-                <th style={{ padding:'11px 16px', textAlign:'left', fontWeight:700, color:'#202124' }}>Key Permissions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ROOM_STAFF.map((s,i) => (
-                <tr key={s.role} style={{ borderBottom:'1px solid #f1f3f4', background:i%2===0?'#fff':'#fafafa', verticalAlign:'top' }}>
-                  <td style={{ padding:'13px 16px' }}>
-                    <span style={{ fontWeight:700, color:s.color }}>{s.role}</span>
-                  </td>
-                  <td style={{ padding:'13px 16px', textAlign:'center', fontWeight:700, color:'#202124' }}>{s.level}</td>
-                  <td style={{ padding:'13px 16px', color:'#5f6368', lineHeight:1.55, maxWidth:200 }}>{s.desc}</td>
-                  <td style={{ padding:'13px 16px' }}>
-                    <ul style={{ margin:0, padding:'0 0 0 16px', color:'#5f6368', lineHeight:1.8 }}>
-                      {s.perms.map((p,j) => <li key={j} style={{ fontSize:'0.82rem' }}>{p}</li>)}
-                    </ul>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <h2 style={{ fontFamily:'Outfit,sans-serif', fontWeight:800, fontSize:'1rem', color:'#202124', marginBottom:14, display:'flex', alignItems:'center', gap:8 }}>
+          <span>🏠</span> Room Staff <span style={{ fontSize:'0.75rem', color:'#9aa0a6', fontWeight:600 }}>— manage individual rooms</span>
+        </h2>
+        {ROOM_STAFF.map(r => <StaffCard key={r.key} r={r} />)}
 
-        <div style={{ background:'#f8f9fa', border:'1px solid #e8eaed', borderRadius:10, padding:'14px 18px', fontSize:'0.875rem', color:'#5f6368' }}>
-          Interested in joining the moderation team? <a href="/contact" style={{ color:'#1a73e8', fontWeight:600 }}>Contact us</a> — we regularly look for active and trustworthy community members.
+        {/* PLATFORM STAFF */}
+        <h2 style={{ fontFamily:'Outfit,sans-serif', fontWeight:800, fontSize:'1rem', color:'#202124', marginBottom:14, marginTop:10, display:'flex', alignItems:'center', gap:8 }}>
+          <span>🛡️</span> Platform Staff <span style={{ fontSize:'0.75rem', color:'#9aa0a6', fontWeight:600 }}>— manage the entire platform</span>
+        </h2>
+        {PLATFORM_STAFF.map(r => <StaffCard key={r.key} r={r} />)}
+
+        <div style={{ background:'#f8f9fa', border:'1px solid #e8eaed', borderRadius:10, padding:'13px 16px', fontSize:'0.84rem', color:'#5f6368', lineHeight:1.6, marginTop:8 }}>
+          Interested in joining our moderation team? Be an active and respectful member of ChatsGenZ and <a href="/contact" style={{ color:'#1a73e8', fontWeight:600 }}>contact us</a>. We look for people who are genuinely passionate about keeping the community safe and friendly.
         </div>
       </div>
     </PageLayout>
