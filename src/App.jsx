@@ -1,9 +1,13 @@
 import { Routes, Route } from 'react-router-dom'
 import { Suspense, lazy } from 'react'
+import { AuthProvider } from './context/AuthContext.jsx'
 import ScrollToTop from './components/ScrollToTop.jsx'
 
 const Home          = lazy(() => import('./pages/Home.jsx'))
 const Login         = lazy(() => import('./pages/Login.jsx'))
+const VerifyEmail   = lazy(() => import('./pages/VerifyEmail.jsx'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword.jsx'))
+const ChatLobby     = lazy(() => import('./pages/chat/ChatLobby.jsx'))
 const NotFound      = lazy(() => import('./pages/NotFound.jsx'))
 const About         = lazy(() => import('./pages/info/About.jsx'))
 const Blog          = lazy(() => import('./pages/info/Blog.jsx'))
@@ -28,8 +32,8 @@ const Terms         = lazy(() => import('./pages/legal/Terms.jsx'))
 
 function Loader() {
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f1923' }}>
-      <div style={{ width: 36, height: 36, border: '3px solid rgba(255,255,255,.15)', borderTop: '3px solid #1a73e8', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#fff' }}>
+      <div style={{ width:36, height:36, border:'3px solid #e8eaed', borderTop:'3px solid #1a73e8', borderRadius:'50%', animation:'spin .8s linear infinite' }} />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
@@ -37,35 +41,38 @@ function Loader() {
 
 export default function App() {
   return (
-    <>
+    <AuthProvider>
       <ScrollToTop />
       <Suspense fallback={<Loader />}>
         <Routes>
-          <Route path="/"               element={<Home />} />
-          <Route path="/login"          element={<Login />} />
-          <Route path="/about"          element={<About />} />
-          <Route path="/blog"           element={<Blog />} />
-          <Route path="/chat-directory" element={<ChatDirectory />} />
-          <Route path="/community"      element={<Community />} />
-          <Route path="/contact"        element={<Contact />} />
-          <Route path="/disclaimer"     element={<Disclaimer />} />
-          <Route path="/faq"            element={<FAQ />} />
-          <Route path="/forum"          element={<Forum />} />
-          <Route path="/help"           element={<Help />} />
-          <Route path="/moderation"     element={<Moderation />} />
-          <Route path="/ranks"          element={<Ranks />} />
-          <Route path="/rti"            element={<RTI />} />
-          <Route path="/sitemap"        element={<Sitemap />} />
-          <Route path="/chat-rules"     element={<ChatRules />} />
-          <Route path="/cookie-policy"  element={<CookiePolicy />} />
-          <Route path="/dmca"           element={<DMCA />} />
-          <Route path="/legal"          element={<LegalTerms />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/safety"         element={<SafetyTerms />} />
-          <Route path="/terms"          element={<Terms />} />
-          <Route path="*"               element={<NotFound />} />
+          <Route path="/"                element={<Home />} />
+          <Route path="/login"           element={<Login />} />
+          <Route path="/verify-email"    element={<VerifyEmail />} />
+          <Route path="/reset-password"  element={<ResetPassword />} />
+          <Route path="/chat"            element={<ChatLobby />} />
+          <Route path="/about"           element={<About />} />
+          <Route path="/blog"            element={<Blog />} />
+          <Route path="/chat-directory"  element={<ChatDirectory />} />
+          <Route path="/community"       element={<Community />} />
+          <Route path="/contact"         element={<Contact />} />
+          <Route path="/disclaimer"      element={<Disclaimer />} />
+          <Route path="/faq"             element={<FAQ />} />
+          <Route path="/forum"           element={<Forum />} />
+          <Route path="/help"            element={<Help />} />
+          <Route path="/moderation"      element={<Moderation />} />
+          <Route path="/ranks"           element={<Ranks />} />
+          <Route path="/rti"             element={<RTI />} />
+          <Route path="/sitemap"         element={<Sitemap />} />
+          <Route path="/chat-rules"      element={<ChatRules />} />
+          <Route path="/cookie-policy"   element={<CookiePolicy />} />
+          <Route path="/dmca"            element={<DMCA />} />
+          <Route path="/legal"           element={<LegalTerms />} />
+          <Route path="/privacy-policy"  element={<PrivacyPolicy />} />
+          <Route path="/safety"          element={<SafetyTerms />} />
+          <Route path="/terms"           element={<Terms />} />
+          <Route path="*"                element={<NotFound />} />
         </Routes>
       </Suspense>
-    </>
+    </AuthProvider>
   )
 }
