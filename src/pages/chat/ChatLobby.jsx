@@ -19,55 +19,40 @@ const RANKS = {
   superadmin: { label:'Superadmin', color:'#FF00FF', icon:'superadmin.svg' },
   owner:      { label:'Owner',      color:'#FFD700', icon:'owner.svg'      },
 }
-
-// Gender border colors — from codychat: genmale=#03add8, genfemale=#ff99ff
-const GENDER_BORDER = {
-  male:   '#03add8',
-  female: '#ff99ff',
-  couple: '#9c6fde',
-  other:  '#cccccc',
-  bot:    'transparent',
-}
-
-const R = r => RANKS[r] || RANKS.guest
-const genderBorder = (gender, isBot) => isBot ? 'transparent' : (GENDER_BORDER[gender] || '#cccccc')
+const GENDER_BORDER = { male:'#03add8', female:'#ff99ff', couple:'#9c6fde', other:'#cccccc' }
+const R   = r => RANKS[r] || RANKS.guest
+const GBR = (g, r) => r === 'bot' ? '#cccccc' : (GENDER_BORDER[g] || '#cccccc')
 
 // ── HEADER ──────────────────────────────────────────────────
 function LobbyHeader({ user, onLogout }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
-
   useEffect(() => {
     const fn = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
     if (open) document.addEventListener('mousedown', fn)
     return () => document.removeEventListener('mousedown', fn)
   }, [open])
 
-  const rank    = user?.rank || 'guest'
-  const rinfo   = user?.rankInfo || R(rank)
-  const col     = rinfo.color || '#aaa'
-  const icon    = rinfo.icon  || 'guest.svg'
-  const label   = rinfo.label || rank
-  const staff   = ['moderator','admin','superadmin','owner'].includes(rank)
-  const isBot   = rank === 'bot'
-  const border  = genderBorder(user?.gender, isBot)
+  const rank  = user?.rank || 'guest'
+  const ri    = user?.rankInfo || R(rank)
+  const col   = ri.color || '#aaa'
+  const icon  = ri.icon  || 'guest.svg'
+  const label = ri.label || rank
+  const staff = ['moderator','admin','superadmin','owner'].includes(rank)
+  const border= GBR(user?.gender, rank)
 
   return (
-    <header style={{ background:'#fff', borderBottom:'1px solid #e8eaed', height:52, display:'flex', alignItems:'center', padding:'0 14px', gap:10, boxShadow:'0 1px 3px rgba(0,0,0,.07)', position:'sticky', top:0, zIndex:900 }}>
+    <header style={{ background:'#fff', borderBottom:'1px solid #e8eaed', height:52, display:'flex', alignItems:'center', padding:'0 16px', gap:10, position:'sticky', top:0, zIndex:900, boxShadow:'0 1px 3px rgba(0,0,0,.06)' }}>
       <div style={{ display:'flex', alignItems:'center', gap:7, flexShrink:0 }}>
         <img src="/favicon/favicon-192.png" alt="" style={{ width:26, height:26, borderRadius:6 }} onError={e=>e.target.style.display='none'} />
-        <span style={{ fontFamily:'Outfit,sans-serif', fontWeight:900, fontSize:'0.95rem', color:'#111827' }}>
-          Chats<span style={{ color:'#1a73e8' }}>GenZ</span>
-        </span>
+        <span style={{ fontFamily:'Outfit,sans-serif', fontWeight:900, fontSize:'0.95rem', color:'#111827' }}>Chats<span style={{ color:'#1a73e8' }}>GenZ</span></span>
       </div>
       <div style={{ flex:1 }} />
-
       <div ref={ref} style={{ position:'relative' }}>
         <button onClick={()=>setOpen(o=>!o)} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:8, padding:'4px 8px', borderRadius:8, transition:'background .15s' }}
           onMouseEnter={e=>e.currentTarget.style.background='#f3f4f6'}
           onMouseLeave={e=>e.currentTarget.style.background='none'}
         >
-          {/* Avatar with gender border */}
           <div style={{ position:'relative', flexShrink:0 }}>
             <img src={user?.avatar||'/default_images/avatar/default_guest.png'} alt=""
               style={{ width:32, height:32, borderRadius:'50%', objectFit:'cover', border:`2px solid ${border}`, display:'block' }}
@@ -75,17 +60,13 @@ function LobbyHeader({ user, onLogout }) {
             />
             <span style={{ position:'absolute', bottom:0, right:0, width:8, height:8, background:'#22c55e', borderRadius:'50%', border:'2px solid #fff' }} />
           </div>
-          {/* Name + rank */}
-          <div className="hdr-text" style={{ textAlign:'left', lineHeight:1 }}>
-            <div style={{ fontSize:'0.82rem', fontWeight:700, color:'#111827', maxWidth:88, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-              {user?.username||'Guest'}
-            </div>
-            <div style={{ display:'flex', alignItems:'center', gap:3, marginTop:3 }}>
+          <div className="hdr-text">
+            <div style={{ fontSize:'0.82rem', fontWeight:700, color:'#111827', maxWidth:88, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user?.username||'Guest'}</div>
+            <div style={{ display:'flex', alignItems:'center', gap:3, marginTop:2 }}>
               <img src={`/icons/ranks/${icon}`} alt="" style={{ width:12, height:12, objectFit:'contain' }} onError={e=>e.target.style.display='none'} />
               <span style={{ fontSize:'0.65rem', color:col, fontWeight:700 }}>{label}</span>
             </div>
           </div>
-          {/* No dropdown chevron icon */}
         </button>
 
         {open && (
@@ -118,18 +99,10 @@ function LobbyHeader({ user, onLogout }) {
                 </div>
               )}
             </div>
-
-            {/* Menu items with icons */}
-            {!user?.isGuest && (
-              <DBtn icon="fi-sr-user-circle" label="My Profile" onClick={()=>setOpen(false)} />
-            )}
-            {staff && (
-              <DBtn icon="fi-sr-dashboard" label="Admin Panel" color="#ef4444"
-                onClick={()=>{setOpen(false); window.location.href='/admin'}} />
-            )}
+            {!user?.isGuest && <DBtn icon="fi-sr-user-circle" label="My Profile" onClick={()=>setOpen(false)} />}
+            {staff && <DBtn icon="fi-sr-dashboard" label="Admin Panel" color="#ef4444" onClick={()=>{setOpen(false);window.location.href='/admin'}} />}
             <div style={{ borderTop:'1px solid #f3f4f6', marginTop:4, paddingTop:4 }}>
-              <DBtn icon="fi-sr-sign-out" label="Logout" color="#ef4444"
-                onClick={()=>{setOpen(false); onLogout()}} />
+              <DBtn icon="fi-sr-sign-out" label="Logout" color="#ef4444" onClick={()=>{setOpen(false);onLogout()}} />
             </div>
           </div>
         )}
@@ -145,19 +118,18 @@ function DBtn({ icon, label, color, onClick }) {
       onMouseEnter={e=>e.currentTarget.style.background='#f3f4f6'}
       onMouseLeave={e=>e.currentTarget.style.background='none'}
     >
-      <i className={`fi ${icon}`} style={{ fontSize:14, width:16, textAlign:'center', flexShrink:0, color:'inherit' }} />
+      <i className={`fi ${icon}`} style={{ fontSize:14, width:16, textAlign:'center', flexShrink:0 }} />
       {label}
     </button>
   )
 }
 
-// ── ROOM CARD ──────────────────────────────────────────────
+// ── ROOM CARD ────────────────────────────────────────────────
 function RoomCard({ room, onClick }) {
   const online = room.currentUsers || 0
   const max    = room.maxUsers || 500
   const pct    = Math.min((online/max)*100, 100)
   const barClr = pct>75?'#ef4444':pct>40?'#f59e0b':'#22c55e'
-
   const typeMap = {
     public:  { icon:'fi-sr-globe',      color:'#1a73e8', bg:'#e8f0fe', label:'Public'  },
     private: { icon:'fi-sr-lock',       color:'#dc2626', bg:'#fee2e2', label:'Private' },
@@ -170,44 +142,38 @@ function RoomCard({ room, onClick }) {
 
   return (
     <div onClick={()=>onClick(room)}
-      style={{ background:'#fff', border:'1px solid #e8eaed', borderRadius:12, cursor:'pointer', transition:'all .18s', overflow:'hidden', display:'flex', flexDirection:'column' }}
+      style={{ background:'#fff', border:'1px solid #e8eaed', borderRadius:12, cursor:'pointer', transition:'all .18s', overflow:'hidden' }}
       onMouseEnter={e=>{ e.currentTarget.style.boxShadow='0 4px 16px rgba(0,0,0,.1)'; e.currentTarget.style.borderColor='#1a73e8'; e.currentTarget.style.transform='translateY(-1px)' }}
-      onMouseLeave={e=>{ e.currentTarget.style.boxShadow='none'; e.currentTarget.style.borderColor='#e8eaed'; e.currentTarget.style.transform='translateY(0)' }}
+      onMouseLeave={e=>{ e.currentTarget.style.boxShadow='none'; e.currentTarget.style.borderColor='#e8eaed'; e.currentTarget.style.transform='none' }}
     >
       {/* Image */}
-      <div style={{ height:100, background:'linear-gradient(135deg,#1a73e820,#7c3aed20)', position:'relative', overflow:'hidden', flexShrink:0 }}>
+      <div style={{ height:96, background:'linear-gradient(135deg,#e8f0fe,#ede9fe)', position:'relative', overflow:'hidden' }}>
         <img src={room.icon||'/default_images/rooms/default_room.png'} alt=""
           style={{ width:'100%', height:'100%', objectFit:'cover' }}
           onError={e=>e.target.style.display='none'}
         />
-        <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top,rgba(0,0,0,.3) 0%,transparent 60%)' }} />
-        {/* Type badge */}
-        <div style={{ position:'absolute', top:7, left:7, display:'flex', alignItems:'center', gap:3, background:t.bg, padding:'2px 8px', borderRadius:20, boxShadow:'0 1px 4px rgba(0,0,0,.1)' }}>
+        <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top,rgba(0,0,0,.25) 0%,transparent 60%)' }} />
+        <div style={{ position:'absolute', top:7, left:7, display:'flex', alignItems:'center', gap:3, background:t.bg, padding:'2px 8px', borderRadius:20 }}>
           <i className={`fi ${t.icon}`} style={{ fontSize:10, color:t.color }} />
           <span style={{ fontSize:'0.62rem', color:t.color, fontWeight:700 }}>{t.label}</span>
         </div>
         {room.isPinned && <span style={{ position:'absolute', top:7, right:7, fontSize:13 }}>📌</span>}
-        {room.password && (
-          <div style={{ position:'absolute', bottom:7, right:7, background:'rgba(0,0,0,.45)', borderRadius:20, padding:'1px 7px', display:'flex', alignItems:'center', gap:3 }}>
-            <i className="fi fi-sr-lock" style={{ fontSize:9, color:'#fff' }} />
-          </div>
-        )}
+        {room.password && <i className="fi fi-sr-lock" style={{ position:'absolute', bottom:7, right:7, fontSize:11, color:'rgba(255,255,255,.9)' }} />}
       </div>
-
       {/* Info */}
-      <div style={{ padding:'10px 12px', flex:1, display:'flex', flexDirection:'column', gap:4 }}>
-        <div style={{ fontFamily:'Outfit,sans-serif', fontWeight:800, fontSize:'0.9rem', color:'#111827', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+      <div style={{ padding:'10px 12px' }}>
+        <div style={{ fontFamily:'Outfit,sans-serif', fontWeight:800, fontSize:'0.9rem', color:'#111827', marginBottom:3, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
           {room.name}
         </div>
         {room.description && (
-          <div style={{ fontSize:'0.74rem', color:'#6b7280', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1 }}>
+          <div style={{ fontSize:'0.74rem', color:'#6b7280', marginBottom:7, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
             {room.description}
           </div>
         )}
-        {/* Online */}
-        <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:2 }}>
-          <span style={{ width:6, height:6, background:barClr, borderRadius:'50%', display:'inline-block', flexShrink:0 }} />
-          <span style={{ fontSize:'0.71rem', color:'#6b7280', fontWeight:600, flexShrink:0 }}>{online} online</span>
+        {/* Online count */}
+        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+          <span style={{ width:6, height:6, background:barClr, borderRadius:'50%', flexShrink:0, display:'inline-block' }} />
+          <span style={{ fontSize:'0.71rem', color:'#6b7280', fontWeight:600 }}>{online} online</span>
           <div style={{ flex:1, height:2, background:'#f3f4f6', borderRadius:1 }}>
             <div style={{ height:'100%', width:`${pct}%`, background:barClr, borderRadius:1 }} />
           </div>
@@ -244,9 +210,7 @@ export default function ChatLobby() {
       if (r.ok && d.user) {
         if (d.freshToken) localStorage.setItem('cgz_token', d.freshToken)
         setUser({ ...d.user, token: d.freshToken||token })
-      } else if (r.status===401) {
-        localStorage.removeItem('cgz_token'); nav('/login'); return
-      }
+      } else if (r.status===401) { localStorage.removeItem('cgz_token'); nav('/login'); return }
     } catch {}
     fetchRooms()
   }
@@ -259,29 +223,23 @@ export default function ChatLobby() {
       const d = await r.json()
       if (r.ok) {
         const roomList = d.rooms || []
-        // Fetch live user counts
+        // Fetch live counts (no auth needed)
         try {
           const cr = await fetch(`${API}/api/rooms/live-counts`)
           const cd = await cr.json()
-          if (cd.counts) {
-            roomList.forEach(room => {
-              room.currentUsers = cd.counts[room._id] || room.currentUsers || 0
-            })
-          }
+          if (cd.counts) roomList.forEach(room => { room.currentUsers = cd.counts[room._id] || 0 })
         } catch {}
         setRooms(roomList)
-      }
-      else if (r.status===401) { localStorage.removeItem('cgz_token'); nav('/login') }
+      } else if (r.status===401) { localStorage.removeItem('cgz_token'); nav('/login') }
       else setError(d.error||'Failed to load rooms')
-    } catch { setError('Network error. Check connection.') }
+    } catch { setError('Network error.') }
     finally { setLoad(false) }
   }
 
   function logout() {
     const token = localStorage.getItem('cgz_token')
     if (token) fetch(`${API}/api/auth/logout`,{method:'POST',headers:{Authorization:`Bearer ${token}`}}).catch(()=>{})
-    localStorage.removeItem('cgz_token')
-    nav('/login')
+    localStorage.removeItem('cgz_token'); nav('/login')
   }
 
   function join(room) {
@@ -295,24 +253,20 @@ export default function ChatLobby() {
     else setPassE('Wrong password.')
   }
 
-  const filtered = rooms.filter(r =>
-    !search ||
-    r.name.toLowerCase().includes(search.toLowerCase()) ||
-    (r.description||'').toLowerCase().includes(search.toLowerCase())
-  )
-  const pinned  = filtered.filter(r=>r.isPinned)
-  const regular = filtered.filter(r=>!r.isPinned)
+  const filtered = rooms.filter(r => !search || r.name.toLowerCase().includes(search.toLowerCase()) || (r.description||'').toLowerCase().includes(search.toLowerCase()))
+  const pinned   = filtered.filter(r=>r.isPinned)
+  const regular  = filtered.filter(r=>!r.isPinned)
 
   return (
     <div style={{ minHeight:'100vh', background:'#f8f9fa' }}>
       <LobbyHeader user={user} onLogout={logout} />
 
-      {/* Search */}
-      <div style={{ background:'#fff', borderBottom:'1px solid #e8eaed', padding:'10px 14px' }}>
+      {/* Search bar */}
+      <div style={{ background:'#fff', borderBottom:'1px solid #e8eaed', padding:'10px 16px' }}>
         <div style={{ maxWidth:900, margin:'0 auto', position:'relative' }}>
-          <i className="fi fi-sr-search" style={{ position:'absolute', left:11, top:'50%', transform:'translateY(-50%)', color:'#9ca3af', fontSize:13 }} />
+          <i className="fi fi-sr-search" style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#9ca3af', fontSize:13 }} />
           <input
-            style={{ width:'100%', padding:'9px 14px 9px 34px', background:'#f9fafb', border:'1.5px solid #e8eaed', borderRadius:9, color:'#111827', fontSize:'0.875rem', outline:'none', boxSizing:'border-box', transition:'border-color .15s' }}
+            style={{ width:'100%', padding:'9px 14px 9px 36px', background:'#f9fafb', border:'1.5px solid #e8eaed', borderRadius:9, color:'#111827', fontSize:'0.875rem', outline:'none', boxSizing:'border-box', transition:'border-color .15s' }}
             placeholder="Search rooms..."
             value={search}
             onChange={e=>setSearch(e.target.value)}
@@ -323,44 +277,37 @@ export default function ChatLobby() {
       </div>
 
       {/* Content */}
-      <div style={{ maxWidth:900, margin:'0 auto', padding:'16px 14px 40px' }}>
-
+      <div style={{ maxWidth:900, margin:'0 auto', padding:'16px 16px 40px' }}>
         {load && (
           <div style={{ textAlign:'center', padding:'70px 0' }}>
             <div style={{ width:34, height:34, border:'3px solid #e8eaed', borderTop:'3px solid #1a73e8', borderRadius:'50%', animation:'spin .8s linear infinite', margin:'0 auto 12px' }} />
             <p style={{ color:'#9ca3af', fontSize:'0.875rem' }}>Loading rooms...</p>
           </div>
         )}
-
         {error && (
           <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'12px 16px', color:'#dc2626', fontSize:'0.875rem', textAlign:'center', marginBottom:16 }}>
-            ⚠️ {error}
-            <button onClick={fetchRooms} style={{ background:'none', border:'none', color:'#1a73e8', fontWeight:700, cursor:'pointer', marginLeft:8 }}>Retry</button>
+            ⚠️ {error} <button onClick={fetchRooms} style={{ background:'none', border:'none', color:'#1a73e8', fontWeight:700, cursor:'pointer', marginLeft:8 }}>Retry</button>
           </div>
         )}
-
         {!load && !error && (
           <>
-            {/* Pinned */}
+            {/* Featured */}
             {pinned.length > 0 && (
-              <div style={{ marginBottom:20 }}>
-                <div style={{ fontSize:'0.7rem', fontWeight:700, color:'#f59e0b', letterSpacing:'1px', textTransform:'uppercase', marginBottom:10 }}>📌 Featured</div>
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))', gap:12 }}>
+              <div style={{ marginBottom:24 }}>
+                <div style={{ fontSize:'0.7rem', fontWeight:700, color:'#f59e0b', letterSpacing:'1px', textTransform:'uppercase', marginBottom:12 }}>📌 Featured</div>
+                <div className="room-grid">
                   {pinned.map(r=><RoomCard key={r._id} room={r} onClick={join}/>)}
                 </div>
               </div>
             )}
-
-            {/* Regular */}
-            {regular.length===0 && pinned.length===0 && (
+            {/* All rooms */}
+            {regular.length===0 && pinned.length===0 ? (
               <div style={{ textAlign:'center', padding:'48px 20px', color:'#9ca3af' }}>
                 <i className="fi fi-sr-search" style={{ fontSize:32, display:'block', marginBottom:8 }} />
-                <p style={{ fontSize:'0.875rem' }}>{search ? 'No rooms found' : 'No rooms available'}</p>
+                <p style={{ fontSize:'0.875rem' }}>{search?'No rooms found':'No rooms available'}</p>
               </div>
-            )}
-
-            {regular.length > 0 && (
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))', gap:12 }}>
+            ) : (
+              <div className="room-grid">
                 {regular.map(r=><RoomCard key={r._id} room={r} onClick={join}/>)}
               </div>
             )}
@@ -387,12 +334,8 @@ export default function ChatLobby() {
                 onBlur={e=>e.target.style.borderColor='#e8eaed'}
                 autoFocus
               />
-              <button type="submit" style={{ padding:'11px', borderRadius:8, border:'none', background:'linear-gradient(135deg,#1a73e8,#1464cc)', color:'#fff', fontWeight:800, fontSize:'0.875rem', fontFamily:'Outfit,sans-serif', cursor:'pointer' }}>
-                Enter Room
-              </button>
-              <button type="button" onClick={()=>setPass(null)} style={{ padding:'9px', borderRadius:8, border:'1.5px solid #e8eaed', background:'none', color:'#6b7280', fontWeight:600, fontSize:'0.82rem', cursor:'pointer' }}>
-                Cancel
-              </button>
+              <button type="submit" style={{ padding:'11px', borderRadius:8, border:'none', background:'linear-gradient(135deg,#1a73e8,#1464cc)', color:'#fff', fontWeight:800, fontSize:'0.875rem', fontFamily:'Outfit,sans-serif', cursor:'pointer' }}>Enter Room</button>
+              <button type="button" onClick={()=>setPass(null)} style={{ padding:'9px', borderRadius:8, border:'1.5px solid #e8eaed', background:'none', color:'#6b7280', fontWeight:600, fontSize:'0.82rem', cursor:'pointer' }}>Cancel</button>
             </form>
           </div>
         </div>
@@ -401,6 +344,13 @@ export default function ChatLobby() {
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
         @media(max-width:400px){.hdr-text{display:none!important}}
+        .room-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 14px;
+        }
+        @media(max-width:800px){ .room-grid{ grid-template-columns: repeat(2,1fr); } }
+        @media(max-width:500px){ .room-grid{ grid-template-columns: 1fr; } }
       `}</style>
     </div>
   )
