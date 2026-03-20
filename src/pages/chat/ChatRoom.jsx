@@ -248,7 +248,10 @@ export default function ChatRoom() {
       const mData = await mRes.json()
       if (mRes.ok) setMessages(mData.messages || [])
 
-    } catch { nav('/chat'); return }
+    } catch (err) { 
+      console.error('initRoom error:', err)
+      // Don't redirect on network errors - just show what we have
+    }
     finally { setLoading(false) }
 
     // Connect socket
@@ -295,7 +298,24 @@ export default function ChatRoom() {
       setMessages(prev => prev.filter(m => m._id !== id))
     })
 
-    sock.on('error', e => console.error('Socket error:', e))
+    sock.on('error', e => {
+      console.error('Socket error:', e)
+      // Don't redirect — show error in chat
+    })
+
+    // Backend sends messageHistory on joinRoom (not newMessage)
+    sock.on('messageHistory', msgs => {
+      setMessages(msgs || [])
+    })
+
+    sock.on('systemMessage', msg => {
+      setMessages(prev => [...prev, {
+        _id: Date.now() + Math.random(),
+        type: 'system',
+        content: msg.text,
+        createdAt: new Date(),
+      }])
+    })
 
     socketRef.current = sock
   }
