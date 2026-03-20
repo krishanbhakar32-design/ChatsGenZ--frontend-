@@ -283,15 +283,13 @@ export default function ChatLobby() {
             {pinned.length>0 && (
               <div style={{ marginBottom:20 }}>
                 <div style={{ fontSize:'0.7rem', fontWeight:700, color:'#f59e0b', letterSpacing:'1px', textTransform:'uppercase', marginBottom:10 }}>📌 Featured</div>
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:10 }}>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))', gap:10 }}>
                   {pinned.map(r=><RoomCard key={r._id} room={r} onClick={join}/>)}
                 </div>
               </div>
             )}
 
-            <div style={{ fontSize:'0.7rem', fontWeight:700, color:'#9ca3af', letterSpacing:'1px', textTransform:'uppercase', marginBottom:10 }}>
-              All Rooms ({filtered.length})
-            </div>
+
 
             {regular.length===0 && (
               <div style={{ textAlign:'center', padding:'48px 20px', color:'#9ca3af' }}>
@@ -300,7 +298,7 @@ export default function ChatLobby() {
               </div>
             )}
 
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:10 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))', gap:10 }}>
               {regular.map(r=><RoomCard key={r._id} room={r} onClick={join}/>)}
             </div>
           </>
