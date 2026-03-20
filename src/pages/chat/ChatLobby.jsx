@@ -257,7 +257,20 @@ export default function ChatLobby() {
     try {
       const r = await fetch(`${API}/api/rooms`, { headers:{ Authorization:`Bearer ${token}` } })
       const d = await r.json()
-      if (r.ok) setRooms(d.rooms||[])
+      if (r.ok) {
+        const roomList = d.rooms || []
+        // Fetch live user counts
+        try {
+          const cr = await fetch(`${API}/api/rooms/live-counts`)
+          const cd = await cr.json()
+          if (cd.counts) {
+            roomList.forEach(room => {
+              room.currentUsers = cd.counts[room._id] || room.currentUsers || 0
+            })
+          }
+        } catch {}
+        setRooms(roomList)
+      }
       else if (r.status===401) { localStorage.removeItem('cgz_token'); nav('/login') }
       else setError(d.error||'Failed to load rooms')
     } catch { setError('Network error. Check connection.') }
