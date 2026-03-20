@@ -271,8 +271,11 @@ export default function ChatLobby() {
     try {
       const res = await fetch(`${API}/api/auth/me`, { headers:{ Authorization:`Bearer ${token}` } })
       const d   = await res.json()
-      if (res.ok && d.user) setUser({ ...d.user, token })
-      else if (res.status===401) { localStorage.removeItem('cgz_token'); nav('/login'); return }
+      if (res.ok && d.user) {
+        // freshToken = updated JWT with current rank from DB
+        if (d.freshToken) localStorage.setItem('cgz_token', d.freshToken)
+        setUser({ ...d.user, token: d.freshToken || token })
+      } else if (res.status===401) { localStorage.removeItem('cgz_token'); nav('/login'); return }
     } catch {}
     fetchRooms()
   }
