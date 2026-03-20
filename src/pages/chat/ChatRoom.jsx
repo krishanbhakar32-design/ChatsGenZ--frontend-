@@ -20,6 +20,10 @@ const RANKS = {
   superadmin: { label:'Superadmin', color:'#FF00FF', icon:'superadmin.svg' },
   owner:      { label:'Owner',      color:'#FFD700', icon:'owner.svg'      },
 }
+const GENDER_BORDER = {
+  male:'#03add8', female:'#ff99ff', couple:'#9c6fde', other:'#cccccc', bot:'transparent'
+}
+const gBorder = (gender, rank) => rank==='bot' ? 'transparent' : (GENDER_BORDER[gender]||'#cccccc')
 const R = r => RANKS[r] || RANKS.guest
 
 // ── USER ITEM ─────────────────────────────────────────────────
@@ -31,7 +35,7 @@ function UserItem({ u, onClick }) {
       onMouseLeave={e=>e.currentTarget.style.background='transparent'}
     >
       <div style={{ position:'relative', flexShrink:0 }}>
-        <img src={u.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{ width:30, height:30, borderRadius:'50%', objectFit:'cover', border:`2px solid ${ri.color}`, display:'block' }} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}} />
+        <img src={u.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{ width:30, height:30, borderRadius:'50%', objectFit:'cover', border:`2px solid ${gBorder(u.gender, u.rank)}`, display:'block' }} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}} />
         <span style={{ position:'absolute', bottom:0, right:0, width:7, height:7, background:'#22c55e', borderRadius:'50%', border:'1.5px solid #fff' }} />
       </div>
       <div style={{ flex:1, minWidth:0 }}>
@@ -61,7 +65,7 @@ function MsgBubble({ msg, myId, onUserClick }) {
   return (
     <div style={{ display:'flex', gap:8, padding:'3px 10px', flexDirection:isMe?'row-reverse':'row', alignItems:'flex-end' }}>
       {!isMe && (
-        <img src={msg.sender?.avatar||'/default_images/avatar/default_guest.png'} onClick={()=>onUserClick(msg.sender)} style={{ width:26, height:26, borderRadius:'50%', objectFit:'cover', border:`1.5px solid ${ri.color}`, flexShrink:0, cursor:'pointer', marginBottom:2 }} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}} />
+        <img src={msg.sender?.avatar||'/default_images/avatar/default_guest.png'} onClick={()=>onUserClick(msg.sender)} style={{ width:26, height:26, borderRadius:'50%', objectFit:'cover', border:`1.5px solid ${gBorder(msg.sender?.gender, msg.sender?.rank)}`, flexShrink:0, cursor:'pointer', marginBottom:2 }} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}} />
       )}
       <div style={{ maxWidth:'72%', display:'flex', flexDirection:'column', alignItems:isMe?'flex-end':'flex-start' }}>
         {!isMe && (
