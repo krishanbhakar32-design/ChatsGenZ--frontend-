@@ -11,22 +11,22 @@ const SOUND_FILES = {
   gift:        '/sounds/action.mp3',
   badge:       '/sounds/badge.mp3',
   levelup:     '/sounds/levelup.mp3',
-  quote:       '/sounds/quote.mp3',
   mute:        '/sounds/mute.mp3',
 }
-
 const cache = {}
-let enabled = localStorage.getItem('cgz_sound') !== 'false'
 
-export const isSoundEnabled = () => enabled
-export const toggleSound = () => {
-  enabled = !enabled
-  localStorage.setItem('cgz_sound', String(enabled))
-  return enabled
+function isEnabled() {
+  try { return localStorage.getItem('cgz_sound') !== 'false' } catch { return true }
 }
-
+export function toggleSound() {
+  try {
+    const next = !isEnabled()
+    localStorage.setItem('cgz_sound', String(next))
+    return next
+  } catch { return true }
+}
 export function playSound(name) {
-  if (!enabled) return
+  if (!isEnabled()) return
   const src = SOUND_FILES[name]; if (!src) return
   try {
     if (!cache[name]) { cache[name] = new Audio(src); cache[name].volume = 0.5 }
@@ -34,7 +34,6 @@ export function playSound(name) {
     cache[name].play().catch(()=>{})
   } catch {}
 }
-
 export const Sounds = {
   newMessage: ()=>playSound('new_message'),
   join:       ()=>playSound('join'),
