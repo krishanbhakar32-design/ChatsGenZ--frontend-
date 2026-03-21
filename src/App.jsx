@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import { Suspense, lazy } from 'react'
 import ScrollToTop from './components/ScrollToTop.jsx'
+import { ToastProvider } from './components/Toast.jsx'
 
 // Pages
 const Home          = lazy(() => import('./pages/Home.jsx'))
@@ -46,7 +47,7 @@ function Loader() {
 
 export default function App() {
   return (
-    <>
+    <ToastProvider>
       <ScrollToTop />
       <Suspense fallback={<Loader />}>
         <Routes>
@@ -86,6 +87,6 @@ export default function App() {
           <Route path="*"               element={<NotFound />} />
         </Routes>
       </Suspense>
-    </>
+    </ToastProvider>
   )
 }
