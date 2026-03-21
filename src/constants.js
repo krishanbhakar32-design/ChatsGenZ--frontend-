@@ -9,17 +9,17 @@
 // Must match RANKS object in backend/models/User.js
 export const RANKS = {
   owner:      { level: 14, label: 'Owner',       icon: 'owner.svg',      color: '#FFD700' },
-  superadmin: { level: 13, label: 'Superadmin',  icon: 'superadmin.svg', color: '#FF00FF' },
+  superadmin: { level: 13, label: 'Superadmin',  icon: 'super_admin.svg', color: '#FF00FF' },
   admin:      { level: 12, label: 'Admin',        icon: 'admin.svg',      color: '#FF4444' },
-  moderator:  { level: 11, label: 'Moderator',   icon: 'moderator.svg',  color: '#00AAFF' },
+  moderator:  { level: 11, label: 'Moderator',   icon: 'mod.svg',  color: '#00AAFF' },
   premium:    { level: 10, label: 'Premium',      icon: 'premium.svg',    color: '#AA44FF' },
   bot:        { level:  9, label: 'Bot',          icon: 'bot.svg',        color: '#888888' },
   legend:     { level:  8, label: 'Legend',       icon: 'legend.svg',     color: '#FF8800' },  // backend says legend.png — we use .svg (same file, rename if needed)
   fairy:      { level:  7, label: 'Fairy',        icon: 'fairy.svg',      color: '#FF88CC' },
   ninja:      { level:  6, label: 'Ninja',        icon: 'ninja.svg',      color: '#444444' },
   butterfly:  { level:  5, label: 'Butterfly',    icon: 'butterfly.svg',  color: '#FF66AA' },
-  vipmale:    { level:  4, label: 'VIP Male',     icon: 'vipmale.svg',    color: '#4488FF' },
-  vipfemale:  { level:  3, label: 'VIP Female',   icon: 'vipfemale.svg',  color: '#FF4488' },
+  vipmale:    { level:  4, label: 'VIP Male',     icon: 'vip_male.svg',    color: '#4488FF' },
+  vipfemale:  { level:  3, label: 'VIP Female',   icon: 'vip_female.svg',  color: '#FF4488' },
   user:       { level:  2, label: 'User',         icon: 'user.svg',       color: '#CCCCCC' },
   guest:      { level:  1, label: 'Guest',        icon: 'guest.svg',      color: '#888888' },
 }
