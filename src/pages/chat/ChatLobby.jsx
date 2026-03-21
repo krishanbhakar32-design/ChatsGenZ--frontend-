@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useToast } from '../../components/Toast.jsx'
 import { useNavigate } from 'react-router-dom'
 
 const API = import.meta.env.VITE_API_URL || 'https://chatsgenz-backend-production.up.railway.app'
@@ -54,7 +55,7 @@ function ProfileDropdown({ user, onClose, onLogout }) {
               {user?.username}
             </div>
             <div style={{ display:'flex', alignItems:'center', gap:5, marginTop:3 }}>
-              <img src={`/icons/ranks/${ri.icon}`} alt="" style={{ width:14, height:14 }} onError={e=>e.target.style.display='none'} />
+              <img src={`/icons/ranks/${ri.icon}`} alt="" className="rank-icon-sm" onError={e=>e.target.style.display='none'} />
               <span style={{ fontSize:'0.72rem', color:ri.color, fontWeight:800 }}>{ri.label}</span>
             </div>
           </div>
@@ -395,6 +396,7 @@ export default function ChatLobby() {
   const [editRoom, setEditRoom] = useState(null)
   const dropRef = useRef(null)
   const nav     = useNavigate()
+  const toast   = useToast()
   const token   = localStorage.getItem('cgz_token')
   const myLevel = RL(user?.rank)
   const canAdmin= myLevel >= 12
@@ -450,6 +452,13 @@ export default function ChatLobby() {
   }
 
   function join(room) {
+    // Frontend rank check
+    const typeMin = { staff: 11, admin: 12, member: 2 }
+    const minLevel = typeMin[room.type]
+    if (minLevel && myLevel < minLevel) {
+      toast?.show(`This room requires ${room.type} rank or higher`, 'error', 4000)
+      return
+    }
     if (room.password) setPassRoom(room)
     else nav(`/chat/${room._id}`)
   }
@@ -466,6 +475,7 @@ export default function ChatLobby() {
     try {
       await fetch(`${API}/api/rooms/${room._id}`, { method:'DELETE', headers:{ Authorization:`Bearer ${token}` } })
       setRooms(p => p.filter(x => x._id !== room._id))
+    toast?.show('Room deleted', 'success')
     } catch {}
   }
 
