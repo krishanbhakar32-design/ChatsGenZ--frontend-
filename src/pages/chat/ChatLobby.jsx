@@ -4,6 +4,159 @@ import { useNavigate } from 'react-router-dom'
 
 const API = import.meta.env.VITE_API_URL || 'https://chatsgenz-backend-production.up.railway.app'
 
+// ─────────────────────────────────────────────────────────────
+// STORY VIEWER MODAL — fullscreen story with progress bar
+// ─────────────────────────────────────────────────────────────
+function StoryViewer({ stories, startUserIdx, onClose }) {
+  const [uIdx, setUIdx] = useState(startUserIdx || 0)
+  const [sIdx, setSIdx] = useState(0)
+  const [progress, setProgress] = useState(0)
+  const timerRef = useRef(null)
+  const DURATION = 5000
+
+  const currentUser = stories[uIdx]
+  const currentStory = currentUser?.stories?.[sIdx]
+
+  useEffect(() => {
+    setProgress(0)
+    clearInterval(timerRef.current)
+    const start = Date.now()
+    timerRef.current = setInterval(() => {
+      const pct = Math.min(100, ((Date.now() - start) / DURATION) * 100)
+      setProgress(pct)
+      if (pct >= 100) advance()
+    }, 50)
+    return () => clearInterval(timerRef.current)
+  }, [uIdx, sIdx])
+
+  function advance() {
+    const user = stories[uIdx]
+    if (sIdx < (user?.stories?.length || 1) - 1) {
+      setSIdx(s => s + 1)
+    } else if (uIdx < stories.length - 1) {
+      setUIdx(u => u + 1); setSIdx(0)
+    } else {
+      onClose()
+    }
+  }
+  function back() {
+    if (sIdx > 0) setSIdx(s => s - 1)
+    else if (uIdx > 0) { setUIdx(u => u - 1); setSIdx(0) }
+  }
+
+  if (!currentUser || !currentStory) return null
+
+  return (
+    <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:9999, background:'rgba(0,0,0,.92)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <div onClick={e => e.stopPropagation()} style={{ position:'relative', width:'min(400px,100vw)', height:'min(700px,100vh)', background:'#000', borderRadius:12, overflow:'hidden' }}>
+        {/* Progress bars */}
+        <div style={{ position:'absolute', top:10, left:10, right:10, display:'flex', gap:3, zIndex:10 }}>
+          {currentUser.stories.map((_, i) => (
+            <div key={i} style={{ flex:1, height:3, background:'rgba(255,255,255,.35)', borderRadius:2, overflow:'hidden' }}>
+              <div style={{ height:'100%', background:'#fff', width: i < sIdx ? '100%' : i === sIdx ? `${progress}%` : '0%', transition: i === sIdx ? 'none' : 'none' }}/>
+            </div>
+          ))}
+        </div>
+        {/* User info */}
+        <div style={{ position:'absolute', top:22, left:12, right:48, display:'flex', alignItems:'center', gap:9, zIndex:10 }}>
+          <img src={currentUser.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{ width:36, height:36, borderRadius:'50%', border:'2px solid #fff', objectFit:'cover' }} onError={e=>e.target.src='/default_images/avatar/default_guest.png'}/>
+          <div>
+            <div style={{ color:'#fff', fontWeight:700, fontSize:'0.88rem', textShadow:'0 1px 4px rgba(0,0,0,.6)' }}>{currentUser.username}</div>
+            <div style={{ color:'rgba(255,255,255,.7)', fontSize:'0.68rem' }}>{new Date(currentStory.createdAt).toLocaleString([],{hour:'2-digit',minute:'2-digit'})}</div>
+          </div>
+        </div>
+        {/* Close */}
+        <button onClick={onClose} style={{ position:'absolute', top:12, right:12, zIndex:10, background:'none', border:'none', color:'#fff', fontSize:22, cursor:'pointer', lineHeight:1 }}>✕</button>
+        {/* Story image */}
+        <img src={currentStory.url} alt="" style={{ width:'100%', height:'100%', objectFit:'contain' }} onError={e=>{e.target.alt='Failed to load'}}/>
+        {/* Caption */}
+        {currentStory.caption && (
+          <div style={{ position:'absolute', bottom:0, left:0, right:0, background:'linear-gradient(transparent,rgba(0,0,0,.7))', padding:'32px 16px 16px', color:'#fff', fontSize:'0.9rem', textAlign:'center' }}>
+            {currentStory.caption}
+          </div>
+        )}
+        {/* Navigation tap zones */}
+        <div onClick={back}    style={{ position:'absolute', left:0, top:0, bottom:0, width:'35%', cursor:'pointer', zIndex:5 }}/>
+        <div onClick={advance} style={{ position:'absolute', right:0, top:0, bottom:0, width:'35%', cursor:'pointer', zIndex:5 }}/>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// STORIES BAR — horizontal scroll row above rooms
+// ─────────────────────────────────────────────────────────────
+function StoriesBar({ user, token }) {
+  const [stories, setStories] = useState([])
+  const [viewing, setViewing] = useState(null) // index to open
+  const [showAddMenu, setShowAddMenu] = useState(false)
+  const fileRef = useRef(null)
+  const isGuest = user?.isGuest || user?.rank === 'guest'
+
+  useEffect(() => {
+    fetch(`${API}/api/stories`, { headers:{ Authorization:`Bearer ${token}` } })
+      .then(r => r.json()).then(d => setStories(d.stories||[])).catch(()=>{})
+  }, [])
+
+  async function uploadStory(file) {
+    const caption = window.prompt('Add a caption (optional):') || ''
+    const fd = new FormData(); fd.append('story', file)
+    try {
+      const r = await fetch(`${API}/api/upload/story`, { method:'POST', headers:{ Authorization:`Bearer ${token}` }, body:fd })
+      const d = await r.json()
+      if (d.url) {
+        await fetch(`${API}/api/stories`, { method:'POST', headers:{ Authorization:`Bearer ${token}`, 'Content-Type':'application/json' }, body:JSON.stringify({ url:d.url, type:'image', caption }) })
+        // Refresh stories
+        fetch(`${API}/api/stories`, { headers:{ Authorization:`Bearer ${token}` } }).then(r=>r.json()).then(d=>setStories(d.stories||[])).catch(()=>{})
+      }
+    } catch(e) { alert('Story upload failed') }
+  }
+
+  return (
+    <>
+      {viewing !== null && <StoryViewer stories={stories} startUserIdx={viewing} onClose={()=>setViewing(null)}/>}
+      <div style={{ marginBottom:18, overflowX:'auto', paddingBottom:4 }}>
+        <div style={{ display:'flex', gap:12, minWidth:'max-content' }}>
+          {/* Add story button (not for guests) */}
+          {!isGuest && (
+            <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, cursor:'pointer', flexShrink:0 }} onClick={()=>fileRef.current?.click()}>
+              <div style={{ width:60, height:60, borderRadius:'50%', background:'linear-gradient(135deg,#e8f0fe,#c7d9fe)', border:'2.5px dashed #1a73e8', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, color:'#1a73e8', transition:'all .15s' }}
+                onMouseEnter={e=>e.currentTarget.style.background='#dce8fd'} onMouseLeave={e=>e.currentTarget.style.background='linear-gradient(135deg,#e8f0fe,#c7d9fe)'}>
+                +
+              </div>
+              <span style={{ fontSize:'0.65rem', fontWeight:600, color:'#6b7280', whiteSpace:'nowrap' }}>Add Story</span>
+              <input ref={fileRef} type="file" accept="image/*" style={{ display:'none' }} onChange={e=>e.target.files[0]&&uploadStory(e.target.files[0])}/>
+            </div>
+          )}
+
+          {/* Story bubbles */}
+          {stories.map((u, i) => {
+            const viewed = false // could track viewed state in localStorage
+            return (
+              <div key={u._id||i} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, cursor:'pointer', flexShrink:0 }} onClick={()=>setViewing(i)}>
+                <div style={{ width:60, height:60, borderRadius:'50%', padding:2, background: viewed ? 'linear-gradient(135deg,#e4e6ea,#e4e6ea)' : 'linear-gradient(135deg,#f97316,#ec4899,#8b5cf6)', flexShrink:0 }}>
+                  <img
+                    src={u.avatar||'/default_images/avatar/default_guest.png'} alt=""
+                    style={{ width:'100%', height:'100%', borderRadius:'50%', objectFit:'cover', border:'2.5px solid #fff', display:'block' }}
+                    onError={e=>e.target.src='/default_images/avatar/default_guest.png'}
+                  />
+                </div>
+                <span style={{ fontSize:'0.65rem', fontWeight:600, color:'#374151', whiteSpace:'nowrap', maxWidth:64, overflow:'hidden', textOverflow:'ellipsis' }}>{u.username}</span>
+              </div>
+            )
+          })}
+
+          {stories.length === 0 && !isGuest && (
+            <div style={{ display:'flex', alignItems:'center', padding:'0 8px', color:'#9ca3af', fontSize:'0.78rem', fontStyle:'italic' }}>
+              No stories yet. Be the first to share!
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  )
+}
+
 const RANKS = {
   guest:      { label:'Guest',      color:'#888888', icon:'guest.svg',       level:1  },
   user:       { label:'User',       color:'#aaaaaa', icon:'user.svg',        level:2  },
@@ -552,6 +705,9 @@ export default function ChatLobby() {
 
       {/* ── ROOM LIST ── */}
       <div style={{ maxWidth:860, margin:'0 auto', padding:'18px 20px 52px' }}>
+
+        {/* ── STORIES BAR ── */}
+        <StoriesBar user={user} token={token}/>
 
         {load && (
           <div style={{ textAlign:'center', padding:'80px 0' }}>
