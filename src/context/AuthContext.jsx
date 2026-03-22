@@ -17,7 +17,7 @@ export function AuthProvider({ children }) {
     })
       .then(r => r.json())
       .then(d => {
-        if (d.user)/ setUser({ ...d.user, token })
+        if (d.user) setUser({ ...d.user, token })
         else { localStorage.removeItem('cgz_token') }
       })
       .catch(() => {})
