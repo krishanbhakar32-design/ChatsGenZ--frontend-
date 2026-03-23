@@ -32,9 +32,9 @@ const GBR = (g,r) => r==='bot'?'transparent':({male:'#03add8',female:'#ff99ff',c
 const R   = r => RANKS[r] || RANKS.guest
 const RL  = r => RANKS[r]?.level || 0
 
-function RIcon({rank,size=14}) {
+function RIcon({rank,size=18}) {
   const ri = R(rank)
-  return <img src={`/icons/ranks/${ri.icon}`} alt="" style={{width:size,height:size,objectFit:'contain',background:'transparent',flexShrink:0}} onError={e=>e.target.style.display='none'}/>
+  return <img src={`/icons/ranks/${ri.icon}`} alt="" style={{width:size,height:size,objectFit:'contain',background:'transparent',flexShrink:0,display:'inline-block'}} onError={e=>e.target.style.display='none'}/>
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -139,13 +139,64 @@ function ProfileModal({user,myLevel,socket,roomId,onClose,onGift}) {
 // ─────────────────────────────────────────────────────────────
 // MESSAGE
 // ─────────────────────────────────────────────────────────────
-function Msg({msg,onMiniCard,onMention,myId,myLevel,socket,roomId}) {
-  const isSystem = msg.type==='system'
-  if (isSystem) return (
-    <div style={{textAlign:'center',padding:'3px 0'}}>
-      <span style={{fontSize:'0.72rem',color:'#9ca3af',background:'#f3f4f6',padding:'2px 14px',borderRadius:20}}>{msg.content}</span>
+
+// Inline YouTube player in chat
+function YTMessage({url}) {
+  const [expanded,setExpanded]=useState(false)
+  const [closed,setClosed]=useState(false)
+  const id=(url||'').match(/(?:v=|youtu\.be\/)([\w-]{11})/)?.[1]
+  if(closed||!id) return null
+  if(!expanded) return(
+    <div style={{display:'flex',alignItems:'center',gap:8,background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'6px 10px',maxWidth:240}}>
+      <img src={`https://img.youtube.com/vi/${id}/mqdefault.jpg`} alt="" style={{width:60,height:38,objectFit:'cover',borderRadius:5,flexShrink:0}}/>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontSize:'0.72rem',color:'#ef4444',fontWeight:700}}>▶ YouTube</div>
+      </div>
+      <div style={{display:'flex',gap:4,flexShrink:0}}>
+        <button onClick={()=>setExpanded(true)} style={{background:'#ef4444',border:'none',color:'#fff',borderRadius:6,padding:'3px 8px',cursor:'pointer',fontSize:'0.7rem',fontWeight:700}}>Play</button>
+        <button onClick={()=>setClosed(true)} style={{background:'#f3f4f6',border:'none',color:'#9ca3af',borderRadius:6,padding:'3px 6px',cursor:'pointer',fontSize:11}}>✕</button>
+      </div>
     </div>
   )
+  return(
+    <div style={{position:'relative',maxWidth:320,borderRadius:10,overflow:'hidden',border:'1px solid #e4e6ea'}}>
+      <button onClick={()=>setClosed(true)} style={{position:'absolute',top:4,right:4,zIndex:5,background:'rgba(0,0,0,.7)',border:'none',color:'#fff',borderRadius:'50%',width:22,height:22,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11}}>✕</button>
+      <button onClick={()=>setExpanded(false)} style={{position:'absolute',top:4,right:30,zIndex:5,background:'rgba(0,0,0,.7)',border:'none',color:'#fff',borderRadius:'50%',width:22,height:22,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10}}>−</button>
+      <iframe width="100%" height="180" src={`https://www.youtube.com/embed/${id}?autoplay=1`}
+        title="YouTube" frameBorder="0" allow="autoplay;encrypted-media" allowFullScreen style={{display:'block'}}/>
+    </div>
+  )
+}
+
+// System message config
+const SYS_CFG = {
+  join:   { icon:'👋', color:'#22c55e', bg:'#f0fdf4' },
+  leave:  { icon:'🚪', color:'#9ca3af', bg:'#f9fafb' },
+  kick:   { icon:'👢', color:'#f59e0b', bg:'#fffbeb' },
+  mute:   { icon:'🔇', color:'#f59e0b', bg:'#fffbeb' },
+  ban:    { icon:'🚫', color:'#ef4444', bg:'#fef2f2' },
+  mod:    { icon:'🛡️', color:'#6366f1', bg:'#eef2ff' },
+  dice:   { icon:'🎲', color:'#7c3aed', bg:'#f5f3ff' },
+  gift:   { icon:'🎁', color:'#ec4899', bg:'#fdf4ff' },
+  system: { icon:'📢', color:'#1a73e8', bg:'#eff6ff' },
+}
+
+function Msg({msg,onMiniCard,onMention,myId,myLevel,socket,roomId}) {
+  const isSystem = msg.type==='system'||msg.type==='join'||msg.type==='leave'||msg.type==='kick'||msg.type==='mute'||msg.type==='ban'||msg.type==='mod'||msg.type==='dice'
+  if (isSystem) {
+    const cfg = SYS_CFG[msg.type] || SYS_CFG.system
+    return (
+      <div style={{display:'flex',alignItems:'center',gap:8,padding:'4px 14px',margin:'1px 0'}}>
+        <img src='/default_images/avatar/default_system.png' alt='System'
+          style={{width:28,height:28,borderRadius:'50%',objectFit:'cover',border:'1.5px solid #e4e6ea',flexShrink:0,background:'#f3f4f6'}}
+          onError={e=>{e.target.style.display='none'}}/>
+        <div style={{background:cfg.bg,border:`1px solid ${cfg.color}33`,borderRadius:'0 10px 10px 10px',padding:'5px 12px',flex:1,maxWidth:'85%'}}>
+          <span style={{fontSize:'0.72rem',fontWeight:700,color:cfg.color,marginRight:6}}>{cfg.icon} System</span>
+          <span style={{fontSize:'0.78rem',color:'#374151'}}>{msg.content}</span>
+        </div>
+      </div>
+    )
+  }
   const ri=R(msg.sender?.rank), bdr=GBR(msg.sender?.gender,msg.sender?.rank)
   const col=msg.sender?.nameColor||ri.color
   const ts=new Date(msg.createdAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
@@ -184,8 +235,10 @@ function Msg({msg,onMiniCard,onMention,myId,myLevel,socket,roomId}) {
           {canDel&&<button onClick={()=>socket?.emit('deleteMessage',{messageId:msg._id,roomId})} style={{background:'none',border:'none',cursor:'pointer',color:'#d1d5db',fontSize:11,padding:0,marginLeft:4,display:'none'}} className="del-btn"><i className="fi fi-sr-trash"/></button>}
         </div>
         <div className="msg-bubble">
-          {msg.type==='gift'  ?<span>🎁 {msg.content}</span>
-          :msg.type==='image' ?<img src={msg.content} alt="" style={{maxWidth:200,borderRadius:8,display:'block'}}/>
+          {msg.type==='gift'    ?<span>🎁 {msg.content}</span>
+          :msg.type==='image'  ?<img src={msg.content} alt="" style={{maxWidth:200,borderRadius:8,display:'block'}}/>
+          :msg.type==='gif'    ?<img src={msg.content} alt="GIF" style={{maxWidth:220,borderRadius:8,display:'block'}}/>
+          :msg.type==='youtube'?<YTMessage url={msg.content}/>
           :renderContent(msg.content)}
         </div>
       </div>
@@ -294,12 +347,15 @@ function RightSidebar({users,myLevel,onUserClick,onClose}) {
 function LeftSidebar({room,nav,socket,roomId,onClose}) {
   const [panel,setPanel]=useState(null)
   const ITEMS=[
-    {id:'rooms',       icon:'fi-sr-house-chimney',label:'Room List'},
-    {id:'games',       icon:'fi-sr-dice',         label:'Games'},
-    {id:'store',       icon:'fi-sr-store-alt',    label:'Store'},
-    {id:'leaderboard', icon:'fi-sr-medal',        label:'Leaderboard'},
-    {id:'username',    icon:'fi-sr-edit',         label:'Change Username'},
-    {id:'premium',     icon:'fi-sr-crown',        label:'Buy Premium'},
+    {id:'rooms',       icon:'fi-sr-house-chimney',   label:'Room List',        color:'#1a73e8'},
+    {id:'news',        icon:'fi-sr-newspaper',        label:'News',             color:'#059669'},
+    {id:'wall',        icon:'fi-sr-user-pen',         label:'Friends Wall',     color:'#7c3aed'},
+    {id:'forum',       icon:'fi-sr-comments-alt',     label:'Forum',            color:'#f59e0b'},
+    {id:'games',       icon:'fi-sr-dice',             label:'Games',            color:'#ec4899'},
+    {id:'leaderboard', icon:'fi-sr-medal',            label:'Leaderboard',      color:'#d97706'},
+    {id:'username',    icon:'fi-sr-id-badge',         label:'Change Username',  color:'#6366f1'},
+    {id:'contact',     icon:'fi-sr-envelope',         label:'Contact Us',       color:'#14b8a6'},
+    {id:'premium',     icon:'fi-sr-diamond',          label:'Buy Premium',      color:'#f59e0b'},
   ]
 
   return (
@@ -311,8 +367,9 @@ function LeftSidebar({room,nav,socket,roomId,onClose}) {
         </div>
         {ITEMS.map(item=>(
           <button key={item.id} title={item.label} onClick={()=>setPanel(p=>p===item.id?null:item.id)}
-            style={{width:36,height:36,borderRadius:8,border:'none',background:panel===item.id?'#e8f0fe':'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:panel===item.id?'#1a73e8':'#6b7280',fontSize:15,transition:'all .12s'}}
-            onMouseEnter={e=>{if(panel!==item.id){e.currentTarget.style.background='#e8f0fe';e.currentTarget.style.color='#1a73e8'}}}
+            style={{width:36,height:36,borderRadius:8,border:'none',background:panel===item.id?`${item.color}22`:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:panel===item.id?item.color:'#6b7280',fontSize:16,transition:'all .12s'}}
+            title={item.label}
+            onMouseEnter={e=>{if(panel!==item.id){e.currentTarget.style.background=`${item.color}18`;e.currentTarget.style.color=item.color}}}
             onMouseLeave={e=>{if(panel!==item.id){e.currentTarget.style.background='none';e.currentTarget.style.color='#6b7280'}}}
           ><i className={`fi ${item.icon}`}/></button>
         ))}
@@ -327,10 +384,13 @@ function LeftSidebar({room,nav,socket,roomId,onClose}) {
           </div>
           {panel==='rooms'&&<RoomListPanel nav={nav}/>}
           {panel==='games'&&<GamesPanel socket={socket} roomId={roomId}/>}
-          {panel==='store'&&<StorePanel/>}
           {panel==='leaderboard'&&<LeaderboardPanel/>}
           {panel==='username'&&<UsernamePanel/>}
-          {panel==='premium'&&<div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:20,textAlign:'center'}}><i className="fi fi-sr-crown" style={{fontSize:40,color:'#f59e0b',marginBottom:10}}/><div style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1rem',color:'#111827',marginBottom:6}}>Go Premium</div><div style={{background:'linear-gradient(135deg,#fbbf24,#f59e0b)',borderRadius:10,padding:12,color:'#fff',fontWeight:700,width:'100%'}}>Coming Soon 🚀</div></div>}
+          {panel==='news'&&<SimplePanel icon="📰" title="News" msg="No announcements yet."/>}
+          {panel==='wall'&&<SimplePanel icon="📝" title="Friends Wall" msg="Wall posts coming soon!"/>}
+          {panel==='forum'&&<SimplePanel icon="💬" title="Forum" msg="Forum coming soon!"/>}
+          {panel==='contact'&&<ContactPanel/>}
+          {panel==='premium'&&<PremiumPanel/>}
         </div>
       )}
     </div>
@@ -362,25 +422,34 @@ function RoomListPanel({nav}) {
 }
 
 function GamesPanel({socket,roomId}) {
+  const [showSpin,setShowSpin]=useState(false)
+  const [showKeno,setShowKeno]=useState(false)
   const GAMES=[
-    {id:'dice',icon:'fi-sr-dice',   label:'Dice',  desc:'Roll to win gold',  color:'#7c3aed'},
-    {id:'keno',icon:'fi-sr-grid',   label:'Keno',  desc:'Pick your numbers', color:'#1a73e8'},
-    {id:'quiz',icon:'fi-sr-quiz',   label:'Quiz',  desc:'Answer & earn XP',  color:'#059669'},
-    {id:'spin',icon:'fi-sr-refresh',label:'Spin',  desc:'Daily free spin',   color:'#f59e0b'},
+    {id:'dice', icon:'fi-sr-dice',    label:'🎲 Dice',       desc:'Roll to win gold',  color:'#7c3aed',
+     action:()=>socket?.emit('rollDice',{roomId,bet:10})},
+    {id:'spin', icon:'fi-sr-wheel',   label:'🎡 Spin Wheel', desc:'Spin to multiply!', color:'#f59e0b',
+     action:()=>setShowSpin(true)},
+    {id:'keno', icon:'fi-sr-grid',    label:'🎯 Keno',       desc:'Pick your numbers', color:'#1a73e8',
+     action:()=>socket?.emit('playKeno',{roomId,picks:[1,2,3,4,5],bet:10})},
   ]
   return (
     <div style={{padding:10,flex:1,overflowY:'auto'}}>
       {GAMES.map(g=>(
-        <button key={g.id} onClick={()=>{
-          if(g.id==='dice') socket?.emit('rollDice',{roomId,bet:10})
-          else if(g.id==='spin') socket?.emit('spinWheel',{})
-          else if(g.id==='keno') socket?.emit('playKeno',{roomId,picks:[1,2,3,4,5],bet:10})
-        }}
-          style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'10px 12px',background:'#f9fafb',border:'1.5px solid #e4e6ea',borderRadius:9,cursor:'pointer',marginBottom:8,textAlign:'left',transition:'all .15s'}}
-          onMouseEnter={e=>{e.currentTarget.style.background='#e8f0fe';e.currentTarget.style.borderColor='#1a73e8'}}
+        <button key={g.id} onClick={g.action}
+          style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'12px',background:'#f9fafb',border:'1.5px solid #e4e6ea',borderRadius:10,cursor:'pointer',marginBottom:8,textAlign:'left',transition:'all .15s'}}
+          onMouseEnter={e=>{e.currentTarget.style.background=`${g.color}12`;e.currentTarget.style.borderColor=g.color}}
           onMouseLeave={e=>{e.currentTarget.style.background='#f9fafb';e.currentTarget.style.borderColor='#e4e6ea'}}
-        ><i className={`fi ${g.icon}`} style={{fontSize:20,color:g.color,flexShrink:0}}/><div><div style={{fontSize:'0.85rem',fontWeight:700,color:'#111827'}}>{g.label}</div><div style={{fontSize:'0.72rem',color:'#9ca3af'}}>{g.desc}</div></div></button>
+        >
+          <div style={{width:36,height:36,borderRadius:9,background:`${g.color}20`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>
+            <i className={`fi ${g.icon}`} style={{color:g.color}}/>
+          </div>
+          <div>
+            <div style={{fontSize:'0.88rem',fontWeight:700,color:'#111827'}}>{g.label}</div>
+            <div style={{fontSize:'0.73rem',color:'#9ca3af'}}>{g.desc}</div>
+          </div>
+        </button>
       ))}
+      {showSpin&&<SpinWheelGame socket={socket} onClose={()=>setShowSpin(false)}/>}
     </div>
   )
 }
@@ -824,6 +893,324 @@ function FBtn({icon,active,onClick,title,badge}) {
 // ─────────────────────────────────────────────────────────────
 // MAIN CHATROOM
 // ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// GIF PICKER — Giphy search
+// ─────────────────────────────────────────────────────────────
+function GifPicker({onSelect,onClose}) {
+  const [q,setQ]=useState('')
+  const [gifs,setGifs]=useState([])
+  const [loading,setLoading]=useState(false)
+  const timer=useRef(null)
+  useEffect(()=>{
+    clearTimeout(timer.current)
+    if(!q.trim()){setGifs([]);return}
+    setLoading(true)
+    timer.current=setTimeout(()=>{
+      fetch(`${API}/api/giphy?q=${encodeURIComponent(q)}&limit=12`)
+        .then(r=>r.json()).then(d=>setGifs(d.gifs||[])).catch(()=>{}).finally(()=>setLoading(false))
+    },400)
+    return()=>clearTimeout(timer.current)
+  },[q])
+  return(
+    <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'calc(100% + 6px)',left:0,right:0,background:'#fff',border:'1px solid #e4e6ea',borderRadius:14,overflow:'hidden',boxShadow:'0 4px 20px rgba(0,0,0,.14)',zIndex:50,maxHeight:320,display:'flex',flexDirection:'column'}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 10px',borderBottom:'1px solid #f3f4f6',flexShrink:0}}>
+        <span style={{fontWeight:700,fontSize:'0.82rem',color:'#374151'}}>🎞 GIF Search</span>
+        <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:14}}><i className="fi fi-sr-cross-small"/></button>
+      </div>
+      <div style={{padding:'6px 8px',borderBottom:'1px solid #f3f4f6',flexShrink:0}}>
+        <input autoFocus value={q} onChange={e=>setQ(e.target.value)} placeholder="Search GIFs..."
+          style={{width:'100%',padding:'7px 12px',border:'1.5px solid #e4e6ea',borderRadius:20,fontSize:'0.875rem',outline:'none',boxSizing:'border-box'}}
+          onFocus={e=>e.target.style.borderColor='#1a73e8'} onBlur={e=>e.target.style.borderColor='#e4e6ea'}/>
+      </div>
+      <div style={{flex:1,overflowY:'auto',padding:6,display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:4}}>
+        {loading&&<div style={{gridColumn:'1/-1',textAlign:'center',padding:16,color:'#9ca3af'}}>Searching...</div>}
+        {!loading&&gifs.length===0&&q&&<div style={{gridColumn:'1/-1',textAlign:'center',padding:16,color:'#9ca3af'}}>No GIFs found</div>}
+        {!loading&&gifs.length===0&&!q&&<div style={{gridColumn:'1/-1',textAlign:'center',padding:16,color:'#9ca3af',fontSize:'0.8rem'}}>Type to search GIFs</div>}
+        {gifs.map((g,i)=>(
+          <img key={i} src={g.preview||g.url} alt="" onClick={()=>onSelect(g.url)}
+            style={{width:'100%',aspectRatio:'1',objectFit:'cover',borderRadius:8,cursor:'pointer',border:'2px solid transparent',transition:'border .15s'}}
+            onMouseEnter={e=>e.target.style.borderColor='#1a73e8'} onMouseLeave={e=>e.target.style.borderColor='transparent'}/>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// YOUTUBE PANEL — search + link paste
+// ─────────────────────────────────────────────────────────────
+function YTPanel({onClose,onSend}) {
+  const [tab,setTab]=useState('search')
+  const [q,setQ]=useState('')
+  const [results,setResults]=useState([])
+  const [loading,setLoading]=useState(false)
+  const [link,setLink]=useState('')
+  const [preview,setPreview]=useState(null)
+  const timer=useRef(null)
+
+  function getVideoId(url) {
+    const m=url.match(/(?:youtu\.be\/|v=|embed\/)([\w-]{11})/)
+    return m?m[1]:null
+  }
+
+  useEffect(()=>{
+    if(tab!=='search'||!q.trim()){setResults([]);return}
+    setLoading(true)
+    clearTimeout(timer.current)
+    timer.current=setTimeout(()=>{
+      fetch(`${API}/api/giphy/youtube?q=${encodeURIComponent(q)}&limit=8`)
+        .then(r=>r.json()).then(d=>setResults(d.results||[])).catch(()=>{}).finally(()=>setLoading(false))
+    },500)
+    return()=>clearTimeout(timer.current)
+  },[q,tab])
+
+  useEffect(()=>{
+    const id=getVideoId(link)
+    setPreview(id?{id,thumb:`https://img.youtube.com/vi/${id}/mqdefault.jpg`}:null)
+  },[link])
+
+  return(
+    <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'calc(100% + 6px)',left:0,right:0,background:'#fff',border:'1px solid #e4e6ea',borderRadius:14,overflow:'hidden',boxShadow:'0 4px 20px rgba(0,0,0,.14)',zIndex:50,maxHeight:380,display:'flex',flexDirection:'column'}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 10px',borderBottom:'1px solid #f3f4f6',flexShrink:0}}>
+        <span style={{fontWeight:700,fontSize:'0.82rem',color:'#ef4444'}}>▶ YouTube</span>
+        <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:14}}><i className="fi fi-sr-cross-small"/></button>
+      </div>
+      <div style={{display:'flex',borderBottom:'1px solid #f3f4f6',flexShrink:0}}>
+        {['search','link'].map(t=>(
+          <button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:'7px',border:'none',background:'none',cursor:'pointer',borderBottom:`2px solid ${tab===t?'#ef4444':'transparent'}`,color:tab===t?'#ef4444':'#9ca3af',fontWeight:700,fontSize:'0.8rem'}}>
+            {t==='search'?'🔍 Search':'🔗 Paste Link'}
+          </button>
+        ))}
+      </div>
+      {tab==='search'&&(
+        <>
+          <div style={{padding:'6px 8px',borderBottom:'1px solid #f3f4f6',flexShrink:0}}>
+            <input autoFocus value={q} onChange={e=>setQ(e.target.value)} placeholder="Search YouTube..."
+              style={{width:'100%',padding:'7px 12px',border:'1.5px solid #e4e6ea',borderRadius:20,fontSize:'0.875rem',outline:'none',boxSizing:'border-box'}}
+              onFocus={e=>e.target.style.borderColor='#ef4444'} onBlur={e=>e.target.style.borderColor='#e4e6ea'}/>
+          </div>
+          <div style={{flex:1,overflowY:'auto',padding:6}}>
+            {loading&&<div style={{textAlign:'center',padding:12,color:'#9ca3af',fontSize:'0.8rem'}}>Searching...</div>}
+            {!loading&&results.length===0&&q&&<div style={{textAlign:'center',padding:12,color:'#9ca3af',fontSize:'0.8rem'}}>No results</div>}
+            {results.map((v,i)=>(
+              <div key={i} onClick={()=>onSend(`https://www.youtube.com/watch?v=${v.id}`)}
+                style={{display:'flex',gap:8,padding:'6px',borderRadius:8,cursor:'pointer',marginBottom:4,transition:'background .12s'}}
+                onMouseEnter={e=>e.currentTarget.style.background='#f3f4f6'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+                <img src={v.thumb} alt="" style={{width:80,height:52,objectFit:'cover',borderRadius:6,flexShrink:0}}/>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:'0.75rem',fontWeight:700,color:'#111827',overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}>{v.title}</div>
+                  <div style={{fontSize:'0.65rem',color:'#9ca3af',marginTop:2}}>{v.channel}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      {tab==='link'&&(
+        <div style={{flex:1,padding:10,display:'flex',flexDirection:'column',gap:8}}>
+          <input autoFocus value={link} onChange={e=>setLink(e.target.value)} placeholder="Paste YouTube link..."
+            style={{width:'100%',padding:'8px 12px',border:'1.5px solid #e4e6ea',borderRadius:10,fontSize:'0.875rem',outline:'none',boxSizing:'border-box'}}
+            onFocus={e=>e.target.style.borderColor='#ef4444'} onBlur={e=>e.target.style.borderColor='#e4e6ea'}/>
+          {preview&&(
+            <div style={{borderRadius:10,overflow:'hidden',border:'1px solid #e4e6ea'}}>
+              <img src={preview.thumb} alt="" style={{width:'100%',display:'block'}}/>
+              <button onClick={()=>onSend(`https://www.youtube.com/watch?v=${preview.id}`)}
+                style={{width:'100%',padding:'9px',background:'linear-gradient(135deg,#ef4444,#dc2626)',border:'none',color:'#fff',fontWeight:700,cursor:'pointer',fontSize:'0.84rem'}}>
+                ▶ Share in Chat
+              </button>
+            </div>
+          )}
+          {link&&!preview&&<p style={{textAlign:'center',color:'#9ca3af',fontSize:'0.8rem'}}>Invalid YouTube link</p>}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// EMOTICON PICKER
+// ─────────────────────────────────────────────────────────────
+const EMOTICONS = ['😀','😂','🥰','😍','😎','🥳','😭','😡','🤔','😴','👋','👍','👎','❤️','🔥','✨','🎉','💯','🙏','💪','😜','🤣','😇','🥺','😏','😈','💀','👻','🤩','🫡','💋','🤗','😤','🙄','😲','🤯','🫠','😶','🥴','😮']
+
+function EmoticonPicker({onSelect,onClose}) {
+  return(
+    <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'calc(100% + 6px)',left:0,background:'#fff',border:'1px solid #e4e6ea',borderRadius:14,padding:8,boxShadow:'0 4px 20px rgba(0,0,0,.14)',zIndex:50,width:280}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:6}}>
+        <span style={{fontWeight:700,fontSize:'0.82rem',color:'#374151'}}>Emoticons</span>
+        <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:14}}><i className="fi fi-sr-cross-small"/></button>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(8,1fr)',gap:2}}>
+        {EMOTICONS.map((em,i)=>(
+          <button key={i} onClick={()=>onSelect(em)}
+            style={{background:'none',border:'none',cursor:'pointer',fontSize:22,padding:'3px',borderRadius:6,lineHeight:1,transition:'background .1s'}}
+            onMouseEnter={e=>e.currentTarget.style.background='#f3f4f6'} onMouseLeave={e=>e.currentTarget.style.background='none'}>
+            {em}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// SPIN WHEEL GAME
+// ─────────────────────────────────────────────────────────────
+function SpinWheelGame({socket,onClose}) {
+  const [spinning,setSpinning]=useState(false)
+  const [rotation,setRotation]=useState(0)
+  const [result,setResult]=useState(null)
+  const [bet,setBet]=useState(10)
+  const SEGMENTS=[
+    {label:'2x',mult:2,color:'#1a73e8'},{label:'0',mult:0,color:'#ef4444'},{label:'1.5x',mult:1.5,color:'#059669'},
+    {label:'Better\nluck!',mult:0,color:'#9ca3af'},{label:'3x',mult:3,color:'#f59e0b'},{label:'0',mult:0,color:'#ef4444'},
+    {label:'1.5x',mult:1.5,color:'#059669'},{label:'Better\nluck!',mult:0,color:'#9ca3af'}
+  ]
+  const n=SEGMENTS.length, segAngle=360/n
+
+  function spin() {
+    if(spinning) return
+    setSpinning(true); setResult(null)
+    const extraSpins=5
+    const winIdx=Math.floor(Math.random()*n)
+    const targetAngle=extraSpins*360+(n-winIdx)*segAngle+segAngle/2
+    setRotation(r=>r+targetAngle)
+    setTimeout(()=>{
+      setSpinning(false)
+      setResult(SEGMENTS[winIdx])
+      socket?.emit('spinWheel',{})
+    },3000)
+  }
+
+  const r=110, cx=120, cy=120
+
+  return(
+    <div onClick={e=>e.stopPropagation()} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1005}}>
+      <div style={{background:'#fff',borderRadius:20,padding:'20px 24px',maxWidth:300,width:'90%',textAlign:'center',boxShadow:'0 20px 60px rgba(0,0,0,.3)'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+          <span style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1rem',color:'#111827'}}>🎡 Spin Wheel</span>
+          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:16}}><i className="fi fi-sr-cross-small"/></button>
+        </div>
+        {/* Wheel */}
+        <div style={{position:'relative',width:240,height:240,margin:'0 auto 12px'}}>
+          {/* Pointer */}
+          <div style={{position:'absolute',top:-8,left:'50%',transform:'translateX(-50%)',width:0,height:0,borderLeft:'10px solid transparent',borderRight:'10px solid transparent',borderTop:'20px solid #ef4444',zIndex:10}}/>
+          <svg width={240} height={240} style={{transition:spinning?'transform 3s cubic-bezier(0.17,0.67,0.12,0.99)':'',transform:`rotate(${rotation}deg)`,transformOrigin:'center'}}>
+            {SEGMENTS.map((seg,i)=>{
+              const startAngle=(i*segAngle-90)*Math.PI/180
+              const endAngle=((i+1)*segAngle-90)*Math.PI/180
+              const x1=cx+r*Math.cos(startAngle), y1=cy+r*Math.sin(startAngle)
+              const x2=cx+r*Math.cos(endAngle), y2=cy+r*Math.sin(endAngle)
+              const mid=((i+0.5)*segAngle-90)*Math.PI/180
+              const tx=cx+(r*0.65)*Math.cos(mid), ty=cy+(r*0.65)*Math.sin(mid)
+              return(
+                <g key={i}>
+                  <path d={`M${cx},${cy} L${x1},${y1} A${r},${r} 0 0,1 ${x2},${y2} Z`} fill={seg.color} stroke="#fff" strokeWidth={2}/>
+                  <text x={tx} y={ty} textAnchor="middle" dominantBaseline="middle" fill="#fff" fontSize={seg.label.includes('\n')?9:11} fontWeight={700}>{seg.label.replace('\n',' ')}</text>
+                </g>
+              )
+            })}
+            <circle cx={cx} cy={cy} r={16} fill="#fff" stroke="#e4e6ea" strokeWidth={2}/>
+          </svg>
+        </div>
+        {result&&(
+          <div style={{background:result.mult>0?'#d1fae5':'#fee2e2',borderRadius:10,padding:'8px 14px',marginBottom:10}}>
+            <span style={{fontWeight:700,color:result.mult>0?'#065f46':'#dc2626',fontSize:'0.9rem'}}>
+              {result.mult>0?`🎉 ${result.label} Win!`:`😅 Better luck next time!`}
+            </span>
+          </div>
+        )}
+        <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:10}}>
+          <span style={{fontSize:'0.8rem',fontWeight:600,color:'#374151'}}>Bet:</span>
+          {[5,10,25,50].map(b=>(
+            <button key={b} onClick={()=>setBet(b)} style={{padding:'4px 10px',borderRadius:20,border:`1.5px solid ${bet===b?'#1a73e8':'#e4e6ea'}`,background:bet===b?'#e8f0fe':'none',cursor:'pointer',fontSize:'0.75rem',fontWeight:700,color:bet===b?'#1a73e8':'#6b7280'}}>{b}</button>
+          ))}
+        </div>
+        <button onClick={spin} disabled={spinning}
+          style={{width:'100%',padding:'11px',borderRadius:10,border:'none',background:spinning?'#f3f4f6':'linear-gradient(135deg,#f59e0b,#d97706)',color:spinning?'#9ca3af':'#fff',fontWeight:800,cursor:spinning?'not-allowed':'pointer',fontSize:'0.9rem',fontFamily:'Outfit,sans-serif'}}>
+          {spinning?'Spinning...':`🎡 Spin! (${bet} Gold)`}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// SIMPLE PANEL (News, Wall, Forum)
+// ─────────────────────────────────────────────────────────────
+function SimplePanel({icon,title,msg}) {
+  return(
+    <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:20,textAlign:'center',color:'#9ca3af'}}>
+      <div style={{fontSize:36,marginBottom:8}}>{icon}</div>
+      <div style={{fontFamily:'Outfit,sans-serif',fontWeight:700,fontSize:'0.9rem',color:'#374151',marginBottom:4}}>{title}</div>
+      <div style={{fontSize:'0.8rem'}}>{msg}</div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// CONTACT PANEL
+// ─────────────────────────────────────────────────────────────
+function ContactPanel() {
+  const [sent,setSent]=useState(false)
+  const [msg,setMsg]=useState('')
+  const [sub,setSub]=useState('')
+  const token=localStorage.getItem('cgz_token')
+  async function submit(e) {
+    e.preventDefault()
+    if(!msg.trim()) return
+    await fetch(`${API}/api/contact`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({subject:sub||'Chat Support',message:msg})}).catch(()=>{})
+    setSent(true)
+  }
+  if(sent) return(
+    <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:20,textAlign:'center'}}>
+      <div style={{fontSize:36,marginBottom:8}}>✅</div>
+      <div style={{fontWeight:700,color:'#059669'}}>Message Sent!</div>
+      <div style={{fontSize:'0.8rem',color:'#9ca3af',marginTop:4}}>We'll reply via email.</div>
+    </div>
+  )
+  return(
+    <div style={{flex:1,padding:12,display:'flex',flexDirection:'column',gap:8}}>
+      <input value={sub} onChange={e=>setSub(e.target.value)} placeholder="Subject..."
+        style={{padding:'8px 12px',border:'1.5px solid #e4e6ea',borderRadius:9,fontSize:'0.85rem',outline:'none'}}/>
+      <textarea value={msg} onChange={e=>setMsg(e.target.value)} placeholder="Your message..." rows={5}
+        style={{padding:'8px 12px',border:'1.5px solid #e4e6ea',borderRadius:9,fontSize:'0.85rem',outline:'none',resize:'none'}}/>
+      <button onClick={submit} style={{padding:'10px',borderRadius:9,border:'none',background:'linear-gradient(135deg,#14b8a6,#0d9488)',color:'#fff',fontWeight:700,cursor:'pointer'}}>
+        Send Message
+      </button>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// PREMIUM PANEL
+// ─────────────────────────────────────────────────────────────
+function PremiumPanel() {
+  return(
+    <div style={{flex:1,padding:12,overflowY:'auto'}}>
+      <div style={{background:'linear-gradient(135deg,#f59e0b,#d97706)',borderRadius:12,padding:14,marginBottom:12,textAlign:'center',color:'#fff'}}>
+        <div style={{fontSize:32,marginBottom:4}}>💎</div>
+        <div style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1rem'}}>Go Premium</div>
+        <div style={{fontSize:'0.78rem',opacity:0.9,marginTop:2}}>Unlock exclusive features</div>
+      </div>
+      {[{d:7,p:199,b:'Weekly'},{d:30,p:599,b:'Monthly'},{d:90,p:1499,b:'3 Months'},{d:365,p:4999,b:'1 Year',best:true}].map(plan=>(
+        <div key={plan.d} style={{background:plan.best?'#fef3c7':'#f9fafb',border:`1.5px solid ${plan.best?'#f59e0b':'#e4e6ea'}`,borderRadius:10,padding:'10px 12px',marginBottom:8}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <div>
+              <div style={{fontWeight:700,fontSize:'0.88rem',color:'#111827'}}>{plan.b} {plan.best&&'⭐'}</div>
+              <div style={{fontSize:'0.75rem',color:'#9ca3af'}}>{plan.d} days</div>
+            </div>
+            <div style={{fontWeight:800,color:'#d97706',fontSize:'0.95rem'}}>{plan.p} 🪙</div>
+          </div>
+          <button style={{width:'100%',marginTop:8,padding:'7px',borderRadius:8,border:'none',background:'linear-gradient(135deg,#f59e0b,#d97706)',color:'#fff',fontWeight:700,cursor:'pointer',fontSize:'0.82rem'}}>
+            Buy with Gold
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+
 export default function ChatRoom() {
   const {roomId}=useParams(), nav=useNavigate(), toast=useToast()
   const token=localStorage.getItem('cgz_token')
@@ -847,6 +1234,10 @@ export default function ChatRoom() {
   const [connected, setConn]     =useState(false)
   const [status,    setStatus]   =useState('online')
   const [notif,     setNotif]    =useState({dm:0,friends:0,notif:0,reports:0})
+  const [showPlus,  setShowPlus] =useState(false)
+  const [showGif,   setShowGif]  =useState(false)
+  const [showYT,    setShowYT]   =useState(false)
+  const [showEmoji, setShowEmoji]=useState(false)
 
   const sockRef=useRef(null), bottomRef=useRef(null), inputRef=useRef(null)
   const typingTimer=useRef(null), isTypingRef=useRef(false)
@@ -938,7 +1329,7 @@ export default function ChatRoom() {
   const isStaff=myLevel>=11
 
   // Close all popups on click outside
-  const closeAll=useCallback(()=>{setMini(null);setShowNotif(false);setShowDM(false)},[])
+  const closeAll=useCallback(()=>{setMini(null);setShowNotif(false);setShowDM(false);setShowPlus(false);setShowEmoji(false);setShowGif(false);setShowYT(false)},[])
 
   if(!loading&&roomErr) return (
     <div style={{minHeight:'100vh',background:'#f8f9fa',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12}}>
@@ -1015,23 +1406,59 @@ export default function ChatRoom() {
           </div>
 
           {/* INPUT BAR */}
-          <div style={{borderTop:'1px solid #e4e6ea',padding:'7px 10px',background:'#fff',flexShrink:0}}>
-            <form onSubmit={send} style={{display:'flex',alignItems:'center',gap:6}}>
-              <button type="button" title="Emoji" style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:20,padding:'0 2px',flexShrink:0,display:'flex',alignItems:'center'}}><i className="fi fi-rr-smile"/></button>
-              <button type="button" title="Image" style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:17,padding:'0 2px',flexShrink:0,display:'flex',alignItems:'center'}}><i className="fi fi-sr-picture"/></button>
+          <div style={{borderTop:'1px solid #e4e6ea',padding:'6px 10px',background:'#fff',flexShrink:0,position:'relative'}}>
+            {/* + Popup menu */}
+            {showPlus&&(
+              <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'calc(100% + 6px)',left:10,background:'#fff',border:'1px solid #e4e6ea',borderRadius:14,padding:8,display:'flex',gap:8,boxShadow:'0 4px 20px rgba(0,0,0,.14)',zIndex:50}}>
+                {[
+                  {icon:'fi-sr-picture',label:'Image',color:'#1a73e8',bg:'#e8f0fe',action:()=>{document.getElementById('cgz-img-input').click();setShowPlus(false)}},
+                  {icon:'fi-br-gif',label:'GIF',color:'#ec4899',bg:'#fdf2f8',action:()=>{setShowGif(p=>!p);setShowPlus(false)}},
+                  {icon:'fi-sr-dice',label:'Dice',color:'#7c3aed',bg:'#f5f3ff',action:()=>{socket?.emit('rollDice',{roomId,bet:10});setShowPlus(false)}},
+                  {icon:'fi-br-youtube',label:'YouTube',color:'#ef4444',bg:'#fef2f2',action:()=>{setShowYT(p=>!p);setShowPlus(false)}},
+                ].map((b,i)=>(
+                  <button key={i} onClick={b.action} title={b.label}
+                    style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,padding:'8px 10px',background:b.bg,border:'none',borderRadius:10,cursor:'pointer',minWidth:52}}>
+                    <i className={`fi ${b.icon}`} style={{fontSize:20,color:b.color}}/>
+                    <span style={{fontSize:'0.62rem',fontWeight:700,color:b.color}}>{b.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {/* GIF Picker */}
+            {showGif&&<GifPicker onSelect={url=>{socket?.emit('sendMessage',{roomId,content:url,type:'gif'});setShowGif(false)}} onClose={()=>setShowGif(false)}/>}
+            {/* YouTube Panel */}
+            {showYT&&<YTPanel onClose={()=>setShowYT(false)} onSend={url=>{socket?.emit('sendMessage',{roomId,content:url,type:'youtube'});setShowYT(false)}}/>}
+            {/* Emoticon Picker */}
+            {showEmoji&&<EmoticonPicker onSelect={em=>{setInput(p=>p+em);setShowEmoji(false);inputRef.current?.focus()}} onClose={()=>setShowEmoji(false)}/>}
+            <input id="cgz-img-input" type="file" accept="image/*" style={{display:'none'}}
+              onChange={e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=ev=>{socket?.emit('sendMessage',{roomId,content:ev.target.result,type:'image'})};rd.readAsDataURL(f);e.target.value=''}}/>
+            <form onSubmit={send} style={{display:'flex',alignItems:'center',gap:5}}>
+              {/* + button */}
+              <button type="button" onClick={e=>{e.stopPropagation();setShowPlus(p=>!p);setShowEmoji(false);setShowGif(false)}}
+                style={{width:34,height:34,borderRadius:'50%',border:'none',background:showPlus?'#e8f0fe':'#f3f4f6',color:showPlus?'#1a73e8':'#6b7280',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0,fontWeight:700,transition:'all .15s'}}>
+                +
+              </button>
+              {/* Emoticon */}
+              <button type="button" onClick={e=>{e.stopPropagation();setShowEmoji(p=>!p);setShowPlus(false)}}
+                style={{background:'none',border:'none',cursor:'pointer',color:showEmoji?'#f59e0b':'#9ca3af',fontSize:22,padding:0,flexShrink:0,display:'flex',alignItems:'center',lineHeight:1}}>
+                😊
+              </button>
+              {/* Input */}
               <input ref={inputRef} value={input} onChange={handleTyping}
                 placeholder={connected?'Type a message...':'Connecting...'}
                 disabled={!connected}
                 style={{flex:1,padding:'9px 14px',background:'#f9fafb',border:'1.5px solid #e4e6ea',borderRadius:22,color:'#111827',fontSize:'0.9rem',outline:'none',transition:'border-color .15s',fontFamily:'Nunito,sans-serif'}}
                 onFocus={e=>e.target.style.borderColor='#1a73e8'} onBlur={e=>e.target.style.borderColor='#e4e6ea'}
               />
-              <button type="button" title="Gift" onClick={e=>{e.stopPropagation();setGiftTgt({_id:null,username:'Room'})}}
-                style={{background:'none',border:'none',cursor:'pointer',fontSize:17,padding:'0 2px',flexShrink:0,display:'flex',alignItems:'center'}}>
-                <img src="/default_images/icons/gift.svg" alt="" style={{width:19,height:19,objectFit:'contain'}} onError={e=>{e.target.outerHTML='<i class="fi fi-sr-gift" style="font-size:17px;color:#9ca3af"></i>'}}/>
+              {/* Mic */}
+              <button type="button" title="Voice message"
+                style={{background:'linear-gradient(135deg,#ef4444,#dc2626)',border:'none',cursor:'pointer',color:'#fff',fontSize:16,width:34,height:34,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:'0 2px 8px rgba(239,68,68,.4)'}}>
+                <i className="fi fi-sr-microphone"/>
               </button>
+              {/* Send */}
               <button type="submit" disabled={!input.trim()||!connected}
-                style={{width:36,height:36,borderRadius:'50%',border:'none',background:input.trim()&&connected?'linear-gradient(135deg,#1a73e8,#1464cc)':'#f3f4f6',color:input.trim()&&connected?'#fff':'#9ca3af',cursor:input.trim()&&connected?'pointer':'not-allowed',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0,transition:'all .15s'}}>
-                <i className="fi fi-sr-paper-plane"/>
+                style={{width:36,height:36,borderRadius:'50%',border:'none',background:input.trim()&&connected?'linear-gradient(135deg,#1a73e8,#1464cc)':'#f3f4f6',color:input.trim()&&connected?'#fff':'#9ca3af',cursor:input.trim()&&connected?'pointer':'not-allowed',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0,boxShadow:input.trim()&&connected?'0 2px 8px rgba(26,115,232,.4)':'none',transition:'all .15s'}}>
+                <i className="fi fi-sr-paper-plane-top"/>
               </button>
             </form>
           </div>
