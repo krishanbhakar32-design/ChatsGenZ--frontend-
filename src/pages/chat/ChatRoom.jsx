@@ -57,6 +57,155 @@ const SYS_CFG = {
   system:  { icon:'📢', color:'#1a73e8', bg:'#eff6ff', border:'#bfdbfe' },
 }
 
+
+// ─────────────────────────────────────────────────────────────
+// PAINTING CANVAS (Screenshot 11 style)
+// ─────────────────────────────────────────────────────────────
+function PaintingCanvas({onSend,onClose}) {
+  const canvasRef=useRef(null)
+  const [drawing,setDrawing]=useState(false)
+  const [tool,setTool]=useState('pen')   // pen | eraser
+  const [color,setColor]=useState('#000000')
+  const [size,setSize]=useState(3)
+  const [history,setHistory]=useState([])
+  const [histIdx,setHistIdx]=useState(-1)
+  const lastPt=useRef(null)
+
+  function getCtx(){return canvasRef.current?.getContext('2d')}
+
+  function saveHistory(){
+    const ctx=getCtx(); if(!ctx||!canvasRef.current) return
+    const snap=ctx.getImageData(0,0,canvasRef.current.width,canvasRef.current.height)
+    setHistory(p=>{const n=[...p.slice(0,histIdx+1),snap];setHistIdx(n.length-1);return n})
+  }
+
+  function undo(){
+    if(histIdx<=0){clearCanvas();return}
+    const ctx=getCtx(); if(!ctx) return
+    ctx.putImageData(history[histIdx-1],0,0)
+    setHistIdx(p=>p-1)
+  }
+  function redo(){
+    if(histIdx>=history.length-1) return
+    const ctx=getCtx(); if(!ctx) return
+    ctx.putImageData(history[histIdx+1],0,0)
+    setHistIdx(p=>p+1)
+  }
+  function clearCanvas(){
+    const ctx=getCtx(); if(!ctx||!canvasRef.current) return
+    ctx.clearRect(0,0,canvasRef.current.width,canvasRef.current.height)
+    ctx.fillStyle='#fff'
+    ctx.fillRect(0,0,canvasRef.current.width,canvasRef.current.height)
+    setHistory([]); setHistIdx(-1)
+  }
+
+  useEffect(()=>{clearCanvas()},[])
+
+  function getPt(e){
+    const r=canvasRef.current.getBoundingClientRect()
+    const touch=e.touches?.[0]||e
+    return{x:(touch.clientX-r.left)*(canvasRef.current.width/r.width),y:(touch.clientY-r.top)*(canvasRef.current.height/r.height)}
+  }
+
+  function startDraw(e){
+    e.preventDefault()
+    setDrawing(true)
+    const pt=getPt(e)
+    lastPt.current=pt
+    const ctx=getCtx(); if(!ctx) return
+    ctx.beginPath(); ctx.arc(pt.x,pt.y,size/2,0,Math.PI*2)
+    ctx.fillStyle=tool==='eraser'?'#fff':color
+    ctx.fill()
+  }
+  function draw(e){
+    e.preventDefault()
+    if(!drawing) return
+    const ctx=getCtx(); if(!ctx) return
+    const pt=getPt(e)
+    ctx.beginPath()
+    ctx.moveTo(lastPt.current.x,lastPt.current.y)
+    ctx.lineTo(pt.x,pt.y)
+    ctx.strokeStyle=tool==='eraser'?'#fff':color
+    ctx.lineWidth=size*(tool==='eraser'?4:1)
+    ctx.lineCap='round'
+    ctx.lineJoin='round'
+    ctx.stroke()
+    lastPt.current=pt
+  }
+  function endDraw(e){
+    e.preventDefault()
+    if(drawing) saveHistory()
+    setDrawing(false)
+  }
+
+  function sendDrawing(){
+    const c=canvasRef.current; if(!c) return
+    const dataUrl=c.toDataURL('image/png')
+    onSend(dataUrl)
+  }
+
+  const COLORS=['#000000','#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#ffffff']
+  const TOOLS=[
+    {id:'pick',  icon:'✛',  title:'Add color',  onClick:()=>{}},
+    {id:'pen',   icon:'✏️', title:'Pen',         onClick:()=>setTool('pen')},
+    {id:'black', icon:'⬛', title:'Black',        onClick:()=>{setColor('#000');setTool('pen')}},
+    {id:'undo',  icon:'↩️', title:'Undo',         onClick:undo},
+    {id:'redo',  icon:'↪️', title:'Redo',         onClick:redo},
+    {id:'erase', icon:'🧹', title:'Eraser',       onClick:()=>setTool('eraser')},
+    {id:'trash', icon:'🗑️', title:'Clear',        onClick:clearCanvas},
+  ]
+
+  return(
+    <div onClick={e=>e.stopPropagation()} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.7)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1005,padding:8}}>
+      <div style={{background:'#1a1a2e',borderRadius:12,width:'min(520px,97vw)',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.5)'}}>
+        {/* Title bar */}
+        <div style={{background:'#111827',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 12px'}}>
+          <span style={{color:'#e2e8f0',fontWeight:700,fontSize:'0.85rem'}}>Draw & Send</span>
+          <button onClick={onClose} style={{background:'none',border:'none',color:'#9ca3af',cursor:'pointer',fontSize:18}}>✕</button>
+        </div>
+        {/* Toolbar */}
+        <div style={{display:'flex',gap:4,padding:'7px 10px',background:'#f8f9fa',borderBottom:'1px solid #e4e6ea',alignItems:'center',flexWrap:'wrap'}}>
+          {/* Color picker */}
+          <label title="Pick color" style={{width:30,height:30,borderRadius:6,border:'2px solid #e4e6ea',overflow:'hidden',cursor:'pointer',flexShrink:0}}>
+            <input type="color" value={color} onChange={e=>{setColor(e.target.value);setTool('pen')}} style={{width:'150%',height:'150%',border:'none',cursor:'pointer',transform:'translate(-15%,-15%)'}}/>
+          </label>
+          {/* Pen */}
+          <button onClick={()=>setTool('pen')} title="Pen" style={{width:30,height:30,borderRadius:6,border:`2px solid ${tool==='pen'?'#1a73e8':'#e4e6ea'}`,background:tool==='pen'?'#e8f0fe':'#fff',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:15}}>✏️</button>
+          {/* Black */}
+          <button onClick={()=>{setColor('#000');setTool('pen')}} title="Black" style={{width:30,height:30,borderRadius:6,border:'2px solid #e4e6ea',background:'#000',cursor:'pointer',flexShrink:0}}/>
+          {/* Undo */}
+          <button onClick={undo} title="Undo" style={{width:30,height:30,borderRadius:6,border:'2px solid #e4e6ea',background:'#fff',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>↩</button>
+          {/* Redo */}
+          <button onClick={redo} title="Redo" style={{width:30,height:30,borderRadius:6,border:'2px solid #e4e6ea',background:'#fff',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>↪</button>
+          {/* Eraser */}
+          <button onClick={()=>setTool('eraser')} title="Eraser" style={{width:30,height:30,borderRadius:6,border:`2px solid ${tool==='eraser'?'#1a73e8':'#e4e6ea'}`,background:tool==='eraser'?'#e8f0fe':'#fff',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:15}}>🧹</button>
+          {/* Trash */}
+          <button onClick={clearCanvas} title="Clear all" style={{width:30,height:30,borderRadius:6,border:'2px solid #ef4444',background:'#fef2f2',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:15}}>🗑️</button>
+          {/* Size */}
+          <div style={{display:'flex',alignItems:'center',gap:4,marginLeft:'auto'}}>
+            <span style={{fontSize:'0.7rem',color:'#6b7280'}}>Size</span>
+            <input type="range" min={1} max={20} value={size} onChange={e=>setSize(+e.target.value)} style={{width:60,accentColor:'#1a73e8'}}/>
+          </div>
+        </div>
+        {/* Canvas */}
+        <div style={{background:'#fff',margin:0}}>
+          <canvas ref={canvasRef} width={520} height={340}
+            style={{display:'block',width:'100%',height:'auto',cursor:tool==='eraser'?'cell':'crosshair',touchAction:'none'}}
+            onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw}
+            onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={endDraw}/>
+        </div>
+        {/* Send button */}
+        <div style={{background:'#1a1a2e',padding:'10px 12px',display:'flex',alignItems:'center',gap:10}}>
+          <button onClick={onClose} style={{flex:1,padding:'9px',borderRadius:8,border:'1px solid #374151',background:'none',color:'#9ca3af',cursor:'pointer',fontSize:'0.84rem',fontWeight:600}}>Cancel</button>
+          <button onClick={sendDrawing} style={{flex:2,padding:'9px',borderRadius:8,border:'none',background:'linear-gradient(135deg,#3b82f6,#1d4ed8)',color:'#fff',cursor:'pointer',fontSize:'0.84rem',fontWeight:700,fontFamily:'Outfit,sans-serif',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+            <i className="fi fi-sr-paper-plane"/>Send
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── GIF PICKER ──
 function GifPicker({onSelect,onClose}) {
   const [q,setQ]=useState('')
@@ -114,7 +263,7 @@ function YTPanel({onClose,onSend}) {
   const [preview,setPreview]=useState(null)
 
   function getVideoId(url) {
-    const m=(url||'').match(/(?:youtu\.be\/|v=|embed\/)([\\w-]{11})/)
+    const m=(url||'').match(/(?:youtu\.be\/|v=|embed\/|\?v=)([\w-]{11})/)
     return m?m[1]:null
   }
   useEffect(()=>{
@@ -163,7 +312,7 @@ function EmoticonPicker({onSelect,onClose}) {
         {EMOT_FILES.map((name,i)=>(
           <button key={i} onClick={()=>onSelect(`:${name}:`)}
             style={{background:'none',border:'none',cursor:'pointer',padding:'3px',borderRadius:6,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center'}}
-            onMouseEnter={e=>e.currentTarget.style.background='#f3f4f6'} onMouseLeave={e=>e.currentTarget.style.background='none'}>
+            onMouseEnter={e=>e.currentTarget.style.background='#374151'} onMouseLeave={e=>e.currentTarget.style.background='none'}>
             <img src={`/icons/emoticon/${name}.png`} alt={name} style={{width:24,height:24,objectFit:'contain'}}
               onError={e=>{e.target.style.display='none';e.target.nextSibling.style.display='block'}}/>
             <span style={{display:'none',fontSize:18}}>{EMOJI_FALLBACK[i]||'😊'}</span>
@@ -178,7 +327,7 @@ function EmoticonPicker({onSelect,onClose}) {
 function YTMessage({url}) {
   const [expanded,setExpanded]=useState(false)
   const [closed,setClosed]=useState(false)
-  const id=(url||'').match(/(?:v=|youtu\.be\/)([\\w-]{11})/)?.[1]
+  const id=(url||'').match(/(?:v=|youtu\.be\/|embed\/|\?v=)([\w-]{11})/)?.[1]
   if(closed||!id) return null
   if(!expanded) return(
     <div style={{display:'flex',alignItems:'center',gap:8,background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'5px 8px',maxWidth:220}}>
@@ -437,8 +586,40 @@ function Msg({msg,onMiniCard,onMention,myId,myLevel,socket,roomId}) {
     )
   }
 
+  const [menuPos,setMenuPos]=useState(null)
+  function openMenu(e){
+    e.preventDefault(); e.stopPropagation()
+    setMenuPos({x:Math.min(e.clientX,window.innerWidth-160),y:Math.min(e.clientY,window.innerHeight-140)})
+  }
+
   return (
+    <>
+    {menuPos&&(
+      <div onClick={()=>setMenuPos(null)} style={{position:'fixed',inset:0,zIndex:8888}}/>
+    )}
+    {menuPos&&(
+      <div style={{position:'fixed',top:menuPos.y,left:menuPos.x,background:'#1e293b',border:'1px solid #334155',borderRadius:10,zIndex:8889,minWidth:170,overflow:'hidden',boxShadow:'0 8px 24px rgba(0,0,0,.4)'}}>
+        {[
+          {icon:'fi-sr-reply-all',label:'Quote',sub:'Reply to this post',  onClick:()=>{onMention(msg.sender?.username);setMenuPos(null)}},
+          {icon:'fi-sr-eye-crossed',label:'Hide',sub:'Hide from my screen', onClick:()=>setMenuPos(null)},
+          isMine
+            ?{icon:'fi-sr-trash',label:'Delete',sub:'Erase this content',color:'#ef4444',onClick:()=>{socket?.emit('deleteMessage',{messageId:msg._id,roomId});setMenuPos(null)}}
+            :{icon:'fi-sr-flag',label:'Report',sub:'Report this content',color:'#ef4444',onClick:()=>setMenuPos(null)},
+        ].map((item,i)=>(
+          <button key={i} onClick={item.onClick}
+            style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'9px 13px',background:'none',border:'none',cursor:'pointer',textAlign:'left',borderBottom:i<2?'1px solid #334155':'none'}}
+            onMouseEnter={e=>e.currentTarget.style.background='#334155'} onMouseLeave={e=>e.currentTarget.style.background='none'}>
+            <i className={`fi ${item.icon}`} style={{fontSize:14,color:item.color||'#60a5fa',width:16,flexShrink:0}}/>
+            <div>
+              <div style={{fontSize:'0.82rem',fontWeight:700,color:'#f1f5f9'}}>{item.label}</div>
+              <div style={{fontSize:'0.68rem',color:'#94a3b8'}}>{item.sub}</div>
+            </div>
+          </button>
+        ))}
+      </div>
+    )}
     <div style={{display:'flex',gap:8,padding:'2px 10px',alignItems:'flex-start',transition:'background .1s'}}
+      onClick={openMenu}
       onMouseEnter={e=>e.currentTarget.style.background='rgba(0,0,0,.02)'}
       onMouseLeave={e=>e.currentTarget.style.background='transparent'}
     >
@@ -461,20 +642,22 @@ function Msg({msg,onMiniCard,onMention,myId,myLevel,socket,roomId}) {
           :msg.type==='image'  ?<img src={msg.content} alt="" style={{maxWidth:'min(200px,60vw)',borderRadius:8,display:'block'}}/>
           :msg.type==='gif'    ?<img src={msg.content} alt="GIF" style={{maxWidth:'min(200px,60vw)',borderRadius:8,display:'block'}}/>
           :msg.type==='youtube'?<YTMessage url={msg.content}/>
-          :renderContent(msg.content)}
+          :msg.type==='whisper'?<span style={{background:'rgba(99,102,241,.1)',border:'1px solid #6366f1',borderRadius:6,padding:'2px 8px',fontSize:'0.84rem',color:'#818cf8'}}>👁️ <em>{renderContent(msg.content)}</em></span>:renderContent(msg.content)}
         </div>
       </div>
     </div>
+    </>
   )
 }
 
 // ─────────────────────────────────────────────────────────────
 // USER ITEM
 // ─────────────────────────────────────────────────────────────
-function UserItem({u,onClick}) {
+function UserItem({u,onClick,onWhisper}) {
   const ri=R(u.rank), col=u.nameColor||ri.color
+  const [hov,setHov]=useState(false)
   return (
-    <div onClick={()=>onClick(u)} style={{display:'flex',alignItems:'center',gap:7,padding:'6px 10px',cursor:'pointer',transition:'background .12s'}} onMouseEnter={e=>e.currentTarget.style.background='#f3f4f6'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+    <div onClick={()=>onClick(u)} style={{display:'flex',alignItems:'center',gap:7,padding:'6px 10px',cursor:'pointer',transition:'background .12s',position:'relative'}} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} style={{background:hov?'#f3f4f6':'transparent',display:'flex',alignItems:'center',gap:7,padding:'6px 10px',cursor:'pointer',transition:'background .12s',position:'relative'}}>
       <div style={{position:'relative',flexShrink:0}}>
         <img src={u.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{width:28,height:28,borderRadius:'50%',objectFit:'cover',border:`1.5px solid ${GBR(u.gender,u.rank)}`,display:'block'}} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
         <span style={{position:'absolute',bottom:0,right:0,width:6,height:6,background:'#22c55e',borderRadius:'50%',border:'1.5px solid #fff'}}/>
@@ -482,6 +665,7 @@ function UserItem({u,onClick}) {
       <span style={{flex:1,fontSize:'0.8rem',fontWeight:700,color:col,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{u.username}</span>
       <RIcon rank={u.rank} size={14}/>
       {u.countryCode&&u.countryCode!=='ZZ'&&<img src={`/icons/flags/${u.countryCode.toUpperCase()}.png`} alt="" style={{width:15,height:10,flexShrink:0,borderRadius:1}} onError={e=>e.target.style.display='none'}/>}
+      {hov&&onWhisper&&<button onClick={e=>{e.stopPropagation();onWhisper(u)}} title="Whisper" style={{position:'absolute',right:6,background:'#eef2ff',border:'1px solid #6366f1',borderRadius:5,padding:'2px 6px',cursor:'pointer',fontSize:'0.7rem',color:'#6366f1',fontWeight:700}}>👁️</button>}
     </div>
   )
 }
@@ -496,16 +680,26 @@ function RightSidebar({users,myLevel,onUserClick,onClose}) {
 
   const sorted=[...users].sort((a,b)=>{const d=RL(b.rank)-RL(a.rank);return d!==0?d:(a.username||'').localeCompare(b.username||'')})
   const staff=sorted.filter(u=>RL(u.rank)>=11)
-  const base=tab==='staff'?staff:sorted
-  const filtered=base.filter(u=>{
-    if(tab==='search') return (!search||u.username.toLowerCase().includes(search.toLowerCase()))&&(rankF==='all'||u.rank===rankF)
-    return true
-  })
+  const base=tab==='staff'?staff:tab==='friends'?friends:sorted
+  const [friends,setFriends]=useState([])
+  useEffect(()=>{
+    if(tab!=='friends') return
+    const t=localStorage.getItem('cgz_token')
+    fetch(`${API}/api/users/me/friends`,{headers:{Authorization:`Bearer ${t}`}})
+      .then(r=>r.json()).then(d=>setFriends(d.friends||[])).catch(()=>{})
+  },[tab])
+
+  const filtered= tab==='friends' ? friends :
+    base.filter(u=>{
+      if(tab==='search') return (!search||u.username.toLowerCase().includes(search.toLowerCase()))&&(rankF==='all'||u.rank===rankF)
+      return true
+    })
 
   const TABS=[
-    {id:'users', icon:'fi-sr-users',        title:'Users'},
-    {id:'staff', icon:'fi-sr-shield-check', title:'Staff'},
-    {id:'search',icon:'fi-sr-search',       title:'Search'},
+    {id:'users',   icon:'fi-sr-users',        title:'Users'},
+    {id:'friends', icon:'fi-sr-user',          title:'Friends'},
+    {id:'staff',   icon:'fi-sr-shield-check',  title:'Staff'},
+    {id:'search',  icon:'fi-sr-search',        title:'Search'},
   ]
 
   return (
@@ -531,12 +725,12 @@ function RightSidebar({users,myLevel,onUserClick,onClose}) {
         </div>
       )}
       <div style={{padding:'4px 10px 2px',fontSize:'0.62rem',fontWeight:700,color:'#9ca3af',letterSpacing:'1px',textTransform:'uppercase',flexShrink:0}}>
-        {tab==='staff'?'Staff':'Online'} · {filtered.length}
+        {tab==='staff'?'Staff':tab==='friends'?'Friends':tab==='search'?'Results':'Online'} · {filtered.length}
       </div>
       <div style={{flex:1,overflowY:'auto'}}>
         {filtered.length===0
-          ? <p style={{textAlign:'center',color:'#9ca3af',fontSize:'0.76rem',padding:'14px 10px'}}>{tab==='staff'?'No staff online':tab==='search'?'No results':'No users'}</p>
-          : filtered.map((u,i)=><UserItem key={u.userId||u._id||i} u={u} onClick={onUserClick}/>)
+          ? <p style={{textAlign:'center',color:'#9ca3af',fontSize:'0.76rem',padding:'14px 10px'}}>{tab==='staff'?'No staff online':tab==='friends'?'No friends online':tab==='search'?'No results':'No users'}</p>
+          : filtered.map((u,i)=><UserItem key={u.userId||u._id||i} u={u} onClick={onUserClick} onWhisper={onWhisper}/>)
         }
       </div>
     </div>
@@ -589,7 +783,7 @@ function LeftSidebar({room,nav,socket,roomId,onClose}) {
             <button onClick={()=>setPanel(null)} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:13}}><i className="fi fi-sr-cross-small"/></button>
           </div>
           {panel==='rooms'      &&<RoomListPanel nav={nav}/>}
-          {panel==='games'      &&<GamesPanel socket={socket} roomId={roomId} myGold={0}/>}
+          {panel==='games'      &&<GamesPanel socket={socket} roomId={roomId} myGold={me?.gold||0}/>}
           {panel==='leaderboard'&&<LeaderboardPanel/>}
           {panel==='username'   &&<UsernamePanel/>}
           {panel==='news'       &&<SimplePanel icon="📰" msg="No announcements yet."/>}
@@ -669,13 +863,17 @@ function RoomListPanel({nav}) {
   return (
     <div style={{flex:1,overflowY:'auto'}}>
       {rooms.map(r=>(
-        <div key={r._id} onClick={()=>nav(`/chat/${r._id}`)} style={{display:'flex',alignItems:'center',gap:9,padding:'9px 12px',cursor:'pointer',borderBottom:'1px solid #f3f4f6',transition:'background .12s'}} onMouseEnter={e=>e.currentTarget.style.background='#f3f4f6'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
-          <img src={r.icon||'/default_images/rooms/default_room.png'} alt="" style={{width:30,height:30,borderRadius:7,objectFit:'cover',flexShrink:0}} onError={e=>e.target.style.display='none'}/>
+        <div key={r._id} onClick={()=>nav(`/chat/${r._id}`)} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',cursor:'pointer',borderBottom:'1px solid #f3f4f6',transition:'background .12s'}} onMouseEnter={e=>e.currentTarget.style.background='#f3f4f6'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+          <img src={r.icon||'/default_images/rooms/default_room.png'} alt="" style={{width:42,height:42,borderRadius:9,objectFit:'cover',flexShrink:0}} onError={e=>e.target.style.display='none'}/>
           <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:'0.82rem',fontWeight:700,color:'#111827',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{r.name}</div>
-            <div style={{fontSize:'0.68rem',color:'#22c55e',fontWeight:600}}>{r.currentUsers||0} online</div>
+            <div style={{fontSize:'0.85rem',fontWeight:700,color:'#111827',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginBottom:3}}>{r.name}</div>
+            <div style={{fontSize:'0.7rem',color:'#6b7280',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginBottom:3}}>{r.description||''}</div>
+            <div style={{display:'flex',alignItems:'center',gap:5}}>
+              <img src={`/default_images/rooms/${r.type||'public'}_room.svg`} alt="" style={{width:13,height:13}} onError={e=>e.target.style.display='none'}/>
+              <img src="/default_images/rooms/user_count.svg" alt="" style={{width:12,height:12}} onError={e=>e.target.style.display='none'}/>
+              <span style={{fontSize:'0.7rem',fontWeight:600,color:(r.currentUsers||0)>0?'#22c55e':'#9ca3af'}}>{r.currentUsers||0}</span>
+            </div>
           </div>
-          <i className="fi fi-sr-angle-right" style={{fontSize:10,color:'#9ca3af',flexShrink:0}}/>
         </div>
       ))}
     </div>
@@ -686,86 +884,193 @@ function RoomListPanel({nav}) {
 // GAMES PANEL — with SpinWheel
 // ─────────────────────────────────────────────────────────────
 // ── KENO GAME ──
-function KenoGame({socket,onClose}) {
-  const [selected,setSel]=useState([])
-  const [bet,setBet]=useState(2)
-  const [result,setResult]=useState(null)
-  const [waiting,setWait]=useState(false)
-  const NUMS=Array.from({length:40},(_,i)=>i+1)
-
-  const BET_STEPS=[2,4,5,10,20,50,100]
-  function incBet(){const i=BET_STEPS.findIndex(v=>v>bet);setBet(i>=0?BET_STEPS[i]:BET_STEPS[BET_STEPS.length-1])}
-  function decBet(){const i=BET_STEPS.findLastIndex(v=>v<bet);setBet(i>=0?BET_STEPS[i]:BET_STEPS[0])}
-
-  function toggleNum(n) {
-    if(waiting) return
-    setSel(p=>p.includes(n)?p.filter(x=>x!==n):p.length<10?[...p,n]:p)
-    setResult(null)
-  }
-
-  function play() {
-    if(selected.length<2||waiting) return
-    setWait(true)
-    socket?.emit('playKeno',{roomId,picks:selected,bet})
-    // Simulate result for UI (backend sends actual result)
-    setTimeout(()=>{
-      const drawn=Array.from({length:20},()=>Math.floor(Math.random()*40)+1)
-      const hits=selected.filter(n=>drawn.includes(n))
-      setResult({drawn,hits})
-      setWait(false)
-    },1500)
-  }
-
+// ── DICE ANIMATION COMPONENT ──
+function DiceRoll({value, onDone}) {
+  const [face,setFace]=useState(1), [rolling,setRolling]=useState(true)
+  useEffect(()=>{
+    let count=0, max=14
+    const t=setInterval(()=>{
+      setFace(Math.floor(Math.random()*6)+1)
+      count++
+      if(count>=max){clearInterval(t);setFace(value);setRolling(false);setTimeout(onDone,1800)}
+    },120)
+    return()=>clearInterval(t)
+  },[value])
+  const DOTS=[[],[4],[4,6],[4,5,6],[1,4,6,9],[1,4,5,6,9],[1,4,6,7,9,3]]
+  const dots=DOTS[face]||[]
   return(
-    <div onClick={e=>e.stopPropagation()} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.55)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1005,padding:12}}>
-      <div style={{background:'#fff',borderRadius:16,padding:'14px',maxWidth:320,width:'100%',boxShadow:'0 20px 60px rgba(0,0,0,.3)'}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
-          <span style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'0.95rem',color:'#111827'}}>🎯 Keno</span>
-          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:15}}><i className="fi fi-sr-cross-small"/></button>
-        </div>
-        <div style={{fontSize:'0.72rem',color:'#9ca3af',marginBottom:6,textAlign:'center'}}>
-          Pick 2-10 numbers · {selected.length} selected
-        </div>
-        {/* Number grid - 8 cols x 5 rows = 40 numbers */}
-        <div style={{display:'grid',gridTemplateColumns:'repeat(8,1fr)',gap:3,marginBottom:10}}>
-          {NUMS.map(n=>{
-            const isSel=selected.includes(n)
-            const isHit=result&&result.drawn.includes(n)
-            const isMatch=result&&result.hits.includes(n)
-            let bg='#f9fafb',color='#374151',border='#e4e6ea'
-            if(isMatch){bg='#22c55e';color='#fff';border='#22c55e'}
-            else if(isHit&&result){bg='#dbeafe';color='#1d4ed8';border='#93c5fd'}
-            else if(isSel){bg='#1a73e8';color='#fff';border='#1a73e8'}
-            return(
-              <button key={n} onClick={()=>toggleNum(n)}
-                style={{height:28,borderRadius:6,border:`1.5px solid ${border}`,background:bg,cursor:'pointer',fontSize:'0.7rem',fontWeight:700,color,transition:'all .1s'}}>
-                {n}
-              </button>
-            )
-          })}
-        </div>
-        {/* Bet field */}
-        <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:10,justifyContent:'center'}}>
-          <button onClick={decBet} style={{width:26,height:26,borderRadius:'50%',border:'1.5px solid #e4e6ea',background:'#f9fafb',cursor:'pointer',fontWeight:700,fontSize:15,display:'flex',alignItems:'center',justifyContent:'center',color:'#374151'}}>−</button>
-          <div style={{background:'#f9fafb',border:'1.5px solid #e4e6ea',borderRadius:7,padding:'3px 14px',fontWeight:800,fontSize:'0.88rem',color:'#111827',minWidth:56,textAlign:'center'}}>{bet}G</div>
-          <button onClick={incBet} style={{width:26,height:26,borderRadius:'50%',border:'1.5px solid #1a73e8',background:'#e8f0fe',cursor:'pointer',fontWeight:700,fontSize:15,display:'flex',alignItems:'center',justifyContent:'center',color:'#1a73e8'}}>+</button>
-          <span style={{fontSize:'0.7rem',color:'#9ca3af'}}>min 2</span>
-        </div>
-        {result&&(
-          <div style={{background:result.hits.length>0?'#d1fae5':'#fee2e2',borderRadius:8,padding:'6px 10px',marginBottom:8,textAlign:'center',fontSize:'0.8rem',fontWeight:700,color:result.hits.length>0?'#065f46':'#dc2626'}}>
-            {result.hits.length>0?`🎉 ${result.hits.length} hits! +${result.hits.length*bet}G`:'😅 No hits this time!'}
+    <div style={{position:'fixed',top:'50%',left:'50%',transform:'translate(-50%,-50%)',zIndex:9999,pointerEvents:'none',textAlign:'center'}}>
+      <div style={{width:80,height:80,background:'linear-gradient(145deg,#fff,#f0f0f0)',borderRadius:16,border:'2px solid #e4e6ea',boxShadow:'0 8px 32px rgba(0,0,0,.25), inset 0 1px 2px rgba(255,255,255,.8)',display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gridTemplateRows:'1fr 1fr 1fr',padding:10,gap:4,animation:rolling?'diceShake .12s infinite':'diceBounce .4s ease-out'}}>
+        {[1,2,3,4,5,6,7,8,9].map(p=>(<div key={p} style={{display:'flex',alignItems:'center',justifyContent:'center'}}>{dots.includes(p)&&<div style={{width:12,height:12,background:'#1a1a2e',borderRadius:'50%',boxShadow:'0 1px 2px rgba(0,0,0,.3)'}}/>}</div>))}
+      </div>
+      {!rolling&&<div style={{marginTop:10,fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1.1rem',color:face===6?'#22c55e':'#374151',textShadow:'0 1px 3px rgba(0,0,0,.2)'}}>{face===6?'🎉 WIN!':'😅 '+face}</div>}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// WHISPER — Ghost message visible only to sender & target
+// ─────────────────────────────────────────────────────────────
+function WhisperBox({target,roomId,socket,onClose}) {
+  const [text,setText]=useState('')
+  const [sent,setSent]=useState(false)
+  function send(e){
+    e.preventDefault()
+    if(!text.trim()||!socket) return
+    socket.emit('sendEcho',{toUserId:target.userId||target._id,content:text.trim(),roomId})
+    setSent(true)
+    setTimeout(()=>{setSent(false);setText('');onClose()},2000)
+  }
+  return(
+    <div style={{position:'fixed',inset:0,zIndex:1010,background:'rgba(0,0,0,.6)',backdropFilter:'blur(4px)',display:'flex',alignItems:'flex-end',justifyContent:'center',padding:'0 0 90px'}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:'#1e1b4b',border:'1px solid #4338ca',borderRadius:14,padding:'14px',width:'min(420px,95vw)',boxShadow:'0 8px 32px rgba(79,70,229,.4)'}}>
+        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
+          <span style={{fontSize:'1.1rem'}}>👁️</span>
+          <div style={{flex:1}}>
+            <div style={{fontSize:'0.82rem',fontWeight:800,color:'#e0e7ff'}}>Whisper to <span style={{color:'#a78bfa'}}>{target.username}</span></div>
+            <div style={{fontSize:'0.68rem',color:'#6366f1'}}>Only they can see this · staff cannot read</div>
           </div>
+          <button onClick={onClose} style={{background:'none',border:'none',color:'#6366f1',cursor:'pointer',fontSize:16}}>✕</button>
+        </div>
+        {sent?(<div style={{textAlign:'center',padding:'10px',color:'#a78bfa',fontWeight:700,fontSize:'0.9rem'}}>👁️ Whisper sent!</div>):(
+          <form onSubmit={send} style={{display:'flex',gap:8}}>
+            <input autoFocus value={text} onChange={e=>setText(e.target.value)} placeholder={`Whisper to ${target.username}...`} maxLength={500}
+              style={{flex:1,padding:'9px 12px',background:'#312e81',border:'1.5px solid #4338ca',borderRadius:9,color:'#e0e7ff',fontSize:'0.875rem',outline:'none',fontFamily:'Nunito,sans-serif'}}
+              onFocus={e=>e.target.style.borderColor='#818cf8'} onBlur={e=>e.target.style.borderColor='#4338ca'}/>
+            <button type="submit" disabled={!text.trim()} style={{padding:'9px 14px',borderRadius:9,border:'none',background:text.trim()?'linear-gradient(135deg,#6366f1,#4338ca)':'#374151',color:'#fff',fontWeight:700,cursor:text.trim()?'pointer':'not-allowed'}}>
+              👁️
+            </button>
+          </form>
         )}
-        <button onClick={play} disabled={selected.length<2||waiting}
-          style={{width:'100%',padding:'9px',borderRadius:9,border:'none',background:selected.length<2||waiting?'#f3f4f6':'linear-gradient(135deg,#1a73e8,#1464cc)',color:selected.length<2||waiting?'#9ca3af':'#fff',fontWeight:700,cursor:selected.length<2||waiting?'not-allowed':'pointer',fontSize:'0.86rem',fontFamily:'Outfit,sans-serif'}}>
-          {waiting?'Drawing...':selected.length<2?'Select 2+ numbers':`Play (${bet}G)`}
-        </button>
       </div>
     </div>
   )
 }
 
-function GamesPanel({socket,roomId,myGold}) {
+function KenoGame({socket,roomId,myGold,onClose}) {
+  const [sel,setSel]=useState([])
+  const [bet,setBet]=useState(10)
+  const [result,setResult]=useState(null)
+  const [waiting,setWait]=useState(false)
+  const [drawn,setDrawn]=useState([])
+  const [animIdx,setAnimIdx]=useState(-1)
+  const NUMS=Array.from({length:80},(_,i)=>i+1)
+
+  // Bet steps: 2,4,5,10,20,50,100,200,500,1000 - double after 10
+  const BET_STEPS=[2,4,5,10,20,50,100,200,500,1000]
+  function incBet(){const i=BET_STEPS.findIndex(v=>v>bet);setBet(i>=0?BET_STEPS[i]:BET_STEPS[BET_STEPS.length-1])}
+  function decBet(){const i=BET_STEPS.findLastIndex(v=>v<bet);setBet(i>=0?BET_STEPS[i]:BET_STEPS[0])}
+
+  function toggleNum(n) {
+    if(waiting||drawn.length>0) return
+    setSel(p=>p.includes(n)?p.filter(x=>x!==n):p.length<10?[...p,n]:p)
+    setResult(null)
+  }
+
+  function clearPicks() {
+    if(waiting) return
+    setSel([]); setResult(null); setDrawn([]); setAnimIdx(-1)
+  }
+
+  useEffect(()=>{
+    if(!socket) return
+    const onResult=({picks,drawn:d,matches,total,multiplier,bet:b,payout,won,newGold})=>{
+      // Animate drawn numbers one by one
+      setDrawn(d)
+      let i=0
+      const interval=setInterval(()=>{
+        setAnimIdx(d[i])
+        i++
+        if(i>=d.length){
+          clearInterval(interval)
+          setResult({matches,total,multiplier,payout,won,newGold})
+          setWait(false)
+        }
+      },120)
+    }
+    const onError=({msg})=>{ setWait(false); alert(msg) }
+    socket.on('kenoResult',onResult)
+    socket.on('kenoError',onError)
+    return()=>{ socket.off('kenoResult',onResult); socket.off('kenoError',onError) }
+  },[socket])
+
+  function play() {
+    if(sel.length<2||waiting) return
+    setWait(true); setResult(null); setDrawn([]); setAnimIdx(-1)
+    socket?.emit('playKeno',{roomId,picks:sel,bet})
+  }
+
+  return(
+    <div onClick={e=>e.stopPropagation()} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.7)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1005,padding:8}}>
+      <div style={{background:'#1a1a2e',borderRadius:14,padding:'14px',maxWidth:360,width:'100%',boxShadow:'0 20px 60px rgba(0,0,0,.5)',color:'#fff'}}>
+        {/* Header */}
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <span style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1rem'}}>Keno</span>
+          </div>
+          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:18}}>✕</button>
+        </div>
+        {/* Gold balance */}
+        <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:10}}>
+          <span style={{fontSize:'1.1rem'}}>🪙</span>
+          <span style={{fontWeight:800,fontSize:'1rem',color:'#fbbf24'}}>{myGold||0}</span>
+          <button style={{marginLeft:'auto',width:24,height:24,borderRadius:'50%',background:'#374151',border:'none',color:'#9ca3af',cursor:'pointer',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center'}}>?</button>
+        </div>
+        {/* Number grid - 10 cols x 8 rows = 80 numbers */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(10,1fr)',gap:3,marginBottom:10}}>
+          {NUMS.map(n=>{
+            const isSel=sel.includes(n)
+            const isDrawn=drawn.includes(n)
+            const isMatch=isSel&&isDrawn
+            const isAnimating=animIdx===n
+            let bg='#374151',color='#d1d5db',border='transparent'
+            if(isMatch){bg='#22c55e';color='#fff';border='#22c55e'}
+            else if(isDrawn&&!isSel){bg='#1e3a5f';color='#60a5fa';border='#3b82f6'}
+            else if(isSel){bg='#3b82f6';color='#fff';border='#3b82f6'}
+            if(isAnimating&&!isSel){bg='#1d4ed8';color='#fff'}
+            return(
+              <button key={n} onClick={()=>toggleNum(n)}
+                style={{height:26,borderRadius:5,border:`1.5px solid ${border}`,background:bg,cursor:'pointer',fontSize:'0.68rem',fontWeight:700,color,transition:'all .08s',transform:isAnimating?'scale(1.15)':'scale(1)'}}>
+                {n}
+              </button>
+            )
+          })}
+        </div>
+        {/* Bottom: trash + bet - value + draw */}
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <button onClick={clearPicks} style={{width:36,height:36,borderRadius:8,background:'#ef4444',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0}}>
+            🗑️
+          </button>
+          <div style={{display:'flex',alignItems:'center',gap:6,flex:1,justifyContent:'center'}}>
+            <button onClick={decBet} style={{width:28,height:28,borderRadius:6,background:'#374151',border:'none',color:'#fff',cursor:'pointer',fontWeight:700,fontSize:16}}>−</button>
+            <div style={{textAlign:'center',minWidth:60}}>
+              <div style={{fontSize:'0.65rem',color:'#9ca3af'}}>Bet</div>
+              <div style={{fontWeight:800,fontSize:'0.95rem',color:'#fbbf24'}}>{bet}</div>
+            </div>
+            <button onClick={incBet} style={{width:28,height:28,borderRadius:6,background:'#374151',border:'none',color:'#fff',cursor:'pointer',fontWeight:700,fontSize:16}}>+</button>
+          </div>
+          <div style={{textAlign:'center',minWidth:60}}>
+            <div style={{fontSize:'0.65rem',color:'#9ca3af'}}>Payout</div>
+            <div style={{fontWeight:800,fontSize:'0.95rem',color:'#22c55e'}}>{result?result.payout:0}</div>
+          </div>
+          <button onClick={play} disabled={sel.length<2||waiting}
+            style={{padding:'8px 16px',borderRadius:8,border:'none',background:sel.length<2||waiting?'#374151':'#22c55e',color:'#fff',fontWeight:800,cursor:sel.length<2||waiting?'not-allowed':'pointer',fontSize:'0.88rem',fontFamily:'Outfit,sans-serif',flexShrink:0}}>
+            {waiting?'...':'Draw'}
+          </button>
+        </div>
+        {result&&(
+          <div style={{marginTop:10,padding:'8px 12px',borderRadius:8,background:result.won?'rgba(34,197,94,.2)':'rgba(239,68,68,.15)',border:`1px solid ${result.won?'#22c55e':'#ef4444'}`,textAlign:'center',fontSize:'0.82rem',fontWeight:700,color:result.won?'#22c55e':'#ef4444'}}>
+            {result.won?`🎉 ${result.matches}/${result.total} hits · ×${result.multiplier} · +${result.payout}`:`😅 ${result.matches}/${result.total} hits · -${bet}`}
+          </div>
+        )}
+        {/* Pays table */}
+        <div style={{marginTop:10,fontSize:'0.65rem',color:'#6b7280',textAlign:'center'}}>Pays table · Select 2-10 numbers · {sel.length} selected</div>
+      </div>
+    </div>
+  )
+}
+
+function GamesPanel({socket,roomId,myGold=0}) {
   const [showSpin,setShowSpin]=useState(false)
   const [showKeno,setShowKeno]=useState(false)
   const [showDice,setShowDice]=useState(false)
@@ -799,8 +1104,19 @@ function GamesPanel({socket,roomId,myGold}) {
         </button>
       ))}
       {showDice&&diceVal&&<DiceRoll value={diceVal} onDone={()=>{setShowDice(false);setDiceVal(null)}}/>}
+      {whisperTarget&&<WhisperBox target={whisperTarget} roomId={roomId} socket={sockRef.current} onClose={()=>setWhisper(null)}/>}
+      {showPaint&&<PaintingCanvas onClose={()=>setShowPaint(false)} onSend={async(dataUrl)=>{
+        // Upload to imgbb then send as image message
+        try {
+          const blob=await(await fetch(dataUrl)).blob()
+          const fd=new FormData(); fd.append('image',blob,'drawing.png')
+          const r=await fetch(`${API}/api/upload/image`,{method:'POST',headers:{Authorization:`Bearer ${localStorage.getItem('cgz_token')}`},body:fd})
+          const d=await r.json()
+          if(r.ok&&d.url){ sockRef.current?.emit('sendMessage',{roomId,content:d.url,type:'image'}); setShowPaint(false) }
+        } catch{ setShowPaint(false) }
+      }}/>}
       {showSpin&&<SpinWheelGame socket={socket} myGold={myGold||0} onClose={()=>setShowSpin(false)}/>}
-      {showKeno&&<KenoGame socket={socket} onClose={()=>setShowKeno(false)}/>}
+      {showKeno&&<KenoGame socket={socket} roomId={roomId} myGold={myGold||0} onClose={()=>setShowKeno(false)}/>}
     </div>
   )
 }
@@ -809,19 +1125,20 @@ function GamesPanel({socket,roomId,myGold}) {
 // LEADERBOARD — with proper icons from public folder
 // ─────────────────────────────────────────────────────────────
 function LeaderboardPanel() {
-  const [data,setData]=useState([]), [type,setType]=useState('xp'), [load,setLoad]=useState(false)
+  const [data,setData]=useState([]), [type,setType]=useState('xp'), [period,setPeriod]=useState('all'), [load,setLoad]=useState(false)
   useEffect(()=>{
     setLoad(true)
     const t=localStorage.getItem('cgz_token')
-    fetch(`${API}/api/leaderboard/${type}`,{headers:{Authorization:`Bearer ${t}`}})
+    fetch(`${API}/api/leaderboard/${type}?period=${period}`,{headers:{Authorization:`Bearer ${t}`}})
       .then(r=>r.json()).then(d=>setData(d.users||[])).catch(()=>{}).finally(()=>setLoad(false))
-  },[type])
+  },[type,period])
 
   const TABS=[
-    {id:'xp',    label:'Top XP',    icon:'xp.svg',    color:'#7c3aed'},
-    {id:'level', label:'Top Level', icon:'level.svg',  color:'#1a73e8'},
-    {id:'gold',  label:'Top Gold',  icon:'gold.svg',   color:'#d97706'},
-    {id:'gifts', label:'Top Gifts', icon:'gift.svg',   color:'#ec4899'},
+    {id:'xp',       label:'Top XP',    icon:'xp.svg',    color:'#7c3aed'},
+    {id:'level',    label:'Top Level', icon:'level.svg', color:'#1a73e8'},
+    {id:'gold',     label:'Top Gold',  icon:'gold.svg',  color:'#d97706'},
+    {id:'gifts',    label:'Top Gifts', icon:'gift.svg',  color:'#ec4899'},
+    {id:'messages', label:'Top Msgs',  icon:'comment.svg',color:'#059669'},
   ]
 
   const getVal=(u)=>{
@@ -836,12 +1153,22 @@ function LeaderboardPanel() {
   return (
     <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
       {/* Tab buttons with SVG icons */}
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4,padding:'8px 8px 4px',flexShrink:0}}>
+      {/* Period tabs */}
+      <div style={{display:'flex',borderBottom:'1px solid #f3f4f6',flexShrink:0}}>
+        {['all','weekly','monthly'].map(p=>(
+          <button key={p} onClick={()=>setPeriod(p)}
+            style={{flex:1,padding:'7px 4px',border:'none',background:'none',cursor:'pointer',borderBottom:`2px solid ${period===p?'#1a73e8':'transparent'}`,color:period===p?'#1a73e8':'#9ca3af',fontSize:'0.72rem',fontWeight:700,transition:'all .15s',textTransform:'capitalize'}}>
+            {p==='all'?'All Time':p==='weekly'?'Weekly':'Monthly'}
+          </button>
+        ))}
+      </div>
+      {/* Type tabs with icons */}
+      <div style={{display:'flex',gap:3,padding:'6px 6px 2px',overflowX:'auto',flexShrink:0}}>
         {TABS.map(tp=>(
           <button key={tp.id} onClick={()=>setType(tp.id)}
-            style={{display:'flex',alignItems:'center',gap:5,padding:'6px 8px',borderRadius:8,border:`1.5px solid ${type===tp.id?tp.color:'#e4e6ea'}`,background:type===tp.id?`${tp.color}15`:'none',cursor:'pointer',transition:'all .15s'}}>
-            <img src={`/default_images/icons/${tp.icon}`} alt="" style={{width:16,height:16,objectFit:'contain'}} onError={e=>e.target.style.display='none'}/>
-            <span style={{fontSize:'0.7rem',fontWeight:700,color:type===tp.id?tp.color:'#6b7280'}}>{tp.label}</span>
+            style={{display:'flex',alignItems:'center',gap:4,padding:'5px 8px',borderRadius:20,border:`1.5px solid ${type===tp.id?tp.color:'#e4e6ea'}`,background:type===tp.id?`${tp.color}18`:'none',cursor:'pointer',flexShrink:0,transition:'all .15s'}}>
+            <img src={`/default_images/icons/${tp.icon}`} alt="" style={{width:14,height:14,objectFit:'contain'}} onError={e=>e.target.style.display='none'}/>
+            <span style={{fontSize:'0.68rem',fontWeight:700,color:type===tp.id?tp.color:'#6b7280',whiteSpace:'nowrap'}}>{tp.label}</span>
           </button>
         ))}
       </div>
@@ -906,7 +1233,7 @@ function RadioPanel({onClose}) {
     {id:'More',     label:'🌐 More',     langs:['Marathi','Hindi/Sanskrit','Instrumental']},
   ]
   useEffect(()=>{
-    fetch(`${API}/api/radio`).then(r=>r.json()).then(d=>setAll(d.stations||[])).catch(()=>{})
+    fetch(`${API}/api/radio/stations`).then(r=>r.json()).then(d=>setAll(d.stations||[])).catch(()=>{})
     return()=>audioRef.current?.pause()
   },[])
   function play(s) {
@@ -1231,54 +1558,63 @@ function AvatarDropdown({me,status,setStatus,onLeave,socket}) {
         </div>
       </button>
       {open&&(
-        <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',background:'#fff',border:'1px solid #e4e6ea',borderRadius:13,minWidth:210,boxShadow:'0 6px 24px rgba(0,0,0,.13)',zIndex:999,overflow:'hidden'}} onClick={e=>e.stopPropagation()}>
-          <div style={{padding:'11px 12px 8px',borderBottom:'1px solid #f3f4f6'}}>
-            <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:7}}>
-              <img src={me?.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{width:38,height:38,borderRadius:'50%',border:`2.5px solid ${border}`,objectFit:'cover',flexShrink:0}} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
-              <div style={{minWidth:0}}>
-                <div style={{fontFamily:'Outfit,sans-serif',fontWeight:800,fontSize:'0.88rem',color:me?.nameColor||'#111827',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{me?.username}</div>
-                <div style={{display:'flex',alignItems:'center',gap:4,marginTop:2}}><RIcon rank={me?.rank} size={11}/><span style={{fontSize:'0.68rem',color:ri.color,fontWeight:700}}>{ri.label}</span></div>
+        <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',background:'#1a1f2e',border:'1px solid #2d3555',borderRadius:12,minWidth:240,boxShadow:'0 8px 32px rgba(0,0,0,.5)',zIndex:999,overflow:'hidden'}} onClick={e=>e.stopPropagation()}>
+          {/* Profile header */}
+          <div style={{padding:'14px 14px 12px',borderBottom:'1px solid #2d3555',display:'flex',alignItems:'center',gap:12,position:'relative'}}>
+            <img src={me?.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{width:52,height:52,borderRadius:'50%',objectFit:'cover',border:`2.5px solid ${border}`,flexShrink:0}} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:2}}>
+                <RIcon rank={me?.rank} size={12}/>
+                <span style={{fontSize:'0.65rem',fontWeight:700,color:ri.color}}>{ri.label}</span>
               </div>
+              <div style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'0.95rem',color:'#fff',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{me?.username}</div>
+              <div style={{fontSize:'0.7rem',color:'#60a5fa',marginTop:2,cursor:'pointer'}}>Edit profile</div>
             </div>
-            {!me?.isGuest&&<div style={{display:'flex',gap:10}}>
-              <div style={{display:'flex',alignItems:'center',gap:3}}><UIIcon name="gold" size={13}/>  <span style={{fontSize:'0.7rem',fontWeight:700,color:'#d97706'}}>{me?.gold||0}</span></div>
-              <div style={{display:'flex',alignItems:'center',gap:3}}><UIIcon name="level" size={13}/><span style={{fontSize:'0.7rem',fontWeight:700,color:'#1a73e8'}}>Lv.{me?.level||1}</span></div>
-              <div style={{display:'flex',alignItems:'center',gap:3}}><UIIcon name="xp" size={13}/>   <span style={{fontSize:'0.7rem',fontWeight:700,color:'#7c3aed'}}>{me?.xp||0}XP</span></div>
-            </div>}
-          </div>
-          <div style={{padding:'5px 7px',borderBottom:'1px solid #f3f4f6'}}>
-            <div style={{display:'flex',gap:3}}>
-              {STATUSES.map(s=>(
-                <button key={s.id} onClick={()=>{setStatus(s.id);socket?.emit('updateStatus',{status:s.id})}} title={s.label}
-                  style={{flex:1,padding:'4px 2px',borderRadius:6,border:`1.5px solid ${status===s.id?s.color:'#e4e6ea'}`,background:status===s.id?s.color+'18':'none',cursor:'pointer',fontSize:'0.6rem',fontWeight:700,color:status===s.id?s.color:'#6b7280'}}>
-                  {s.label.slice(0,3)}
-                </button>
-              ))}
+            {/* Rank badge top right */}
+            <div style={{position:'absolute',top:10,right:10,width:30,height:30,borderRadius:'50%',background:'#2d3555',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              <RIcon rank={me?.rank} size={18}/>
             </div>
           </div>
-          <div style={{padding:'4px'}}>
+          {/* Gold + Level row */}
+          {!me?.isGuest&&<div style={{display:'flex',gap:6,padding:'8px 12px',borderBottom:'1px solid #2d3555'}}>
+            <div style={{flex:1,background:'#111827',borderRadius:8,padding:'6px 10px',display:'flex',alignItems:'center',gap:6}}>
+              <span style={{fontSize:'1rem'}}>🪙</span>
+              <div><div style={{fontSize:'0.58rem',color:'#9ca3af',fontWeight:600}}>Gold</div><div style={{fontSize:'0.82rem',fontWeight:800,color:'#fbbf24'}}>{me?.gold||0}</div></div>
+            </div>
+            <div style={{flex:1,background:'#111827',borderRadius:8,padding:'6px 10px',display:'flex',alignItems:'center',gap:6}}>
+              <span style={{fontSize:'1rem'}}>⭐</span>
+              <div><div style={{fontSize:'0.58rem',color:'#9ca3af',fontWeight:600}}>Level {me?.level||1}</div><div style={{fontSize:'0.82rem',fontWeight:800,color:'#a78bfa'}}>{me?.xp||0} XP</div></div>
+            </div>
+          </div>}
+          {/* Menu items */}
+          <div>
             {[
-              {icon:'fi-ss-user',       label:'My Profile'},
-              {icon:'fi-sr-pencil',     label:'Edit Profile'},
-              {icon:'fi-sr-wallet',     label:'Wallet'},
-              {icon:'fi-sr-layer-group',label:'Level Info'},
-              isStaff&&{icon:'fi-sr-shield-check',label:'Mod Panel',   color:'#6366f1'},
-              isStaff&&{icon:'fi-sr-dashboard',   label:'Admin Panel', color:'#ef4444',onClick:()=>{setOpen(false);window.location.href='/admin'}},
-              me?.rank==='owner'&&{icon:'fi-sr-settings',label:'Site Settings',color:'#f59e0b'},
-              me?.rank==='owner'&&{icon:'fi-sr-cog',     label:'Room Settings', color:'#7c3aed'},
-              me?.rank==='owner'&&{icon:'fi-sr-user-crown',label:'Manage Ranks',color:'#d97706'},
+              {icon:'fi-sr-settings',   label:'Chat options', color:'#60a5fa'},
+              {icon:'fi-sr-layer-group',label:'Level info',   color:'#60a5fa'},
+              {icon:'fi-sr-wallet',     label:'Wallet',       color:'#60a5fa'},
+              isStaff&&{icon:'fi-sr-dashboard',label:'Admin Panel',color:'#60a5fa',onClick:()=>{setOpen(false);window.location.href='/admin'}},
             ].filter(Boolean).map((item,i)=>(
               <button key={i} onClick={()=>{item.onClick?.();setOpen(false)}}
-                style={{display:'flex',alignItems:'center',gap:8,width:'100%',padding:'7px 9px',background:'none',border:'none',cursor:'pointer',color:item.color||'#374151',fontSize:'0.82rem',fontWeight:600,borderRadius:7,textAlign:'left'}}
-                onMouseEnter={e=>e.currentTarget.style.background='#f3f4f6'}
+                style={{display:'flex',alignItems:'center',justifyContent:'space-between',width:'100%',padding:'11px 14px',background:'none',border:'none',borderBottom:'1px solid #2d3555',cursor:'pointer',textAlign:'left',transition:'background .12s'}}
+                onMouseEnter={e=>e.currentTarget.style.background='#2d3555'}
                 onMouseLeave={e=>e.currentTarget.style.background='none'}>
-                <i className={`fi ${item.icon}`} style={{fontSize:13,width:14,textAlign:'center',flexShrink:0}}/>{item.label}
+                <div style={{display:'flex',alignItems:'center',gap:10}}>
+                  <i className={`fi ${item.icon}`} style={{fontSize:14,color:item.color,width:18,textAlign:'center',flexShrink:0}}/>
+                  <span style={{fontSize:'0.84rem',fontWeight:600,color:'#e2e8f0'}}>{item.label}</span>
+                </div>
+                {item.arrow&&<i className="fi fi-sr-angle-right" style={{fontSize:11,color:'#64748b'}}/>}
               </button>
             ))}
-            <div style={{borderTop:'1px solid #f3f4f6',margin:'3px 0'}}/>
-            <button onClick={onLeave} style={{display:'flex',alignItems:'center',gap:8,width:'100%',padding:'7px 9px',background:'none',border:'none',cursor:'pointer',color:'#374151',fontSize:'0.82rem',fontWeight:600,borderRadius:7,textAlign:'left'}} onMouseEnter={e=>e.currentTarget.style.background='#f3f4f6'} onMouseLeave={e=>e.currentTarget.style.background='none'}><i className="fi fi-sr-arrow-left" style={{fontSize:12,width:14,textAlign:'center',flexShrink:0}}/>Leave Room</button>
+          </div>
+          {/* Leave + Logout */}
+          <div style={{borderTop:'1px solid #2d3555'}}>
+            <button onClick={()=>{setOpen(false);onLeave()}} style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'11px 14px',background:'none',border:'none',borderBottom:'1px solid #2d3555',cursor:'pointer',textAlign:'left',transition:'background .12s'}} onMouseEnter={e=>e.currentTarget.style.background='#2d3555'} onMouseLeave={e=>e.currentTarget.style.background='none'}>
+              <i className="fi fi-sr-sign-out-alt" style={{fontSize:14,color:'#60a5fa',width:18,textAlign:'center',flexShrink:0}}/><span style={{fontSize:'0.84rem',fontWeight:600,color:'#e2e8f0'}}>Leave room</span>
+            </button>
             <button onClick={()=>{const t=localStorage.getItem('cgz_token');if(t)fetch(`${API}/api/auth/logout`,{method:'POST',headers:{Authorization:`Bearer ${t}`}}).catch(()=>{});localStorage.removeItem('cgz_token');nav('/login')}}
-              style={{display:'flex',alignItems:'center',gap:8,width:'100%',padding:'7px 9px',background:'none',border:'none',cursor:'pointer',color:'#ef4444',fontSize:'0.82rem',fontWeight:600,borderRadius:7,textAlign:'left'}} onMouseEnter={e=>e.currentTarget.style.background='#fef2f2'} onMouseLeave={e=>e.currentTarget.style.background='none'}><i className="fi fi-sr-user-logout" style={{fontSize:12,width:14,textAlign:'center',flexShrink:0}}/>Logout</button>
+              style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'11px 14px',background:'none',border:'none',cursor:'pointer',textAlign:'left',transition:'background .12s'}} onMouseEnter={e=>e.currentTarget.style.background='#2d3555'} onMouseLeave={e=>e.currentTarget.style.background='none'}>
+              <i className="fi fi-sr-user-logout" style={{fontSize:14,color:'#60a5fa',width:18,textAlign:'center',flexShrink:0}}/><span style={{fontSize:'0.84rem',fontWeight:600,color:'#e2e8f0'}}>Logout</span>
+            </button>
           </div>
         </div>
       )}
@@ -1292,11 +1628,11 @@ function AvatarDropdown({me,status,setStatus,onLeave,socket}) {
 function HBtn({icon,img,title,badge,active,onClick}) {
   return (
     <button onClick={onClick} title={title}
-      style={{position:'relative',background:active?'#e8f0fe':'none',border:'none',cursor:'pointer',color:active?'#1a73e8':'#6b7280',width:34,height:34,borderRadius:7,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,transition:'all .15s',flexShrink:0}}
+      style={{position:'relative',background:active?'#e8f0fe':'none',border:'none',cursor:'pointer',color:active?'#1a73e8':'#6b7280',width:38,height:38,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,transition:'all .15s',flexShrink:0}}
       onMouseEnter={e=>{e.currentTarget.style.background='#f3f4f6'}}
       onMouseLeave={e=>{e.currentTarget.style.background=active?'#e8f0fe':'none'}}>
       {img
-        ? <img src={img} alt={title} style={{width:19,height:19,objectFit:'contain',filter:active?'none':'grayscale(20%)',opacity:active?1:0.75}} onError={e=>e.target.style.display='none'}/>
+        ? <img src={img} alt={title} style={{width:22,height:22,objectFit:'contain',filter:active?'none':'grayscale(20%)',opacity:active?1:0.8}} onError={e=>e.target.style.display='none'}/>
         : <i className={`fi ${icon}`}/>
       }
       {badge>0&&<span style={{position:'absolute',top:4,right:4,minWidth:7,height:7,background:'#ef4444',borderRadius:'50%',border:'1.5px solid #fff'}}/>}
@@ -1345,6 +1681,8 @@ export default function ChatRoom() {
   const [showDM,    setShowDM]   =useState(false)
   const [showFriends,setShowFriends]=useState(false)
   const [showPlus,  setShowPlus] =useState(false)
+  const [showPaint, setShowPaint]=useState(false)
+  const [whisperTarget,setWhisper]=useState(null)
   const [showGif,   setShowGif]  =useState(false)
   const [showYT,    setShowYT]   =useState(false)
   const [showEmoji, setShowEmoji]=useState(false)
@@ -1409,7 +1747,7 @@ export default function ChatRoom() {
     s.on('youAreMuted',    ({minutes})=>{Sounds.mute();toast?.show(`🔇 Muted for ${minutes} minutes`,'warn',6000)})
     s.on('levelUp',        ({level,gold})=>{Sounds.levelUp();toast?.show(`🎉 Level ${level}! +${gold} Gold`,'success',5000)})
     s.on('giftReceived',   ({gift,from})=>{Sounds.gift();toast?.show(`🎁 ${from} sent you ${gift.name}!`,'gift',5000)})
-    s.on('diceResult',     ({roll,won,payout})=>toast?.show(`🎲 Rolled ${roll}! ${won?`Won ${payout} Gold 🎉`:'Better luck next time!'}`,'info',4000))
+    s.on('diceResult',     ({roll,won,payout,bet})=>{if(won)toast?.show(`🎲 Rolled ${roll}! WON ${payout} Gold 🎉`,'success',4000);else toast?.show(`🎲 Rolled ${roll}! Lost ${bet||100} Gold`,'error',3000)})
     s.on('spinResult',     ({prize})=>toast?.show(`🎡 Spin: ${prize||0} Gold!`,'success',4000))
     s.on('goldUpdated',    ({gold})=>setMe(p=>p?{...p,gold}:p))
     s.on('error',          e=>console.error('Socket:',e))
@@ -1436,6 +1774,10 @@ export default function ChatRoom() {
     s.on('privateMessage', m=>{setNotif(p=>({...p,dm:p.dm+1}));Sounds.privateMsg()})
     s.on('giftSent',       ({gift,to})=>toast?.show(`🎁 Gift sent to ${to}!`,'success',3000))
     s.on('pmError',        ({error})=>toast?.show(error,'error',4000))
+    s.on('echoMessage',    ({from,content,isEcho})=>{
+      if(isEcho&&from) setMsgs(p=>[...p,{_id:Date.now()+'e',type:'whisper',content,sender:from,createdAt:new Date(),isEcho:true}])
+    })
+    s.on('echoError',      ({error})=>toast?.show(`👁️ ${error}`,'error',3000))
     s.on('roomPasswordRequired', ({roomId:rid,roomName})=>{
       const pw=window.prompt(`🔒 "${roomName}" requires a password:`)
       if(pw) s.emit('joinRoom',{roomId:rid,enteredPassword:pw})
@@ -1467,7 +1809,7 @@ export default function ChatRoom() {
   const handleMiniCard=useCallback((user,pos)=>{setMini({user,pos});setProf(null)},[])
   const myLevel=RANKS[me?.rank]?.level||1
   const isStaff=myLevel>=11
-  const closeAll=useCallback(()=>{setMini(null);setShowNotif(false);setShowDM(false);setShowFriends(false);setShowPlus(false);setShowEmoji(false);setShowGif(false);setShowYT(false)},[])
+  const closeAll=useCallback(()=>{setMini(null);setShowNotif(false);setShowDM(false);setShowFriends(false);setShowPlus(false);setShowEmoji(false);setShowGif(false);setShowYT(false);setShowPaint(false)},[])
 
   if(!loading&&roomErr) return (
     <div style={{minHeight:'100dvh',background:'#f8f9fa',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12,padding:16}}>
@@ -1485,7 +1827,7 @@ export default function ChatRoom() {
     <div style={{height:'100dvh',display:'flex',flexDirection:'column',background:'#fff',overflow:'hidden'}} onClick={closeAll}>
 
       {/* ── HEADER ── */}
-      <div style={{height:46,background:'#fff',borderBottom:'1px solid #e4e6ea',display:'flex',alignItems:'center',padding:'0 6px',gap:3,flexShrink:0,boxShadow:'0 1px 3px rgba(0,0,0,.05)'}}>
+      <div style={{height:50,background:'#fff',borderBottom:'1px solid #e4e6ea',display:'flex',alignItems:'center',padding:'0 8px',gap:2,flexShrink:0,boxShadow:'0 1px 3px rgba(0,0,0,.05)'}}>
         {/* Hamburger */}
         <button onClick={e=>{e.stopPropagation();setLeft(s=>!s)}} title="Menu"
           style={{background:showLeft?'#e8f0fe':'none',border:'none',cursor:'pointer',color:showLeft?'#1a73e8':'#6b7280',width:34,height:34,borderRadius:7,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>
@@ -1528,7 +1870,13 @@ export default function ChatRoom() {
 
         {/* MESSAGES */}
         <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',minWidth:0}}>
-          {room?.topic&&<div style={{background:'#f8f9fa',borderBottom:'1px solid #e4e6ea',padding:'4px 12px',fontSize:'0.76rem',color:'#374151',flexShrink:0}}><i className="fi fi-sr-info" style={{marginRight:5,color:'#1a73e8'}}/>{room.topic}</div>}
+          {room?.topic&&(
+            <div style={{background:'#1e293b',borderBottom:'1px solid #334155',padding:'8px 14px',fontSize:'0.78rem',color:'#e2e8f0',flexShrink:0,display:'flex',alignItems:'flex-start',gap:10}}>
+              <i className="fi fi-sr-envelope" style={{fontSize:16,color:'#fbbf24',marginTop:1,flexShrink:0}}/>
+              <span style={{flex:1,lineHeight:1.5}}>{room.topic}</span>
+              <button onClick={()=>setRoom(p=>p?{...p,topic:''}:p)} style={{background:'none',border:'none',cursor:'pointer',color:'#64748b',fontSize:14,flexShrink:0,padding:0}}>✕</button>
+            </div>
+          )}
 
           <div style={{flex:1,overflowY:'auto',padding:'6px 0'}}>
             {messages.map((m,i)=>(
@@ -1555,6 +1903,7 @@ export default function ChatRoom() {
                 {[
                   {icon:'/default_images/icons/upload.svg', fallback:'fi-sr-picture', label:'Image',  action:()=>{document.getElementById('cgz-img-input').click();setShowPlus(false)}},
                   {icon:'/default_images/icons/giphy.svg',  fallback:'fi-sr-gif',     label:'GIF',    action:()=>{setShowGif(p=>!p);setShowPlus(false)}},
+  {icon:null, emoji:'🎨', label:'Paint',  action:()=>{setShowPaint(true);setShowPlus(false)}},
                   {icon:'/default_images/icons/youtube.svg',fallback:'fi-br-youtube', label:'YouTube',action:()=>{setShowYT(p=>!p);setShowPlus(false)}},
                   {icon:null, emoji:'🎲', label:'Dice', action:()=>{sockRef.current?.emit('rollDice',{roomId,bet:10});setShowPlus(false)}},
                 ].map((b,i)=>(
