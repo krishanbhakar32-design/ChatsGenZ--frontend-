@@ -84,7 +84,7 @@ function GifPicker({onSelect,onClose}) {
   },[q])
 
   return(
-    <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'calc(100% + 6px)',left:0,right:0,background:'#fff',border:'1px solid #e4e6ea',borderRadius:12,overflow:'hidden',boxShadow:'0 4px 20px rgba(0,0,0,.15)',zIndex:50,maxHeight:'60vw',minHeight:200,display:'flex',flexDirection:'column'}}>
+    <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'calc(100% + 6px)',left:0,right:0,background:'#fff',border:'1px solid #e4e6ea',borderRadius:12,overflow:'hidden',boxShadow:'0 4px 20px rgba(0,0,0,.15)',zIndex:50,maxHeight:'min(250px,55vw)',minHeight:180,display:'flex',flexDirection:'column'}}>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 10px',borderBottom:'1px solid #f3f4f6',flexShrink:0}}>
         <span style={{fontWeight:700,fontSize:'0.82rem',color:'#374151'}}>🎞 GIF</span>
         <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:14,padding:0}}><i className="fi fi-sr-cross-small"/></button>
@@ -123,7 +123,7 @@ function YTPanel({onClose,onSend}) {
   },[link])
 
   return(
-    <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'calc(100% + 6px)',left:0,right:0,background:'#fff',border:'1px solid #e4e6ea',borderRadius:12,overflow:'hidden',boxShadow:'0 4px 20px rgba(0,0,0,.15)',zIndex:50}}>
+    <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'calc(100% + 6px)',left:0,right:0,maxWidth:'min(100%,320px)',background:'#fff',border:'1px solid #e4e6ea',borderRadius:12,overflow:'hidden',boxShadow:'0 4px 20px rgba(0,0,0,.15)',zIndex:50}}>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 10px',borderBottom:'1px solid #f3f4f6'}}>
         <span style={{fontWeight:700,fontSize:'0.82rem',color:'#ef4444'}}>▶ YouTube</span>
         <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:14,padding:0}}><i className="fi fi-sr-cross-small"/></button>
@@ -193,85 +193,124 @@ function YTMessage({url}) {
     </div>
   )
   return(
-    <div style={{position:'relative',maxWidth:'100%',width:280,borderRadius:9,overflow:'hidden',border:'1px solid #e4e6ea'}}>
+    <div style={{position:'relative',maxWidth:'min(100%,260px)',width:'min(260px,55vw)',borderRadius:9,overflow:'hidden',border:'1px solid #e4e6ea'}}>
       <div style={{position:'absolute',top:4,right:4,zIndex:5,display:'flex',gap:3}}>
         <button onClick={()=>setExpanded(false)} style={{background:'rgba(0,0,0,.7)',border:'none',color:'#fff',borderRadius:'50%',width:20,height:20,cursor:'pointer',fontSize:9,display:'flex',alignItems:'center',justifyContent:'center'}}>−</button>
         <button onClick={()=>setClosed(true)} style={{background:'rgba(0,0,0,.7)',border:'none',color:'#fff',borderRadius:'50%',width:20,height:20,cursor:'pointer',fontSize:9,display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
       </div>
       <iframe width="100%" height="158" src={`https://www.youtube.com/embed/${id}?autoplay=1`}
-        title="YouTube" frameBorder="0" allow="autoplay;encrypted-media" allowFullScreen style={{display:'block'}}/>
+        title="YouTube" frameBorder="0" allow="autoplay;encrypted-media" allowFullScreen style={{display:'block',height:'min(158px,35vw)'}}/>
     </div>
   )
 }
 
 // ── SPIN WHEEL ──
-function SpinWheelGame({socket,onClose}) {
+function SpinWheelGame({socket,myGold,onClose}) {
   const [spinning,setSpinning]=useState(false)
   const [rotation,setRotation]=useState(0)
   const [result,setResult]=useState(null)
   const [bet,setBet]=useState(10)
+  const [notification,setNotification]=useState(null)
+
+  // Segments with multipliers
   const SEGS=[
-    {label:'2x',  color:'#1a73e8'},{label:'0',   color:'#ef4444'},{label:'1.5x',color:'#059669'},
-    {label:'💀',  color:'#9ca3af'},{label:'3x',  color:'#f59e0b'},{label:'0',   color:'#ef4444'},
-    {label:'1.5x',color:'#059669'},{label:'💀',  color:'#9ca3af'},
+    {label:'2×',  mult:2,   color:'#1a73e8'},{label:'0×',  mult:0,   color:'#ef4444'},
+    {label:'1.5×',mult:1.5, color:'#059669'},{label:'💀',  mult:0,   color:'#6b7280'},
+    {label:'3×',  mult:3,   color:'#f59e0b'},{label:'0×',  mult:0,   color:'#ef4444'},
+    {label:'1.5×',mult:1.5, color:'#059669'},{label:'💀',  mult:0,   color:'#6b7280'},
   ]
-  const n=SEGS.length, sa=360/n, cx=100, cy=100, r=90
+  const n=SEGS.length, sa=360/n, cx=100, cy=100, r=88
+
+  const BET_STEPS=[2,5,10,20,50,100,200,500]
+  function incBet(){const i=BET_STEPS.findIndex(v=>v>=bet);setBet(BET_STEPS[Math.min(i+1,BET_STEPS.length-1)])}
+  function decBet(){const i=BET_STEPS.findLastIndex(v=>v<bet);setBet(i>=0?BET_STEPS[i]:BET_STEPS[0])}
 
   function spin() {
-    if(spinning) return
-    setSpinning(true); setResult(null)
+    if(spinning||bet<2) return
+    setSpinning(true); setResult(null); setNotification(null)
     const idx=Math.floor(Math.random()*n)
     const target=5*360+(n-idx)*sa+sa/2
     setRotation(prev=>prev+target)
-    setTimeout(()=>{setSpinning(false);setResult(SEGS[idx]);socket?.emit('spinWheel',{})},3200)
+    setTimeout(()=>{
+      const seg=SEGS[idx]
+      const winAmt=Math.floor(bet*seg.mult)
+      const profit=winAmt-bet
+      setSpinning(false); setResult({...seg,bet,winAmt,profit})
+      // Top floating notification
+      setNotification({
+        text: seg.mult>0
+          ? `🎡 You won ${winAmt} Gold! (+${profit})`
+          : `🎡 Better luck next time! (-${bet})`,
+        win: seg.mult>0
+      })
+      setTimeout(()=>setNotification(null),3500)
+      socket?.emit('spinWheel',{})
+    },3200)
   }
 
   return(
-    <div onClick={e=>e.stopPropagation()} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.55)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1005,padding:16}}>
-      <div style={{background:'#fff',borderRadius:18,padding:'18px 16px',maxWidth:260,width:'100%',textAlign:'center',boxShadow:'0 20px 60px rgba(0,0,0,.3)'}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-          <span style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1rem',color:'#111827'}}>🎡 Spin Wheel</span>
-          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:16}}><i className="fi fi-sr-cross-small"/></button>
+    <>
+      {/* Top floating notification */}
+      {notification&&(
+        <div style={{position:'fixed',top:60,left:'50%',transform:'translateX(-50%)',zIndex:9999,
+          background:notification.win?'#dcfce7':'#fee2e2',
+          border:`1px solid ${notification.win?'#86efac':'#fecaca'}`,
+          color:notification.win?'#15803d':'#dc2626',
+          padding:'10px 20px',borderRadius:30,fontWeight:700,fontSize:'0.9rem',
+          boxShadow:'0 4px 20px rgba(0,0,0,.2)',fontFamily:'Outfit,sans-serif',
+          animation:'slideDown .3s ease-out',whiteSpace:'nowrap'}}>
+          {notification.text}
         </div>
-        <div style={{position:'relative',width:200,height:200,margin:'0 auto 12px'}}>
-          <div style={{position:'absolute',top:-8,left:'50%',transform:'translateX(-50%)',width:0,height:0,borderLeft:'9px solid transparent',borderRight:'9px solid transparent',borderTop:'18px solid #ef4444',zIndex:10}}/>
-          <svg width={200} height={200} style={{transition:spinning?'transform 3.2s cubic-bezier(0.17,0.67,0.12,0.99)':'',transform:`rotate(${rotation}deg)`,transformOrigin:'center'}}>
-            {SEGS.map((seg,i)=>{
-              const s=(i*sa-90)*Math.PI/180, e=((i+1)*sa-90)*Math.PI/180
-              const x1=cx+r*Math.cos(s),y1=cy+r*Math.sin(s),x2=cx+r*Math.cos(e),y2=cy+r*Math.sin(e)
-              const m=((i+0.5)*sa-90)*Math.PI/180,tx=cx+(r*.65)*Math.cos(m),ty=cy+(r*.65)*Math.sin(m)
-              return(
-                <g key={i}>
-                  <path d={`M${cx},${cy} L${x1},${y1} A${r},${r} 0 0,1 ${x2},${y2} Z`} fill={seg.color} stroke="#fff" strokeWidth={2}/>
-                  <text x={tx} y={ty} textAnchor="middle" dominantBaseline="middle" fill="#fff" fontSize={10} fontWeight={700}>{seg.label}</text>
-                </g>
-              )
-            })}
-            <circle cx={cx} cy={cy} r={14} fill="#fff" stroke="#e4e6ea" strokeWidth={2}/>
-          </svg>
-        </div>
-        {result&&(
-          <div style={{background:result.label.includes('x')?'#d1fae5':'#fee2e2',borderRadius:9,padding:'7px 12px',marginBottom:10}}>
-            <span style={{fontWeight:700,color:result.label.includes('x')?'#065f46':'#dc2626',fontSize:'0.88rem'}}>
-              {result.label.includes('x')?`🎉 ${result.label} — You Win!`:'😅 Better luck next time!'}
-            </span>
+      )}
+      <div onClick={e=>e.stopPropagation()} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.55)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1005,padding:16}}>
+        <div style={{background:'#fff',borderRadius:18,padding:'16px 14px',maxWidth:240,width:'100%',textAlign:'center',boxShadow:'0 20px 60px rgba(0,0,0,.3)'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+            <span style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'0.95rem',color:'#111827'}}>🎡 Spin Wheel</span>
+            <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:15}}><i className="fi fi-sr-cross-small"/></button>
           </div>
-        )}
-        <div style={{display:'flex',gap:6,alignItems:'center',justifyContent:'center',marginBottom:10}}>
-          <span style={{fontSize:'0.78rem',fontWeight:600,color:'#374151'}}>Bet:</span>
-          {[5,10,25,50].map(b=>(
-            <button key={b} onClick={()=>setBet(b)} style={{padding:'3px 9px',borderRadius:20,border:`1.5px solid ${bet===b?'#1a73e8':'#e4e6ea'}`,background:bet===b?'#e8f0fe':'none',cursor:'pointer',fontSize:'0.72rem',fontWeight:700,color:bet===b?'#1a73e8':'#6b7280'}}>{b}</button>
-          ))}
+          {/* Wheel */}
+          <div style={{position:'relative',width:200,height:200,margin:'0 auto 10px'}}>
+            <div style={{position:'absolute',top:-8,left:'50%',transform:'translateX(-50%)',width:0,height:0,borderLeft:'8px solid transparent',borderRight:'8px solid transparent',borderTop:'16px solid #ef4444',zIndex:10}}/>
+            <svg width={200} height={200} style={{transition:spinning?'transform 3.2s cubic-bezier(0.17,0.67,0.12,0.99)':'',transform:`rotate(${rotation}deg)`,transformOrigin:'center'}}>
+              {SEGS.map((seg,i)=>{
+                const s=(i*sa-90)*Math.PI/180, e=((i+1)*sa-90)*Math.PI/180
+                const x1=cx+r*Math.cos(s),y1=cy+r*Math.sin(s),x2=cx+r*Math.cos(e),y2=cy+r*Math.sin(e)
+                const m=((i+0.5)*sa-90)*Math.PI/180,tx=cx+(r*.66)*Math.cos(m),ty=cy+(r*.66)*Math.sin(m)
+                return(
+                  <g key={i}>
+                    <path d={`M${cx},${cy} L${x1},${y1} A${r},${r} 0 0,1 ${x2},${y2} Z`} fill={seg.color} stroke="#fff" strokeWidth={2}/>
+                    <text x={tx} y={ty} textAnchor="middle" dominantBaseline="middle" fill="#fff" fontSize={10} fontWeight={700}>{seg.label}</text>
+                  </g>
+                )
+              })}
+              <circle cx={cx} cy={cy} r={14} fill="#fff" stroke="#e4e6ea" strokeWidth={2}/>
+            </svg>
+          </div>
+          {/* Bet payout preview */}
+          <div style={{background:'#f9fafb',borderRadius:8,padding:'6px 10px',marginBottom:8,fontSize:'0.75rem',color:'#374151',display:'flex',justifyContent:'space-around'}}>
+            <span>Cost: <strong style={{color:'#ef4444'}}>{bet}G</strong></span>
+            <span>3×: <strong style={{color:'#f59e0b'}}>{bet*3}G</strong></span>
+            <span>2×: <strong style={{color:'#1a73e8'}}>{bet*2}G</strong></span>
+            <span>1.5×: <strong style={{color:'#059669'}}>{Math.floor(bet*1.5)}G</strong></span>
+          </div>
+          {/* Bet field */}
+          <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:10,justifyContent:'center'}}>
+            <button onClick={decBet} style={{width:28,height:28,borderRadius:'50%',border:'1.5px solid #e4e6ea',background:'#f9fafb',cursor:'pointer',fontWeight:700,fontSize:16,display:'flex',alignItems:'center',justifyContent:'center',color:'#374151'}}>−</button>
+            <div style={{background:'#f9fafb',border:'1.5px solid #e4e6ea',borderRadius:8,padding:'4px 16px',fontWeight:800,fontSize:'0.95rem',color:'#111827',minWidth:60,textAlign:'center'}}>{bet} Gold</div>
+            <button onClick={incBet} style={{width:28,height:28,borderRadius:'50%',border:'1.5px solid #1a73e8',background:'#e8f0fe',cursor:'pointer',fontWeight:700,fontSize:16,display:'flex',alignItems:'center',justifyContent:'center',color:'#1a73e8'}}>+</button>
+          </div>
+          <button onClick={spin} disabled={spinning||bet>=(myGold||9999)}
+            style={{width:'100%',padding:'10px',borderRadius:10,border:'none',background:spinning?'#f3f4f6':'linear-gradient(135deg,#f59e0b,#d97706)',color:spinning?'#9ca3af':'#fff',fontWeight:800,cursor:spinning?'not-allowed':'pointer',fontSize:'0.88rem',fontFamily:'Outfit,sans-serif'}}>
+            {spinning?'Spinning...':'🎡 Spin!'}
+          </button>
         </div>
-        <button onClick={spin} disabled={spinning}
-          style={{width:'100%',padding:'10px',borderRadius:10,border:'none',background:spinning?'#f3f4f6':'linear-gradient(135deg,#f59e0b,#d97706)',color:spinning?'#9ca3af':'#fff',fontWeight:800,cursor:spinning?'not-allowed':'pointer',fontSize:'0.88rem',fontFamily:'Outfit,sans-serif'}}>
-          {spinning?'Spinning...':'🎡 Spin!'}
-        </button>
       </div>
-    </div>
+    </>
   )
 }
 
+// ─────────────────────────────────────────────────────────────
+// MINI CARD
 // ─────────────────────────────────────────────────────────────
 // MINI CARD
 // ─────────────────────────────────────────────────────────────
@@ -375,14 +414,11 @@ function Msg({msg,onMiniCard,onMention,myId,myLevel,socket,roomId}) {
   if (isSystem) {
     const cfg = SYS_CFG[msg.type] || SYS_CFG.system
     return (
-      <div style={{display:'flex',alignItems:'center',gap:7,padding:'3px 10px',margin:'1px 0'}}>
-        <img src="/default_images/avatar/default_system.png" alt=""
-          style={{width:26,height:26,borderRadius:'50%',objectFit:'cover',border:'1.5px solid #e4e6ea',flexShrink:0,background:'#f3f4f6'}}
-          onError={e=>{e.target.style.display='none'}}/>
-        <div style={{background:cfg.bg,border:`1px solid ${cfg.border}`,borderRadius:'3px 10px 10px 10px',padding:'4px 10px',maxWidth:'85%'}}>
-          <span style={{fontSize:'0.7rem',fontWeight:700,color:cfg.color,marginRight:5}}>{cfg.icon} System</span>
-          <span style={{fontSize:'0.76rem',color:'#374151'}}>{msg.content}</span>
-        </div>
+      <div style={{textAlign:'center',padding:'2px 12px',margin:'1px 0'}}>
+        <span style={{display:'inline-flex',alignItems:'center',gap:4,background:'#f3f4f6',padding:'2px 12px',borderRadius:20,fontSize:'0.72rem',color:cfg.color,fontWeight:600}}>
+          <span style={{fontSize:'0.85rem'}}>{cfg.icon}</span>
+          <span style={{color:'#374151'}}>{msg.content}</span>
+        </span>
       </div>
     )
   }
@@ -528,16 +564,16 @@ function LeftSidebar({room,nav,socket,roomId,onClose}) {
   return (
     <div style={{display:'flex',height:'100%',flexShrink:0}}>
       {/* Icon strip with labels - like adultchat left menu */}
-      <div style={{width:56,background:'#1e2235',borderRight:'1px solid #2d3148',display:'flex',flexDirection:'column',alignItems:'center',padding:'6px 0',gap:1,overflowY:'auto'}}>
+      <div style={{width:56,background:'#f8f9fa',borderRight:'1px solid #e4e6ea',display:'flex',flexDirection:'column',alignItems:'center',padding:'6px 0',gap:1,overflowY:'auto'}}>
         {/* Room icon at top */}
         <div style={{padding:'4px 0 8px',borderBottom:'1px solid #2d3148',width:'100%',textAlign:'center',marginBottom:4}}>
           <img src={room?.icon||'/default_images/rooms/default_room.png'} alt="" style={{width:28,height:28,borderRadius:7,objectFit:'cover',margin:'0 auto',display:'block'}} onError={e=>e.target.style.display='none'}/>
-          <div style={{fontSize:'0.5rem',color:'#8892b0',fontWeight:600,marginTop:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',padding:'0 2px'}}>{room?.name||'Room'}</div>
+          <div style={{fontSize:'0.5rem',color:'#9ca3af',fontWeight:600,marginTop:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',padding:'0 2px'}}>{room?.name||'Room'}</div>
         </div>
         {ITEMS.map(item=>(
           <button key={item.id} title={item.label} onClick={()=>setPanel(p=>p===item.id?null:item.id)}
-            style={{width:'100%',padding:'7px 2px 5px',border:'none',background:panel===item.id?`${item.color}28`:'none',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:2,color:panel===item.id?item.color:'#8892b0',transition:'all .12s',borderLeft:panel===item.id?`2px solid ${item.color}`:'2px solid transparent'}}
-            onMouseEnter={e=>{if(panel!==item.id){e.currentTarget.style.background='rgba(255,255,255,.07)';e.currentTarget.style.color=item.color}}}
+            style={{width:'100%',padding:'7px 2px 5px',border:'none',background:panel===item.id?`${item.color}15`:'none',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:2,color:panel===item.id?item.color:'#6b7280',transition:'all .12s',borderLeft:panel===item.id?`2px solid ${item.color}`:'2px solid transparent'}}
+            onMouseEnter={e=>{if(panel!==item.id){e.currentTarget.style.background=`${item.color}10`;e.currentTarget.style.color=item.color}}}
             onMouseLeave={e=>{if(panel!==item.id){e.currentTarget.style.background='none';e.currentTarget.style.color='#8892b0'}}}>
             <i className={`fi ${item.icon}`} style={{fontSize:16}}/>
             <span style={{fontSize:'0.48rem',fontWeight:700,letterSpacing:'0.2px',textAlign:'center',lineHeight:1.2,maxWidth:48,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.label}</span>
@@ -553,7 +589,7 @@ function LeftSidebar({room,nav,socket,roomId,onClose}) {
             <button onClick={()=>setPanel(null)} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:13}}><i className="fi fi-sr-cross-small"/></button>
           </div>
           {panel==='rooms'      &&<RoomListPanel nav={nav}/>}
-          {panel==='games'      &&<GamesPanel socket={socket} roomId={roomId}/>}
+          {panel==='games'      &&<GamesPanel socket={socket} roomId={roomId} myGold={0}/>}
           {panel==='leaderboard'&&<LeaderboardPanel/>}
           {panel==='username'   &&<UsernamePanel/>}
           {panel==='news'       &&<SimplePanel icon="📰" msg="No announcements yet."/>}
@@ -649,12 +685,102 @@ function RoomListPanel({nav}) {
 // ─────────────────────────────────────────────────────────────
 // GAMES PANEL — with SpinWheel
 // ─────────────────────────────────────────────────────────────
-function GamesPanel({socket,roomId}) {
+// ── KENO GAME ──
+function KenoGame({socket,onClose}) {
+  const [selected,setSel]=useState([])
+  const [bet,setBet]=useState(2)
+  const [result,setResult]=useState(null)
+  const [waiting,setWait]=useState(false)
+  const NUMS=Array.from({length:40},(_,i)=>i+1)
+
+  const BET_STEPS=[2,4,5,10,20,50,100]
+  function incBet(){const i=BET_STEPS.findIndex(v=>v>bet);setBet(i>=0?BET_STEPS[i]:BET_STEPS[BET_STEPS.length-1])}
+  function decBet(){const i=BET_STEPS.findLastIndex(v=>v<bet);setBet(i>=0?BET_STEPS[i]:BET_STEPS[0])}
+
+  function toggleNum(n) {
+    if(waiting) return
+    setSel(p=>p.includes(n)?p.filter(x=>x!==n):p.length<10?[...p,n]:p)
+    setResult(null)
+  }
+
+  function play() {
+    if(selected.length<2||waiting) return
+    setWait(true)
+    socket?.emit('playKeno',{roomId:'',picks:selected,bet})
+    // Simulate result for UI (backend sends actual result)
+    setTimeout(()=>{
+      const drawn=Array.from({length:20},()=>Math.floor(Math.random()*40)+1)
+      const hits=selected.filter(n=>drawn.includes(n))
+      setResult({drawn,hits})
+      setWait(false)
+    },1500)
+  }
+
+  return(
+    <div onClick={e=>e.stopPropagation()} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.55)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1005,padding:12}}>
+      <div style={{background:'#fff',borderRadius:16,padding:'14px',maxWidth:320,width:'100%',boxShadow:'0 20px 60px rgba(0,0,0,.3)'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+          <span style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'0.95rem',color:'#111827'}}>🎯 Keno</span>
+          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:15}}><i className="fi fi-sr-cross-small"/></button>
+        </div>
+        <div style={{fontSize:'0.72rem',color:'#9ca3af',marginBottom:6,textAlign:'center'}}>
+          Pick 2-10 numbers · {selected.length} selected
+        </div>
+        {/* Number grid - 8 cols x 5 rows = 40 numbers */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(8,1fr)',gap:3,marginBottom:10}}>
+          {NUMS.map(n=>{
+            const isSel=selected.includes(n)
+            const isHit=result&&result.drawn.includes(n)
+            const isMatch=result&&result.hits.includes(n)
+            let bg='#f9fafb',color='#374151',border='#e4e6ea'
+            if(isMatch){bg='#22c55e';color='#fff';border='#22c55e'}
+            else if(isHit&&result){bg='#dbeafe';color='#1d4ed8';border='#93c5fd'}
+            else if(isSel){bg='#1a73e8';color='#fff';border='#1a73e8'}
+            return(
+              <button key={n} onClick={()=>toggleNum(n)}
+                style={{height:28,borderRadius:6,border:`1.5px solid ${border}`,background:bg,cursor:'pointer',fontSize:'0.7rem',fontWeight:700,color,transition:'all .1s'}}>
+                {n}
+              </button>
+            )
+          })}
+        </div>
+        {/* Bet field */}
+        <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:10,justifyContent:'center'}}>
+          <button onClick={decBet} style={{width:26,height:26,borderRadius:'50%',border:'1.5px solid #e4e6ea',background:'#f9fafb',cursor:'pointer',fontWeight:700,fontSize:15,display:'flex',alignItems:'center',justifyContent:'center',color:'#374151'}}>−</button>
+          <div style={{background:'#f9fafb',border:'1.5px solid #e4e6ea',borderRadius:7,padding:'3px 14px',fontWeight:800,fontSize:'0.88rem',color:'#111827',minWidth:56,textAlign:'center'}}>{bet}G</div>
+          <button onClick={incBet} style={{width:26,height:26,borderRadius:'50%',border:'1.5px solid #1a73e8',background:'#e8f0fe',cursor:'pointer',fontWeight:700,fontSize:15,display:'flex',alignItems:'center',justifyContent:'center',color:'#1a73e8'}}>+</button>
+          <span style={{fontSize:'0.7rem',color:'#9ca3af'}}>min 2</span>
+        </div>
+        {result&&(
+          <div style={{background:result.hits.length>0?'#d1fae5':'#fee2e2',borderRadius:8,padding:'6px 10px',marginBottom:8,textAlign:'center',fontSize:'0.8rem',fontWeight:700,color:result.hits.length>0?'#065f46':'#dc2626'}}>
+            {result.hits.length>0?`🎉 ${result.hits.length} hits! +${result.hits.length*bet}G`:'😅 No hits this time!'}
+          </div>
+        )}
+        <button onClick={play} disabled={selected.length<2||waiting}
+          style={{width:'100%',padding:'9px',borderRadius:9,border:'none',background:selected.length<2||waiting?'#f3f4f6':'linear-gradient(135deg,#1a73e8,#1464cc)',color:selected.length<2||waiting?'#9ca3af':'#fff',fontWeight:700,cursor:selected.length<2||waiting?'not-allowed':'pointer',fontSize:'0.86rem',fontFamily:'Outfit,sans-serif'}}>
+          {waiting?'Drawing...':selected.length<2?'Select 2+ numbers':`Play (${bet}G)`}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function GamesPanel({socket,roomId,myGold}) {
   const [showSpin,setShowSpin]=useState(false)
+  const [showKeno,setShowKeno]=useState(false)
+  const [showDice,setShowDice]=useState(false)
+  const [diceVal,setDiceVal]=useState(null)
+
+  function rollDice() {
+    socket?.emit('rollDice',{roomId,bet:10})
+    setDiceVal(Math.floor(Math.random()*6)+1)
+    setShowDice(true)
+  }
+
   const GAMES=[
-    {id:'dice', icon:'fi-sr-dice',  label:'🎲 Dice',       desc:'Roll to win gold',  color:'#7c3aed', action:()=>socket?.emit('rollDice',{roomId,bet:10})},
+    {id:'dice', icon:'fi-sr-dice',  label:'🎲 Dice',       desc:'Roll to win gold',  color:'#7c3aed', action:rollDice},
     {id:'spin', icon:'fi-sr-wheel', label:'🎡 Spin Wheel', desc:'Spin to multiply!', color:'#f59e0b', action:()=>setShowSpin(true)},
-    {id:'keno', icon:'fi-sr-grid',  label:'🎯 Keno',       desc:'Pick your numbers', color:'#1a73e8', action:()=>socket?.emit('playKeno',{roomId,picks:[1,2,3,4,5],bet:10})},
+    {id:'keno', icon:'fi-sr-grid',  label:'🎯 Keno',       desc:'Pick 2-10 numbers', color:'#1a73e8', action:()=>setShowKeno(true)},
   ]
   return (
     <div style={{padding:10,flex:1,overflowY:'auto'}}>
@@ -672,7 +798,9 @@ function GamesPanel({socket,roomId}) {
           </div>
         </button>
       ))}
-      {showSpin&&<SpinWheelGame socket={socket} onClose={()=>setShowSpin(false)}/>}
+      {showDice&&diceVal&&<DiceRoll value={diceVal} onDone={()=>{setShowDice(false);setDiceVal(null)}}/>}
+      {showSpin&&<SpinWheelGame socket={socket} myGold={myGold||0} onClose={()=>setShowSpin(false)}/>}
+      {showKeno&&<KenoGame socket={socket} onClose={()=>setShowKeno(false)}/>}
     </div>
   )
 }
@@ -830,6 +958,77 @@ function RadioPanel({onClose}) {
         ))}
       </div>
       <audio ref={audioRef} style={{display:'none'}}/>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// FRIEND REQUESTS PANEL
+// ─────────────────────────────────────────────────────────────
+function FriendReqPanel({onClose,onCount}) {
+  const [reqs,setReqs]=useState([]), [load,setLoad]=useState(true)
+  const token=localStorage.getItem('cgz_token')
+
+  function load_reqs() {
+    fetch(`${API}/api/users/me/friends`,{headers:{Authorization:`Bearer ${token}`}})
+      .then(r=>r.json())
+      .then(d=>{
+        const pending=(d.requests||[]).filter(r=>r.status==='pending')
+        setReqs(pending)
+        onCount(pending.length)
+      }).catch(()=>{}).finally(()=>setLoad(false))
+  }
+
+  useEffect(()=>{ load_reqs() },[])
+
+  async function accept(userId) {
+    await fetch(`${API}/api/users/friend/${userId}/accept`,{method:'POST',headers:{Authorization:`Bearer ${token}`}}).catch(()=>{})
+    load_reqs()
+  }
+  async function decline(userId) {
+    await fetch(`${API}/api/users/friend/${userId}/decline`,{method:'POST',headers:{Authorization:`Bearer ${token}`}}).catch(()=>{})
+    load_reqs()
+  }
+
+  return (
+    <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',background:'#fff',border:'1px solid #e4e6ea',borderRadius:14,width:'min(300px,92vw)',maxHeight:380,display:'flex',flexDirection:'column',boxShadow:'0 8px 28px rgba(0,0,0,.14)',zIndex:999}} onClick={e=>e.stopPropagation()}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 13px',borderBottom:'1px solid #f3f4f6',flexShrink:0}}>
+        <span style={{fontFamily:'Outfit,sans-serif',fontWeight:800,fontSize:'0.88rem',color:'#111827'}}>Friend Requests</span>
+        <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:13}}><i className="fi fi-sr-cross-small"/></button>
+      </div>
+      <div style={{flex:1,overflowY:'auto'}}>
+        {load&&<div style={{textAlign:'center',padding:20}}><div style={{width:20,height:20,border:'2px solid #e4e6ea',borderTop:'2px solid #1a73e8',borderRadius:'50%',animation:'spin .8s linear infinite',margin:'0 auto'}}/></div>}
+        {!load&&reqs.length===0&&(
+          <div style={{textAlign:'center',padding:'28px 16px',color:'#9ca3af'}}>
+            <i className="fi fi-sr-user-add" style={{fontSize:26,display:'block',marginBottom:8,opacity:0.3}}/>
+            <p style={{fontSize:'0.84rem',fontWeight:600,margin:0}}>No pending requests</p>
+          </div>
+        )}
+        {reqs.map(req=>(
+          <div key={req._id||req.from?._id} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 13px',borderBottom:'1px solid #f9fafb'}}>
+            <img src={req.from?.avatar||'/default_images/avatar/default_guest.png'} alt=""
+              style={{width:36,height:36,borderRadius:'50%',objectFit:'cover',flexShrink:0,border:`1.5px solid ${GBR(req.from?.gender,req.from?.rank)}`}}
+              onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:'0.84rem',fontWeight:700,color:'#111827',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{req.from?.username}</div>
+              <div style={{display:'flex',alignItems:'center',gap:3}}>
+                <RIcon rank={req.from?.rank} size={10}/>
+                <span style={{fontSize:'0.68rem',color:R(req.from?.rank).color}}>{R(req.from?.rank).label}</span>
+              </div>
+            </div>
+            <div style={{display:'flex',gap:5,flexShrink:0}}>
+              <button onClick={()=>accept(req.from?._id)}
+                style={{padding:'5px 10px',borderRadius:7,border:'none',background:'#22c55e',color:'#fff',fontWeight:700,cursor:'pointer',fontSize:'0.75rem'}}>
+                ✓ Accept
+              </button>
+              <button onClick={()=>decline(req.from?._id)}
+                style={{padding:'5px 8px',borderRadius:7,border:'1.5px solid #e4e6ea',background:'#f9fafb',color:'#6b7280',fontWeight:600,cursor:'pointer',fontSize:'0.75rem'}}>
+                ✕
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -1062,7 +1261,12 @@ function AvatarDropdown({me,status,setStatus,onLeave,socket}) {
               {icon:'fi-ss-user',       label:'My Profile'},
               {icon:'fi-sr-pencil',     label:'Edit Profile'},
               {icon:'fi-sr-wallet',     label:'Wallet'},
-              isStaff&&{icon:'fi-sr-dashboard',label:'Admin Panel',color:'#ef4444',onClick:()=>{setOpen(false);window.location.href='/admin'}},
+              {icon:'fi-sr-layer-group',label:'Level Info'},
+              isStaff&&{icon:'fi-sr-shield-check',label:'Mod Panel',   color:'#6366f1'},
+              isStaff&&{icon:'fi-sr-dashboard',   label:'Admin Panel', color:'#ef4444',onClick:()=>{setOpen(false);window.location.href='/admin'}},
+              me?.rank==='owner'&&{icon:'fi-sr-settings',label:'Site Settings',color:'#f59e0b'},
+              me?.rank==='owner'&&{icon:'fi-sr-cog',     label:'Room Settings', color:'#7c3aed'},
+              me?.rank==='owner'&&{icon:'fi-sr-user-crown',label:'Manage Ranks',color:'#d97706'},
             ].filter(Boolean).map((item,i)=>(
               <button key={i} onClick={()=>{item.onClick?.();setOpen(false)}}
                 style={{display:'flex',alignItems:'center',gap:8,width:'100%',padding:'7px 9px',background:'none',border:'none',cursor:'pointer',color:item.color||'#374151',fontSize:'0.82rem',fontWeight:600,borderRadius:7,textAlign:'left'}}
@@ -1139,6 +1343,7 @@ export default function ChatRoom() {
   const [showRadio, setRadio]    =useState(false)
   const [showNotif, setShowNotif]=useState(false)
   const [showDM,    setShowDM]   =useState(false)
+  const [showFriends,setShowFriends]=useState(false)
   const [showPlus,  setShowPlus] =useState(false)
   const [showGif,   setShowGif]  =useState(false)
   const [showYT,    setShowYT]   =useState(false)
@@ -1235,7 +1440,7 @@ export default function ChatRoom() {
   const handleMiniCard=useCallback((user,pos)=>{setMini({user,pos});setProf(null)},[])
   const myLevel=RANKS[me?.rank]?.level||1
   const isStaff=myLevel>=11
-  const closeAll=useCallback(()=>{setMini(null);setShowNotif(false);setShowDM(false);setShowPlus(false);setShowEmoji(false);setShowGif(false);setShowYT(false)},[])
+  const closeAll=useCallback(()=>{setMini(null);setShowNotif(false);setShowDM(false);setShowFriends(false);setShowPlus(false);setShowEmoji(false);setShowGif(false);setShowYT(false)},[])
 
   if(!loading&&roomErr) return (
     <div style={{minHeight:'100dvh',background:'#f8f9fa',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12,padding:16}}>
@@ -1260,6 +1465,9 @@ export default function ChatRoom() {
           <i className="fi fi-sr-bars-sort"/>
         </button>
 
+        {/* Webcam button */}
+        <HBtn img="/default_images/icons/webcam.svg" title="Webcam" active={false} onClick={e=>e.stopPropagation()}/>
+
         {/* Room name - center */}
         <div style={{flex:1,textAlign:'center',minWidth:0}}>
           <div style={{fontSize:'0.84rem',fontWeight:800,color:'#111827',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontFamily:'Outfit,sans-serif'}}>{room?.name||'Chat Room'}</div>
@@ -1273,7 +1481,8 @@ export default function ChatRoom() {
         </div>
 
         <div style={{position:'relative'}}>
-          <HBtn icon="fi-sr-user-add" title="Friend Requests" badge={notif.friends} active={false} onClick={e=>e.stopPropagation()}/>
+          <HBtn icon="fi-sr-user-add" title="Friend Requests" badge={notif.friends} active={showFriends} onClick={e=>{e.stopPropagation();setShowFriends(p=>!p);setShowDM(false);setShowNotif(false)}}/>
+          {showFriends&&<FriendReqPanel onClose={()=>setShowFriends(false)} onCount={n=>setNotif(p=>({...p,friends:n}))}/>}
         </div>
 
         <div style={{position:'relative'}}>
@@ -1318,7 +1527,7 @@ export default function ChatRoom() {
               <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'calc(100% + 5px)',left:6,background:'#fff',border:'1px solid #e4e6ea',borderRadius:12,padding:8,display:'flex',gap:7,boxShadow:'0 4px 20px rgba(0,0,0,.14)',zIndex:50}}>
                 {[
                   {icon:'/default_images/icons/upload.svg', fallback:'fi-sr-picture', label:'Image',  action:()=>{document.getElementById('cgz-img-input').click();setShowPlus(false)}},
-                  {icon:'/default_images/icons/gift.svg',   fallback:'fi-sr-gif',     label:'GIF',    action:()=>{setShowGif(p=>!p);setShowPlus(false)}},
+                  {icon:'/default_images/icons/giphy.svg',  fallback:'fi-sr-gif',     label:'GIF',    action:()=>{setShowGif(p=>!p);setShowPlus(false)}},
                   {icon:'/default_images/icons/youtube.svg',fallback:'fi-br-youtube', label:'YouTube',action:()=>{setShowYT(p=>!p);setShowPlus(false)}},
                   {icon:null, emoji:'🎲', label:'Dice', action:()=>{sockRef.current?.emit('rollDice',{roomId,bet:10});setShowPlus(false)}},
                 ].map((b,i)=>(
@@ -1392,6 +1601,9 @@ export default function ChatRoom() {
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes typingDot{0%,80%,100%{transform:scale(.8);opacity:.5}40%{transform:scale(1.1);opacity:1}}
+        @keyframes diceShake{0%,100%{transform:translate(-50%,-50%) rotate(0deg)}25%{transform:translate(-48%,-52%) rotate(-8deg)}75%{transform:translate(-52%,-48%) rotate(8deg)}}
+        @keyframes diceBounce{0%{transform:translate(-50%,-50%) scale(1.2)}50%{transform:translate(-50%,-55%) scale(0.95)}100%{transform:translate(-50%,-50%) scale(1)}}
+        @keyframes slideDown{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
         .del-btn{display:none!important}
         div:hover > div > .del-btn{display:inline-flex!important}
         *{-webkit-tap-highlight-color:transparent}
