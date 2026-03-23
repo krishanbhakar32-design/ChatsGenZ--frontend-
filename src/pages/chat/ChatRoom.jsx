@@ -706,7 +706,7 @@ function KenoGame({socket,onClose}) {
   function play() {
     if(selected.length<2||waiting) return
     setWait(true)
-    socket?.emit('playKeno',{roomId:'',picks:selected,bet})
+    socket?.emit('playKeno',{roomId,picks:selected,bet})
     // Simulate result for UI (backend sends actual result)
     setTimeout(()=>{
       const drawn=Array.from({length:20},()=>Math.floor(Math.random()*40)+1)
@@ -1354,6 +1354,7 @@ export default function ChatRoom() {
   const [loading,   setLoad]     =useState(true)
   const [roomErr,   setErr]      =useState('')
   const [connected, setConn]     =useState(false)
+  const [onlineCount,setOnlineCount]=useState(0)
   const [status,    setStatus]   =useState('online')
   const [notif,     setNotif]    =useState({dm:0,friends:0,notif:0,reports:0})
 
@@ -1394,10 +1395,13 @@ export default function ChatRoom() {
     s.on('disconnect',     ()=>setConn(false))
     s.on('messageHistory', ms=>setMsgs(ms||[]))
     s.on('newMessage',     m=>{setMsgs(p=>[...p,m]);Sounds.newMessage()})
-    s.on('roomUsers',      l=>setUsers(l||[]))
-    s.on('userJoined',     u=>{setUsers(p=>p.find(x=>x.userId===u.userId)?p:[...p,u]);setMsgs(p=>[...p,{_id:Date.now(),type:'join',content:`${u.username} joined the room`,createdAt:new Date()}]);Sounds.join()})
-    s.on('userLeft',       u=>{setUsers(p=>p.filter(x=>x.userId!==u.userId));setMsgs(p=>[...p,{_id:Date.now()+'l',type:'leave',content:`${u.username} left the room`,createdAt:new Date()}])})
-    s.on('systemMessage',  m=>setMsgs(p=>[...p,{_id:Date.now()+'s',type:m.type||'system',content:m.text,createdAt:new Date()}]))
+    s.on('roomUsers',      l=>{setUsers(l||[])})
+    s.on('roomUserCount',  n=>setOnlineCount(n))
+    // Backend sends systemMessage for join/leave/kick/mute/ban/dice — NOT userJoined/userLeft
+    s.on('systemMessage',  m=>{
+      setMsgs(p=>[...p,{_id:Date.now()+'s'+Math.random(),type:m.type||'system',content:m.text,createdAt:new Date()}])
+      if(m.type==='join') Sounds.join()
+    })
     s.on('messageDeleted', ({messageId})=>setMsgs(p=>p.filter(m=>m._id!==messageId)))
     s.on('typing',         ({username,isTyping:t})=>setTypers(p=>t?[...new Set([...p,username])]:p.filter(n=>n!==username)))
     s.on('youAreKicked',   ({reason})=>{Sounds.mute();toast?.show(reason||'You were kicked','error',5000);setTimeout(()=>nav('/chat'),2000)})
@@ -1409,6 +1413,29 @@ export default function ChatRoom() {
     s.on('spinResult',     ({prize})=>toast?.show(`🎡 Spin: ${prize||0} Gold!`,'success',4000))
     s.on('goldUpdated',    ({gold})=>setMe(p=>p?{...p,gold}:p))
     s.on('error',          e=>console.error('Socket:',e))
+    // ── ADDITIONAL EVENTS ──────────────────────────────────
+    s.on('roomTopic',      ({topic})=>setRoom(p=>p?{...p,topic}:p))
+    s.on('topicChanged',   ({topic})=>setRoom(p=>p?{...p,topic}:p))
+    s.on('roomUpdated',    d=>setRoom(p=>p?{...p,...d}:p))
+    s.on('roomClosed',     ({message})=>{toast?.show(message||'Room closed','error',4000);setTimeout(()=>nav('/chat'),2000)})
+    s.on('badgeEarned',    ({badge})=>{Sounds.badge();toast?.show(`🏅 New badge: ${badge.title||badge.name}!`,'success',5000)})
+    s.on('mentioned',      ({by,content})=>{Sounds.mention();toast?.show(`💬 ${by} mentioned you: "${content?.slice(0,30)}"...`,'info',4000)})
+    s.on('messageReaction',({messageId,reactions})=>{setMsgs(p=>p.map(m=>m._id===messageId?{...m,reactions}:m))})
+    s.on('messagePinned',  ({messageId})=>{setMsgs(p=>p.map(m=>m._id===messageId?{...m,isPinned:true}:m))})
+    s.on('userMuted',      ({userId:uid,minutes,by})=>{setMsgs(p=>[...p,{_id:Date.now()+'mu',type:'mute',content:`${by} muted a user for ${minutes} minutes`,createdAt:new Date()}])})
+    s.on('userKicked',     ({userId:uid,by})=>{setMsgs(p=>[...p,{_id:Date.now()+'ki',type:'kick',content:`${by} kicked a user`,createdAt:new Date()}])})
+    s.on('diceError',      ({msg})=>toast?.show(`🎲 ${msg}`,'error',4000))
+    s.on('kenoError',      ({msg})=>toast?.show(`🎯 ${msg}`,'error',4000))
+    s.on('kenoResult',     ({won,payout,matches,total,bet})=>{
+      if(won) toast?.show(`🎯 Keno: ${matches}/${total} hits! +${payout} Gold 🎉`,'success',5000)
+      else    toast?.show(`🎯 Keno: No hits. -${bet} Gold`,'info',3000)
+    })
+    s.on('gamePlayed',     ({game,player,won})=>{}) // already handled via systemMessage
+    s.on('dailyBonusClaimed',({gold,xp})=>toast?.show(`🎁 Daily bonus: +${gold} Gold, +${xp} XP!`,'success',4000))
+    s.on('onlineCount',    n=>setOnlineCount(n))
+    s.on('privateMessage', m=>{setNotif(p=>({...p,dm:p.dm+1}));Sounds.privateMsg()})
+    s.on('giftSent',       ({gift,to})=>toast?.show(`🎁 Gift sent to ${to}!`,'success',3000))
+    s.on('pmError',        ({error})=>toast?.show(error,'error',4000))
     s.on('roomPasswordRequired', ({roomId:rid,roomName})=>{
       const pw=window.prompt(`🔒 "${roomName}" requires a password:`)
       if(pw) s.emit('joinRoom',{roomId:rid,enteredPassword:pw})
@@ -1471,7 +1498,7 @@ export default function ChatRoom() {
         {/* Room name - center */}
         <div style={{flex:1,textAlign:'center',minWidth:0}}>
           <div style={{fontSize:'0.84rem',fontWeight:800,color:'#111827',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontFamily:'Outfit,sans-serif'}}>{room?.name||'Chat Room'}</div>
-          <div style={{fontSize:'0.62rem',color:connected?'#22c55e':'#9ca3af'}}>{connected?`● ${users.length} online`:'Connecting...'}</div>
+          <div style={{fontSize:'0.62rem',color:connected?'#22c55e':'#9ca3af'}}>{connected?`● ${Math.max(users.length,onlineCount)||users.length} online`:'Connecting...'}</div>
         </div>
 
         {/* Right icons - using SVGs from public folder */}
@@ -1550,7 +1577,17 @@ export default function ChatRoom() {
             {showEmoji&&<EmoticonPicker onSelect={em=>{setInput(p=>p+em);setShowEmoji(false);inputRef.current?.focus()}} onClose={()=>setShowEmoji(false)}/>}
 
             <input id="cgz-img-input" type="file" accept="image/*" style={{display:'none'}}
-              onChange={e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=ev=>{sockRef.current?.emit('sendMessage',{roomId,content:ev.target.result,type:'image'})};rd.readAsDataURL(f);e.target.value=''}}/>
+              onChange={async e=>{
+                const f=e.target.files[0]; if(!f) return
+                e.target.value=''
+                try {
+                  const fd=new FormData(); fd.append('image',f)
+                  const r=await fetch(`${API}/api/upload/image`,{method:'POST',headers:{Authorization:`Bearer ${localStorage.getItem('cgz_token')}`},body:fd})
+                  const d=await r.json()
+                  if(r.ok&&d.url) sockRef.current?.emit('sendMessage',{roomId,content:d.url,type:'image'})
+                  else toast?.show('Image upload failed','error',3000)
+                } catch{toast?.show('Image upload failed','error',3000)}
+              }}/>
 
             <form onSubmit={send} style={{display:'flex',alignItems:'center',gap:4}}>
               {/* + button — plain, no color */}
