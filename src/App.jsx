@@ -3,17 +3,17 @@ import { Suspense, lazy } from 'react'
 import ScrollToTop from './components/ScrollToTop.jsx'
 import { ToastProvider } from './components/Toast.jsx'
 
+// Pages
 const Home          = lazy(() => import('./pages/Home.jsx'))
 const Login         = lazy(() => import('./pages/Login.jsx'))
 const VerifyEmail   = lazy(() => import('./pages/VerifyEmail.jsx'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword.jsx'))
 const ChatLobby     = lazy(() => import('./pages/chat/ChatLobby.jsx'))
 const ChatRoom      = lazy(() => import('./pages/chat/ChatRoom.jsx'))
-const Profile       = lazy(() => import('./pages/Profile.jsx'))
-const AdminPanel    = lazy(() => import('./pages/admin/AdminPanel.jsx'))
 const NotFound      = lazy(() => import('./pages/NotFound.jsx'))
 const Kicked        = lazy(() => import('./pages/Kicked.jsx'))
 
+// Info pages
 const About         = lazy(() => import('./pages/info/About.jsx'))
 const Blog          = lazy(() => import('./pages/info/Blog.jsx'))
 const ChatDirectory = lazy(() => import('./pages/info/ChatDirectory.jsx'))
@@ -28,6 +28,7 @@ const Ranks         = lazy(() => import('./pages/info/Ranks.jsx'))
 const RTI           = lazy(() => import('./pages/info/RTI.jsx'))
 const Sitemap       = lazy(() => import('./pages/info/Sitemap.jsx'))
 
+// Legal pages
 const ChatRules     = lazy(() => import('./pages/legal/ChatRules.jsx'))
 const CookiePolicy  = lazy(() => import('./pages/legal/CookiePolicy.jsx'))
 const DMCA          = lazy(() => import('./pages/legal/DMCA.jsx'))
@@ -51,36 +52,41 @@ export default function App() {
       <ScrollToTop />
       <Suspense fallback={<Loader />}>
         <Routes>
-          <Route path="/"                  element={<Home />} />
-          <Route path="/login"             element={<Login />} />
-          <Route path="/verify-email"      element={<VerifyEmail />} />
-          <Route path="/reset-password"    element={<ResetPassword />} />
-          <Route path="/chat"              element={<ChatLobby />} />
-          <Route path="/chat/:roomId"      element={<ChatRoom />} />
-          <Route path="/profile/:username" element={<Profile />} />
-          <Route path="/admin"             element={<AdminPanel />} />
-          <Route path="/about"             element={<About />} />
-          <Route path="/blog"              element={<Blog />} />
-          <Route path="/chat-directory"    element={<ChatDirectory />} />
-          <Route path="/community"         element={<Community />} />
-          <Route path="/contact"           element={<Contact />} />
-          <Route path="/disclaimer"        element={<Disclaimer />} />
-          <Route path="/faq"               element={<FAQ />} />
-          <Route path="/forum"             element={<Forum />} />
-          <Route path="/help"              element={<Help />} />
-          <Route path="/moderation"        element={<Moderation />} />
-          <Route path="/ranks"             element={<Ranks />} />
-          <Route path="/rti"               element={<RTI />} />
-          <Route path="/sitemap"           element={<Sitemap />} />
-          <Route path="/chat-rules"        element={<ChatRules />} />
-          <Route path="/cookie-policy"     element={<CookiePolicy />} />
-          <Route path="/dmca"              element={<DMCA />} />
-          <Route path="/legal"             element={<LegalTerms />} />
-          <Route path="/privacy-policy"    element={<PrivacyPolicy />} />
-          <Route path="/safety"            element={<SafetyTerms />} />
-          <Route path="/terms"             element={<Terms />} />
-          <Route path="/kicked"            element={<Kicked />} />
-          <Route path="*"                  element={<NotFound />} />
+          {/* Main */}
+          <Route path="/"               element={<Home />} />
+          <Route path="/login"          element={<Login />} />
+          <Route path="/verify-email"   element={<VerifyEmail />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/chat"           element={<ChatLobby />} />
+          <Route path="/chat/:roomId"     element={<ChatRoom />} />
+
+          {/* Info */}
+          <Route path="/about"          element={<About />} />
+          <Route path="/blog"           element={<Blog />} />
+          <Route path="/chat-directory" element={<ChatDirectory />} />
+          <Route path="/community"      element={<Community />} />
+          <Route path="/contact"        element={<Contact />} />
+          <Route path="/disclaimer"     element={<Disclaimer />} />
+          <Route path="/faq"            element={<FAQ />} />
+          <Route path="/forum"          element={<Forum />} />
+          <Route path="/help"           element={<Help />} />
+          <Route path="/moderation"     element={<Moderation />} />
+          <Route path="/ranks"          element={<Ranks />} />
+          <Route path="/rti"            element={<RTI />} />
+          <Route path="/sitemap"        element={<Sitemap />} />
+
+          {/* Legal */}
+          <Route path="/chat-rules"     element={<ChatRules />} />
+          <Route path="/cookie-policy"  element={<CookiePolicy />} />
+          <Route path="/dmca"           element={<DMCA />} />
+          <Route path="/legal"          element={<LegalTerms />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/safety"         element={<SafetyTerms />} />
+          <Route path="/terms"          element={<Terms />} />
+
+          {/* 404 */}
+          <Route path="/kicked"          element={<Kicked />} />
+          <Route path="*"               element={<NotFound />} />
         </Routes>
       </Suspense>
     </ToastProvider>
