@@ -403,7 +403,7 @@ function StorePanel() {
 }
 
 function LeaderboardPanel() {
-  const [data,setData]=useState([]), [type,setType]=useState('leader_xp'), [load,setLoad]=useState(false)
+  const [data,setData]=useState([]), [type,setType]=useState('xp'), [load,setLoad]=useState(false)
   useEffect(()=>{
     setLoad(true)
     const t=localStorage.getItem('cgz_token')
@@ -412,7 +412,7 @@ function LeaderboardPanel() {
   return (
     <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
       <div style={{display:'flex',gap:4,padding:'8px 8px 4px',flexShrink:0}}>
-        {[{id:'leader_xp',l:'XP'},{id:'leader_level',l:'Level'},{id:'leader_gold',l:'Gold'},{id:'leader_gift',l:'Gifts'}].map(tp=>(
+        {[{id:'xp',l:'XP'},{id:'level',l:'Level'},{id:'gold',l:'Gold'},{id:'gifts',l:'Gifts'}].map(tp=>(
           <button key={tp.id} onClick={()=>setType(tp.id)} style={{flex:1,padding:'5px 4px',borderRadius:6,border:`1.5px solid ${type===tp.id?'#1a73e8':'#e4e6ea'}`,background:type===tp.id?'#e8f0fe':'none',cursor:'pointer',fontSize:'0.72rem',fontWeight:700,color:type===tp.id?'#1a73e8':'#6b7280'}}>{tp.l}</button>
         ))}
       </div>
