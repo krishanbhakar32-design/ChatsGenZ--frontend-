@@ -12,6 +12,8 @@ const ChatLobby     = lazy(() => import('./pages/chat/ChatLobby.jsx'))
 const ChatRoom      = lazy(() => import('./pages/chat/ChatRoom.jsx'))
 const NotFound      = lazy(() => import('./pages/NotFound.jsx'))
 const Kicked        = lazy(() => import('./pages/Kicked.jsx'))
+const Leaderboard   = lazy(() => import('./pages/Leaderboard.jsx'))
+const Gifts         = lazy(() => import('./pages/Gifts.jsx'))
 
 // Info pages
 const About         = lazy(() => import('./pages/info/About.jsx'))
@@ -85,7 +87,9 @@ export default function App() {
           <Route path="/terms"          element={<Terms />} />
 
           {/* 404 */}
-          <Route path="/kicked"          element={<Kicked />} />
+          <Route path="/leaderboard"    element={<Leaderboard />} />
+          <Route path="/gifts"          element={<Gifts />} />
+          <Route path="/kicked"         element={<Kicked />} />
           <Route path="*"               element={<NotFound />} />
         </Routes>
       </Suspense>
