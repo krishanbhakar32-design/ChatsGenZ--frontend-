@@ -374,27 +374,32 @@ function SpinWheelGame({socket,myGold,onClose}) {
   function incBet(){const i=BET_STEPS.findIndex(v=>v>=bet);setBet(BET_STEPS[Math.min(i+1,BET_STEPS.length-1)])}
   function decBet(){const i=BET_STEPS.findLastIndex(v=>v<bet);setBet(i>=0?BET_STEPS[i]:BET_STEPS[0])}
 
+  // Listen for backend spin result
+  useEffect(()=>{
+    if(!socket) return
+    const onSpin=({prize,index,newGold})=>{
+      // Map backend index to visual segment
+      const target=5*360+(n-(index%n))*sa+sa/2
+      setRotation(prev=>prev+target)
+      setTimeout(()=>{
+        setSpinning(false)
+        setNotification({text:prize>0?`🎡 You won ${prize} Gold! 🎉`:'🎡 Better luck next time!',win:prize>0})
+        setTimeout(()=>setNotification(null),3500)
+      },3200)
+    }
+    const onErr=({msg})=>{setSpinning(false);setNotification({text:`❌ ${msg}`,win:false});setTimeout(()=>setNotification(null),4000)}
+    socket.on('spinResult',onSpin); socket.on('error',onErr)
+    return()=>{ socket.off('spinResult',onSpin); socket.off('error',onErr) }
+  },[socket])
+
   function spin() {
-    if(spinning||bet<2) return
-    setSpinning(true); setResult(null); setNotification(null)
-    const idx=Math.floor(Math.random()*n)
-    const target=5*360+(n-idx)*sa+sa/2
+    if(spinning) return
+    setSpinning(true); setNotification(null)
+    socket?.emit('spinWheel',{})
+    // Visual rotation (actual result comes from backend)
+    const randIdx=Math.floor(Math.random()*n)
+    const target=5*360+(n-randIdx)*sa+sa/2
     setRotation(prev=>prev+target)
-    setTimeout(()=>{
-      const seg=SEGS[idx]
-      const winAmt=Math.floor(bet*seg.mult)
-      const profit=winAmt-bet
-      setSpinning(false); setResult({...seg,bet,winAmt,profit})
-      // Top floating notification
-      setNotification({
-        text: seg.mult>0
-          ? `🎡 You won ${winAmt} Gold! (+${profit})`
-          : `🎡 Better luck next time! (-${bet})`,
-        win: seg.mult>0
-      })
-      setTimeout(()=>setNotification(null),3500)
-      socket?.emit('spinWheel',{})
-    },3200)
   }
 
   return(
@@ -435,22 +440,12 @@ function SpinWheelGame({socket,myGold,onClose}) {
               <circle cx={cx} cy={cy} r={14} fill="#fff" stroke="#e4e6ea" strokeWidth={2}/>
             </svg>
           </div>
-          {/* Bet payout preview */}
-          <div style={{background:'#f9fafb',borderRadius:8,padding:'6px 10px',marginBottom:8,fontSize:'0.75rem',color:'#374151',display:'flex',justifyContent:'space-around'}}>
-            <span>Cost: <strong style={{color:'#ef4444'}}>{bet}G</strong></span>
-            <span>3×: <strong style={{color:'#f59e0b'}}>{bet*3}G</strong></span>
-            <span>2×: <strong style={{color:'#1a73e8'}}>{bet*2}G</strong></span>
-            <span>1.5×: <strong style={{color:'#059669'}}>{Math.floor(bet*1.5)}G</strong></span>
+          <div style={{background:'#f9fafb',borderRadius:8,padding:'6px 10px',marginBottom:10,fontSize:'0.75rem',color:'#6b7280',textAlign:'center'}}>
+            🎡 Free spin once every 24 hours! Prizes: 5 to 500 Gold
           </div>
-          {/* Bet field */}
-          <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:10,justifyContent:'center'}}>
-            <button onClick={decBet} style={{width:28,height:28,borderRadius:'50%',border:'1.5px solid #e4e6ea',background:'#f9fafb',cursor:'pointer',fontWeight:700,fontSize:16,display:'flex',alignItems:'center',justifyContent:'center',color:'#374151'}}>−</button>
-            <div style={{background:'#f9fafb',border:'1.5px solid #e4e6ea',borderRadius:8,padding:'4px 16px',fontWeight:800,fontSize:'0.95rem',color:'#111827',minWidth:60,textAlign:'center'}}>{bet} Gold</div>
-            <button onClick={incBet} style={{width:28,height:28,borderRadius:'50%',border:'1.5px solid #1a73e8',background:'#e8f0fe',cursor:'pointer',fontWeight:700,fontSize:16,display:'flex',alignItems:'center',justifyContent:'center',color:'#1a73e8'}}>+</button>
-          </div>
-          <button onClick={spin} disabled={spinning||bet>=(myGold||9999)}
+          <button onClick={spin} disabled={spinning}
             style={{width:'100%',padding:'10px',borderRadius:10,border:'none',background:spinning?'#f3f4f6':'linear-gradient(135deg,#f59e0b,#d97706)',color:spinning?'#9ca3af':'#fff',fontWeight:800,cursor:spinning?'not-allowed':'pointer',fontSize:'0.88rem',fontFamily:'Outfit,sans-serif'}}>
-            {spinning?'Spinning...':'🎡 Spin!'}
+            {spinning?'Spinning...':'🎡 Spin (Free Daily!)'}
           </button>
         </div>
       </div>
@@ -558,15 +553,17 @@ function ProfileModal({user,myLevel,socket,roomId,onClose,onGift}) {
 // ─────────────────────────────────────────────────────────────
 // MESSAGE — system messages styled like adultchat
 // ─────────────────────────────────────────────────────────────
-function Msg({msg,onMiniCard,onMention,myId,myLevel,socket,roomId}) {
+function Msg({msg,onMiniCard,onMention,onHide,myId,myLevel,socket,roomId}) {
   const isSystem = msg.type==='system'||msg.type==='join'||msg.type==='leave'||msg.type==='kick'||msg.type==='mute'||msg.type==='ban'||msg.type==='mod'||msg.type==='dice'
   if (isSystem) {
     const cfg = SYS_CFG[msg.type] || SYS_CFG.system
+    const ts2 = new Date(msg.createdAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
     return (
-      <div style={{textAlign:'center',padding:'2px 12px',margin:'1px 0'}}>
-        <span style={{display:'inline-flex',alignItems:'center',gap:4,background:'#f3f4f6',padding:'2px 12px',borderRadius:20,fontSize:'0.72rem',color:cfg.color,fontWeight:600}}>
-          <span style={{fontSize:'0.85rem'}}>{cfg.icon}</span>
+      <div style={{textAlign:'center',padding:'3px 12px',margin:'2px 0'}}>
+        <span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f3f4f6',padding:'3px 14px',borderRadius:20,fontSize:'0.72rem',color:cfg.color,fontWeight:600}}>
+          <span style={{fontSize:'0.82rem'}}>{cfg.icon}</span>
           <span style={{color:'#374151'}}>{msg.content}</span>
+          <span style={{fontSize:'0.62rem',color:'#9ca3af',marginLeft:2}}>{ts2}</span>
         </span>
       </div>
     )
@@ -600,8 +597,8 @@ function Msg({msg,onMiniCard,onMention,myId,myLevel,socket,roomId}) {
     {menuPos&&(
       <div style={{position:'fixed',top:menuPos.y,left:menuPos.x,background:'#1e293b',border:'1px solid #334155',borderRadius:10,zIndex:8889,minWidth:170,overflow:'hidden',boxShadow:'0 8px 24px rgba(0,0,0,.4)'}}>
         {[
-          {icon:'fi-sr-reply-all',label:'Quote',sub:'Reply to this post',  onClick:()=>{onMention(msg.sender?.username);setMenuPos(null)}},
-          {icon:'fi-sr-eye-crossed',label:'Hide',sub:'Hide from my screen', onClick:()=>setMenuPos(null)},
+          {icon:'fi-sr-reply-all',label:'Quote',sub:'Reply to this post',  onClick:()=>{onMention(`@${msg.sender?.username} "${(msg.content||'').slice(0,50)}" `);setMenuPos(null)}},
+          {icon:'fi-sr-eye-crossed',label:'Hide',sub:'Hide from my screen', onClick:()=>{onHide?.(msg._id);setMenuPos(null)}},
           isMine
             ?{icon:'fi-sr-trash',label:'Delete',sub:'Erase this content',color:'#ef4444',onClick:()=>{socket?.emit('deleteMessage',{messageId:msg._id,roomId});setMenuPos(null)}}
             :{icon:'fi-sr-flag',label:'Report',sub:'Report this content',color:'#ef4444',onClick:()=>setMenuPos(null)},
@@ -619,7 +616,7 @@ function Msg({msg,onMiniCard,onMention,myId,myLevel,socket,roomId}) {
       </div>
     )}
     <div style={{display:'flex',gap:8,padding:'2px 10px',alignItems:'flex-start',transition:'background .1s'}}
-      onClick={openMenu}
+      onContextMenu={openMenu}
       onMouseEnter={e=>e.currentTarget.style.background='rgba(0,0,0,.02)'}
       onMouseLeave={e=>e.currentTarget.style.background='transparent'}
     >
@@ -657,7 +654,9 @@ function UserItem({u,onClick,onWhisper}) {
   const ri=R(u.rank), col=u.nameColor||ri.color
   const [hov,setHov]=useState(false)
   return (
-    <div onClick={()=>onClick(u)} style={{display:'flex',alignItems:'center',gap:7,padding:'6px 10px',cursor:'pointer',transition:'background .12s',position:'relative'}} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} style={{background:hov?'#f3f4f6':'transparent',display:'flex',alignItems:'center',gap:7,padding:'6px 10px',cursor:'pointer',transition:'background .12s',position:'relative'}}>
+    <div onClick={()=>onClick(u)}
+      onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+      style={{display:'flex',alignItems:'center',gap:7,padding:'6px 10px',cursor:'pointer',transition:'background .12s',position:'relative',background:hov?'#f3f4f6':'transparent'}}>
       <div style={{position:'relative',flexShrink:0}}>
         <img src={u.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{width:28,height:28,borderRadius:'50%',objectFit:'cover',border:`1.5px solid ${GBR(u.gender,u.rank)}`,display:'block'}} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
         <span style={{position:'absolute',bottom:0,right:0,width:6,height:6,background:'#22c55e',borderRadius:'50%',border:'1.5px solid #fff'}}/>
@@ -673,15 +672,15 @@ function UserItem({u,onClick,onWhisper}) {
 // ─────────────────────────────────────────────────────────────
 // RIGHT SIDEBAR
 // ─────────────────────────────────────────────────────────────
-function RightSidebar({users,myLevel,onUserClick,onClose}) {
+function RightSidebar({users,myLevel,onUserClick,onWhisper,onClose}) {
   const [tab,setTab]=useState('users')
   const [search,setSearch]=useState('')
   const [rankF,setRankF]=useState('all')
 
+  const [friends,setFriends]=useState([])
   const sorted=[...users].sort((a,b)=>{const d=RL(b.rank)-RL(a.rank);return d!==0?d:(a.username||'').localeCompare(b.username||'')})
   const staff=sorted.filter(u=>RL(u.rank)>=11)
   const base=tab==='staff'?staff:tab==='friends'?friends:sorted
-  const [friends,setFriends]=useState([])
   useEffect(()=>{
     if(tab!=='friends') return
     const t=localStorage.getItem('cgz_token')
@@ -1805,7 +1804,8 @@ export default function ChatRoom() {
 
   function leave(){sockRef.current?.disconnect();nav('/chat')}
 
-  const handleMention=useCallback((username)=>{setInput(p=>username+' '+p);inputRef.current?.focus()},[])
+  const handleMention=useCallback((text)=>{setInput(p=>text+(p?' '+p:''));inputRef.current?.focus()},[])
+  const handleHide=useCallback((id)=>{setHidden(p=>new Set([...p,id]))},[])
   const handleMiniCard=useCallback((user,pos)=>{setMini({user,pos});setProf(null)},[])
   const myLevel=RANKS[me?.rank]?.level||1
   const isStaff=myLevel>=11
@@ -1880,8 +1880,8 @@ export default function ChatRoom() {
 
           <div style={{flex:1,overflowY:'auto',padding:'6px 0'}}>
             {messages.map((m,i)=>(
-              <Msg key={m._id||i} msg={m} myId={me?._id} myLevel={myLevel}
-                onMiniCard={handleMiniCard} onMention={handleMention}
+              !hiddenMsgs.has(m._id)&&<Msg key={m._id||i} msg={m} myId={me?._id} myLevel={myLevel}
+                onMiniCard={handleMiniCard} onMention={handleMention} onHide={handleHide}
                 socket={sockRef.current} roomId={roomId}/>
             ))}
             {typers.filter(t=>t!==me?.username).length>0&&(
@@ -1970,7 +1970,7 @@ export default function ChatRoom() {
           </div>
         </div>
 
-        {showRight&&<RightSidebar users={users} myLevel={myLevel} onUserClick={u=>{setProf(u);setMini(null)}} onClose={()=>setRight(false)}/>}
+        {showRight&&<RightSidebar users={users} myLevel={myLevel} onUserClick={u=>{setProf(u);setMini(null)}} onWhisper={u=>setWhisper(u)} onClose={()=>setRight(false)}/>}
       </div>
 
       {/* ── FOOTER ── */}
