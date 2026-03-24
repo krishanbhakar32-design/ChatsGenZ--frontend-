@@ -1694,6 +1694,7 @@ export default function ChatRoom() {
   const [onlineCount,setOnlineCount]=useState(0)
   const [status,    setStatus]   =useState('online')
   const [notif,     setNotif]    =useState({dm:0,friends:0,notif:0,reports:0})
+  const [hiddenMsgs,setHidden]   =useState(new Set())
 
   const sockRef=useRef(null), bottomRef=useRef(null), inputRef=useRef(null)
   const typingTimer=useRef(null), isTypingRef=useRef(false)
