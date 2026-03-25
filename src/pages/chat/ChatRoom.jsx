@@ -39,7 +39,7 @@ function UIIcon({name, size=22, fallback, style={}}) {
   return <i className={`fi ${fallback||'fi-sr-info'}`} style={{fontSize:size-2,...style}}/>
 }
 
-function RIcon({rank,size=24}) {
+function RIcon({rank,size=20}) {
   const ri = R(rank)
   return <img src={`/icons/ranks/${ri.icon}`} alt="" style={{width:size,height:size,objectFit:'contain',background:'transparent',flexShrink:0,display:'inline-block'}} onError={e=>e.target.style.display='none'}/>
 }
@@ -1571,7 +1571,7 @@ function AvatarDropdown({me,status,setStatus,onLeave,socket}) {
             </div>
             {/* Rank badge top right */}
             <div style={{position:'absolute',top:10,right:10,width:30,height:30,borderRadius:'50%',background:'#2d3555',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-              <RIcon rank={me?.rank} size={24}/>
+              <RIcon rank={me?.rank} size={20}/>
             </div>
           </div>
           {/* Gold + Level row */}
