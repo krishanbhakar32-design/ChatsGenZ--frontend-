@@ -559,12 +559,21 @@ function Msg({msg,onMiniCard,onMention,onHide,myId,myLevel,socket,roomId}) {
     const cfg = SYS_CFG[msg.type] || SYS_CFG.system
     const ts2 = new Date(msg.createdAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
     return (
-      <div style={{textAlign:'center',padding:'3px 12px',margin:'2px 0'}}>
-        <span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f3f4f6',padding:'3px 14px',borderRadius:20,fontSize:'0.72rem',color:cfg.color,fontWeight:600}}>
-          <span style={{fontSize:'0.82rem'}}>{cfg.icon}</span>
-          <span style={{color:'#374151'}}>{msg.content}</span>
-          <span style={{fontSize:'0.62rem',color:'#9ca3af',marginLeft:2}}>{ts2}</span>
-        </span>
+      <div style={{display:'flex',alignItems:'flex-start',padding:'3px 12px 3px 10px',margin:'2px 0'}}>
+        <div style={{
+          maxWidth:'80%',
+          background:cfg.bg||'#f3f4f6',
+          border:`1px solid ${cfg.border||'#e4e6ea'}`,
+          borderRadius:'0 12px 12px 12px',
+          padding:'5px 12px 5px 10px',
+          display:'inline-flex',
+          alignItems:'center',
+          gap:6,
+          boxShadow:'0 1px 2px rgba(0,0,0,.05)'
+        }}>
+          <span style={{fontSize:'0.78rem',color:cfg.color,fontWeight:600,lineHeight:1.4}}>{msg.content}</span>
+          <span style={{fontSize:'0.6rem',color:'#9ca3af',flexShrink:0,marginLeft:2}}>{ts2}</span>
+        </div>
       </div>
     )
   }
@@ -658,11 +667,13 @@ function UserItem({u,onClick,onWhisper}) {
       onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
       style={{display:'flex',alignItems:'center',gap:7,padding:'6px 10px',cursor:'pointer',transition:'background .12s',position:'relative',background:hov?'#f3f4f6':'transparent'}}>
       <div style={{position:'relative',flexShrink:0}}>
-        <img src={u.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{width:28,height:28,borderRadius:'50%',objectFit:'cover',border:`1.5px solid ${GBR(u.gender,u.rank)}`,display:'block'}} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
-        <span style={{position:'absolute',bottom:0,right:0,width:6,height:6,background:'#22c55e',borderRadius:'50%',border:'1.5px solid #fff'}}/>
+        {/* 36×36px avatar — same as CodyChat user list */}
+        <img src={u.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{width:36,height:36,borderRadius:'50%',objectFit:'cover',border:`1.5px solid ${GBR(u.gender,u.rank)}`,display:'block'}} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
+        <span style={{position:'absolute',bottom:0,right:0,width:8,height:8,background:'#22c55e',borderRadius:'50%',border:'1.5px solid #fff'}}/>
       </div>
-      <span style={{flex:1,fontSize:'0.92rem',fontWeight:700,color:col,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{u.username}</span>
-      <RIcon rank={u.rank} size={14}/>
+      {/* 18px rank icon — matches Msg component */}
+      <RIcon rank={u.rank} size={18}/>
+      <span style={{flex:1,fontSize:'14px',fontWeight:700,color:col,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{u.username}</span>
       {u.countryCode&&u.countryCode!=='ZZ'&&<img src={`/icons/flags/${u.countryCode.toUpperCase()}.png`} alt="" style={{width:15,height:10,flexShrink:0,borderRadius:1}} onError={e=>e.target.style.display='none'}/>}
       {hov&&onWhisper&&<button onClick={e=>{e.stopPropagation();onWhisper(u)}} title="Whisper" style={{position:'absolute',right:6,background:'#eef2ff',border:'1px solid #6366f1',borderRadius:5,padding:'2px 6px',cursor:'pointer',fontSize:'0.7rem',color:'#6366f1',fontWeight:700}}>👁️</button>}
     </div>
@@ -739,39 +750,57 @@ function RightSidebar({users,myLevel,onUserClick,onWhisper,onClose}) {
 // ─────────────────────────────────────────────────────────────
 // LEFT SIDEBAR — icon strip + label (like adultchat)
 // ─────────────────────────────────────────────────────────────
-function LeftSidebar({room,nav,socket,roomId,onClose}) {
+// SidebarIcon: renders SVG from /icons/ui/ with fi-sr fallback for left sidebar items
+function SidebarIcon({svgName, fiClass, color, active, size=18}) {
+  const [err,setErr]=useState(false)
+  const style={width:size,height:size,objectFit:'contain',flexShrink:0,
+    filter:active?'none':'grayscale(30%) opacity(0.75)'}
+  if(!err && svgName)
+    return <img src={`/icons/ui/${svgName}.svg`} alt="" style={style} onError={()=>setErr(true)}/>
+  return <i className={`fi ${fiClass}`} style={{fontSize:size-2,color:active?color:'#6b7280'}}/>
+}
+
+function LeftSidebar({room,nav,socket,roomId,myRank,onClose}) {
   const [panel,setPanel]=useState(null)
-  // Icons match adultchat: fa-rss for wall, fa-newspaper for news, fa-comments for forum
+  const isPremium = myRank && RANKS[myRank] && RANKS[myRank].level >= 10
+
+  // Each item: svgName maps to /icons/ui/<svgName>.svg, fiClass is flaticon fallback
   const ITEMS=[
-    {id:'rooms',       icon:'fi-sr-house-chimney',  label:'Room List',    color:'#1a73e8'},
-    {id:'wall',        icon:'fi-sr-rss',             label:'Friends Wall', color:'#7c3aed'},
-    {id:'news',        icon:'fi-sr-newspaper',       label:'News',         color:'#059669'},
-    {id:'forum',       icon:'fi-sr-comments-alt',    label:'Forum',        color:'#f59e0b'},
-    {id:'games',       icon:'fi-sr-dice',            label:'Games',        color:'#ec4899'},
-    {id:'leaderboard', icon:'fi-sr-medal',           label:'Leaderboards', color:'#d97706'},
-    {id:'username',    icon:'fi-sr-user-pen',        label:'Username',     color:'#6366f1'},
-    {id:'contact',     icon:'fi-sr-envelope',        label:'Contact',      color:'#14b8a6'},
-    {id:'premium',     icon:'fi-sr-diamond',         label:'Premium',      color:'#f59e0b'},
+    {id:'rooms',       svgName:'dashboard',  fiClass:'fi-sr-house-chimney', label:'Room List',    color:'#1a73e8'},
+    {id:'wall',        svgName:'note',       fiClass:'fi-sr-rss',           label:'Friends Wall', color:'#7c3aed'},
+    {id:'news',        svgName:'badge',      fiClass:'fi-sr-newspaper',     label:'News',         color:'#059669'},
+    {id:'forum',       svgName:'comment',    fiClass:'fi-sr-comments-alt',  label:'Forum',        color:'#f59e0b'},
+    {id:'games',       svgName:'gold',       fiClass:'fi-sr-dice',          label:'Games',        color:'#ec4899'},
+    {id:'leaderboard', svgName:'medal1',     fiClass:'fi-sr-medal',         label:'Leaderboards', color:'#d97706'},
+    {id:'username',    svgName:'create',     fiClass:'fi-sr-user-pen',      label:'Username',     color:'#6366f1'},
+    {id:'contact',     svgName:'contact',    fiClass:'fi-sr-envelope',      label:'Contact',      color:'#14b8a6'},
+    {id:'premium',     svgName:null,         fiClass:'fi-sr-diamond',       label:'Premium',      color:'#aa44ff', rankIcon: isPremium},
   ]
 
   return (
     <div style={{display:'flex',height:'100%',flexShrink:0}}>
-      {/* Icon strip with labels - like adultchat left menu */}
+      {/* Icon strip with labels */}
       <div style={{width:56,background:'#f8f9fa',borderRight:'1px solid #e4e6ea',display:'flex',flexDirection:'column',alignItems:'center',padding:'6px 0',gap:1,overflowY:'auto'}}>
         {/* Room icon at top */}
         <div style={{padding:'4px 0 8px',borderBottom:'1px solid #2d3148',width:'100%',textAlign:'center',marginBottom:4}}>
           <img src={room?.icon||'/default_images/rooms/default_room.png'} alt="" style={{width:28,height:28,borderRadius:7,objectFit:'cover',margin:'0 auto',display:'block'}} onError={e=>e.target.style.display='none'}/>
           <div style={{fontSize:'0.5rem',color:'#9ca3af',fontWeight:600,marginTop:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',padding:'0 2px'}}>{room?.name||'Room'}</div>
         </div>
-        {ITEMS.map(item=>(
-          <button key={item.id} title={item.label} onClick={()=>setPanel(p=>p===item.id?null:item.id)}
-            style={{width:'100%',padding:'7px 2px 5px',border:'none',background:panel===item.id?`${item.color}15`:'none',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:2,color:panel===item.id?item.color:'#6b7280',transition:'all .12s',borderLeft:panel===item.id?`2px solid ${item.color}`:'2px solid transparent'}}
-            onMouseEnter={e=>{if(panel!==item.id){e.currentTarget.style.background=`${item.color}10`;e.currentTarget.style.color=item.color}}}
-            onMouseLeave={e=>{if(panel!==item.id){e.currentTarget.style.background='none';e.currentTarget.style.color='#8892b0'}}}>
-            <i className={`fi ${item.icon}`} style={{fontSize:16}}/>
-            <span style={{fontSize:'0.48rem',fontWeight:700,letterSpacing:'0.2px',textAlign:'center',lineHeight:1.2,maxWidth:48,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.label}</span>
-          </button>
-        ))}
+        {ITEMS.map(item=>{
+          const active=panel===item.id
+          return (
+            <button key={item.id} title={item.label} onClick={()=>setPanel(p=>p===item.id?null:item.id)}
+              style={{width:'100%',padding:'7px 2px 5px',border:'none',background:active?`${item.color}15`:'none',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:2,color:active?item.color:'#6b7280',transition:'all .12s',borderLeft:active?`2px solid ${item.color}`:'2px solid transparent'}}
+              onMouseEnter={e=>{if(!active){e.currentTarget.style.background=`${item.color}10`;e.currentTarget.style.color=item.color}}}
+              onMouseLeave={e=>{if(!active){e.currentTarget.style.background='none';e.currentTarget.style.color='#6b7280'}}}>
+              {item.rankIcon
+                ? <img src={`/icons/ranks/premium.svg`} alt="" style={{width:18,height:18,objectFit:'contain',flexShrink:0}} onError={e=>{e.target.outerHTML=`<i class="fi fi-sr-diamond" style="font-size:16px;color:${active?item.color:'#6b7280'}"></i>`}}/>
+                : <SidebarIcon svgName={item.svgName} fiClass={item.fiClass} color={item.color} active={active} size={18}/>
+              }
+              <span style={{fontSize:'0.48rem',fontWeight:700,letterSpacing:'0.2px',textAlign:'center',lineHeight:1.2,maxWidth:48,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.label}</span>
+            </button>
+          )
+        })}
       </div>
 
       {/* Panel content */}
@@ -1613,15 +1642,17 @@ function AvatarDropdown({me,status,setStatus,onLeave,socket}) {
 // ─────────────────────────────────────────────────────────────
 // HEADER BUTTON
 // ─────────────────────────────────────────────────────────────
-function HBtn({icon,img,title,badge,active,onClick}) {
+function HBtn({icon,img,faIcon,title,badge,active,onClick,transparent}) {
   return (
     <button onClick={onClick} title={title}
-      style={{position:'relative',background:active?'#e8f0fe':'none',border:'none',cursor:'pointer',color:active?'#1a73e8':'#6b7280',width:38,height:38,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,transition:'all .15s',flexShrink:0}}
-      onMouseEnter={e=>{e.currentTarget.style.background='#f3f4f6'}}
-      onMouseLeave={e=>{e.currentTarget.style.background=active?'#e8f0fe':'none'}}>
+      style={{position:'relative',background:transparent?'transparent':active?'#e8f0fe':'none',border:'none',cursor:'pointer',color:active?'#1a73e8':'#6b7280',width:38,height:38,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,transition:'all .15s',flexShrink:0}}
+      onMouseEnter={e=>{if(!transparent)e.currentTarget.style.background='#f3f4f6'}}
+      onMouseLeave={e=>{if(!transparent)e.currentTarget.style.background=active?'#e8f0fe':'none'}}>
       {img
-        ? <img src={img} alt={title} style={{width:22,height:22,objectFit:'contain',filter:active?'none':'grayscale(20%)',opacity:active?1:0.8}} onError={e=>e.target.style.display='none'}/>
-        : <i className={`fi ${icon}`}/>
+        ? <img src={img} alt={title} style={{width:22,height:22,objectFit:'contain',filter:active?'none':'grayscale(20%)',opacity:active?1:0.8,background:'transparent'}} onError={e=>e.target.style.display='none'}/>
+        : faIcon
+          ? <i className={`fa ${faIcon}`} style={{fontSize:17}}/>
+          : <i className={`fi ${icon}`}/>
       }
       {badge>0&&<span style={{position:'absolute',top:4,right:4,minWidth:7,height:7,background:'#ef4444',borderRadius:'50%',border:'1.5px solid #fff'}}/>}
     </button>
@@ -1824,39 +1855,40 @@ export default function ChatRoom() {
           <i className="fi fi-sr-bars-sort"/>
         </button>
 
-        {/* Webcam button */}
-        <HBtn img="/default_images/icons/webcam.svg" title="Webcam" active={false} onClick={e=>e.stopPropagation()}/>
+        {/* Webcam button - fully transparent, no background */}
+        <HBtn img="/default_images/icons/webcam.svg" title="Webcam" transparent={true} active={false} onClick={e=>e.stopPropagation()}/>
 
-        {/* Room name - center */}
+        {/* Online count - center, no room name */}
         <div style={{flex:1,textAlign:'center',minWidth:0}}>
-          <div style={{fontSize:'0.84rem',fontWeight:800,color:'#111827',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontFamily:'Outfit,sans-serif'}}>{room?.name||'Chat Room'}</div>
-          <div style={{fontSize:'0.62rem',color:connected?'#22c55e':'#9ca3af'}}>{connected?`● ${Math.max(users.length,onlineCount)||users.length} online`:'Connecting...'}</div>
+          <div style={{fontSize:'0.72rem',color:connected?'#22c55e':'#9ca3af',fontWeight:600}}>
+            {connected?`● ${Math.max(users.length,onlineCount)||users.length} online`:'Connecting...'}
+          </div>
         </div>
 
-        {/* Right icons - using SVGs from public folder */}
+        {/* Right icons - CodyChat style FA icons */}
         <div style={{position:'relative'}}>
-          <HBtn img="/default_images/icons/comment.svg" title="Messages" badge={notif.dm} active={showDM} onClick={e=>{e.stopPropagation();setShowDM(p=>!p);setShowNotif(false)}}/>
+          <HBtn faIcon="fa-envelope" title="Messages" badge={notif.dm} active={showDM} onClick={e=>{e.stopPropagation();setShowDM(p=>!p);setShowNotif(false)}}/>
           {showDM&&<DMPanel me={me} socket={sockRef.current} onClose={()=>setShowDM(false)} onCount={n=>setNotif(p=>({...p,dm:n}))}/>}
         </div>
 
         <div style={{position:'relative'}}>
-          <HBtn icon="fi-sr-user-add" title="Friend Requests" badge={notif.friends} active={showFriends} onClick={e=>{e.stopPropagation();setShowFriends(p=>!p);setShowDM(false);setShowNotif(false)}}/>
+          <HBtn faIcon="fa-user-plus" title="Friend Requests" badge={notif.friends} active={showFriends} onClick={e=>{e.stopPropagation();setShowFriends(p=>!p);setShowDM(false);setShowNotif(false)}}/>
           {showFriends&&<FriendReqPanel onClose={()=>setShowFriends(false)} onCount={n=>setNotif(p=>({...p,friends:n}))}/>}
         </div>
 
         <div style={{position:'relative'}}>
-          <HBtn img="/default_images/icons/congratulation.svg" title="Notifications" badge={notif.notif} active={showNotif} onClick={e=>{e.stopPropagation();setShowNotif(p=>!p);setShowDM(false)}}/>
+          <HBtn faIcon="fa-bell" title="Notifications" badge={notif.notif} active={showNotif} onClick={e=>{e.stopPropagation();setShowNotif(p=>!p);setShowDM(false)}}/>
           {showNotif&&<NotifPanel onClose={()=>setShowNotif(false)} onCount={n=>setNotif(p=>({...p,notif:n}))}/>}
         </div>
 
-        {isStaff&&<HBtn img="/default_images/icons/warning.svg" title="Reports" badge={notif.reports}/>}
+        {isStaff&&<HBtn faIcon="fa-flag" title="Reports" badge={notif.reports}/>}
 
         <AvatarDropdown me={me} status={status} setStatus={setStatus} onLeave={leave} socket={sockRef.current}/>
       </div>
 
       {/* ── BODY ── */}
       <div style={{flex:1,display:'flex',overflow:'hidden'}}>
-        {showLeft&&<LeftSidebar room={room} nav={nav} socket={sockRef.current} roomId={roomId} onClose={()=>setLeft(false)}/>}
+        {showLeft&&<LeftSidebar room={room} nav={nav} socket={sockRef.current} roomId={roomId} myRank={me?.rank} onClose={()=>setLeft(false)}/>}
 
         {/* MESSAGES */}
         <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',minWidth:0}}>
