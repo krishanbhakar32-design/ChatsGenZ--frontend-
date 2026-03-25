@@ -1,29 +1,22 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 
-// Desktop nav links shown BELOW site name
+// Desktop nav links — only 5
 const NAV_LINKS = [
-  { label: 'About Us',    to: '/about' },
-  { label: 'RTI',         to: '/rti' },
-  { label: 'Blog',        to: '/blog' },
-  { label: 'Forum',       to: '/forum' },
-  { label: 'Disclaimer',  to: '/disclaimer' },
+  { label: 'About Us',   to: '/about' },
+  { label: 'Blog',       to: '/blog' },
+  { label: 'Disclaimer', to: '/disclaimer' },
+  { label: 'RTI',        to: '/rti' },
+  { label: 'Forum',      to: '/forum' },
 ]
 
-// Mobile dropdown menu links
+// Mobile dropdown — same 5
 const MOBILE_LINKS = [
-  { label: 'About Us',      to: '/about' },
-  { label: 'RTI',           to: '/rti' },
-  { label: 'Blog',          to: '/blog' },
-  { label: 'Forum',         to: '/forum' },
-  { label: 'Disclaimer',    to: '/disclaimer' },
-  { label: 'Chat Directory',to: '/chat-directory' },
-  { label: 'Ranks',         to: '/ranks' },
-  { label: 'Community',     to: '/community' },
-  { label: 'Help Center',   to: '/help' },
-  { label: 'FAQ',           to: '/faq' },
-  { label: 'Contact Us',    to: '/contact' },
-  { label: 'Moderation',    to: '/moderation' },
+  { label: 'About Us',   to: '/about' },
+  { label: 'Blog',       to: '/blog' },
+  { label: 'Disclaimer', to: '/disclaimer' },
+  { label: 'RTI',        to: '/rti' },
+  { label: 'Forum',      to: '/forum' },
 ]
 
 export default function Header() {
