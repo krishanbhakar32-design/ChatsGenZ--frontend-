@@ -33,13 +33,13 @@ const R   = r => RANKS[r] || RANKS.guest
 const RL  = r => RANKS[r]?.level || 0
 
 // ── ICON helper - use SVG from public folder with fi fallback ──
-function UIIcon({name, size=18, fallback, style={}}) {
+function UIIcon({name, size=22, fallback, style={}}) {
   const [err,setErr]=useState(false)
   if(!err) return <img src={`/default_images/icons/${name}.svg`} alt="" style={{width:size,height:size,objectFit:'contain',flexShrink:0,...style}} onError={()=>setErr(true)}/>
   return <i className={`fi ${fallback||'fi-sr-info'}`} style={{fontSize:size-2,...style}}/>
 }
 
-function RIcon({rank,size=16}) {
+function RIcon({rank,size=24}) {
   const ri = R(rank)
   return <img src={`/icons/ranks/${ri.icon}`} alt="" style={{width:size,height:size,objectFit:'contain',background:'transparent',flexShrink:0,display:'inline-block'}} onError={e=>e.target.style.display='none'}/>
 }
