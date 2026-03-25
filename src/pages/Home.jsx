@@ -1,7 +1,19 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import PageLayout from '../components/PageLayout.jsx'
+import { useAuth } from '../context/AuthContext.jsx'
 
 export default function Home() {
+  const { user, loading } = useAuth()
+  const navigate = useNavigate()
+
+  // Auto-login: if user has saved session, go straight to chat
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/chat', { replace: true })
+    }
+  }, [user, loading, navigate])
+
   return (
     <PageLayout seo={{
       title: 'ChatsGenZ — Free Live Chat Rooms | Talk to Strangers Online',
@@ -32,7 +44,7 @@ export default function Home() {
             </p>
 
             <div style={{ marginTop: 22 }}>
-              <Link to="/login" style={{
+              <Link to={user ? "/chat" : "/login"} style={{
                 display: 'inline-flex', alignItems: 'center', gap: 8,
                 padding: '12px 26px', borderRadius: 9,
                 background: 'linear-gradient(135deg,#1a73e8,#1557b0)',
