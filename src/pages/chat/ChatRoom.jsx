@@ -662,7 +662,7 @@ function UserItem({u,onClick,onWhisper}) {
         <span style={{position:'absolute',bottom:0,right:0,width:6,height:6,background:'#22c55e',borderRadius:'50%',border:'1.5px solid #fff'}}/>
       </div>
       <span style={{flex:1,fontSize:'0.8rem',fontWeight:700,color:col,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{u.username}</span>
-      <RIcon rank={u.rank} size={14}/>
+      <RIcon rank={u.rank} size={24}/>
       {u.countryCode&&u.countryCode!=='ZZ'&&<img src={`/icons/flags/${u.countryCode.toUpperCase()}.png`} alt="" style={{width:15,height:10,flexShrink:0,borderRadius:1}} onError={e=>e.target.style.display='none'}/>}
       {hov&&onWhisper&&<button onClick={e=>{e.stopPropagation();onWhisper(u)}} title="Whisper" style={{position:'absolute',right:6,background:'#eef2ff',border:'1px solid #6366f1',borderRadius:5,padding:'2px 6px',cursor:'pointer',fontSize:'0.7rem',color:'#6366f1',fontWeight:700}}>👁️</button>}
     </div>
@@ -1563,7 +1563,7 @@ function AvatarDropdown({me,status,setStatus,onLeave,socket}) {
             <img src={me?.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{width:52,height:52,borderRadius:'50%',objectFit:'cover',border:`2.5px solid ${border}`,flexShrink:0}} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
             <div style={{flex:1,minWidth:0}}>
               <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:2}}>
-                <RIcon rank={me?.rank} size={12}/>
+                <RIcon rank={me?.rank} size={24}/>
                 <span style={{fontSize:'0.65rem',fontWeight:700,color:ri.color}}>{ri.label}</span>
               </div>
               <div style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'0.95rem',color:'#fff',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{me?.username}</div>
@@ -1571,7 +1571,7 @@ function AvatarDropdown({me,status,setStatus,onLeave,socket}) {
             </div>
             {/* Rank badge top right */}
             <div style={{position:'absolute',top:10,right:10,width:30,height:30,borderRadius:'50%',background:'#2d3555',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-              <RIcon rank={me?.rank} size={18}/>
+              <RIcon rank={me?.rank} size={24}/>
             </div>
           </div>
           {/* Gold + Level row */}
@@ -1875,7 +1875,7 @@ export default function ChatRoom() {
             <div style={{background:'#1e293b',borderBottom:'1px solid #334155',padding:'8px 14px',fontSize:'0.78rem',color:'#e2e8f0',flexShrink:0,display:'flex',alignItems:'flex-start',gap:10}}>
               <i className="fi fi-sr-envelope" style={{fontSize:16,color:'#fbbf24',marginTop:1,flexShrink:0}}/>
               <span style={{flex:1,lineHeight:1.5}}>{room.topic}</span>
-              <button onClick={()=>setRoom(p=>p?{...p,topic:''}:p)} style={{background:'none',border:'none',cursor:'pointer',color:'#64748b',fontSize:14,flexShrink:0,padding:0}}>✕</button>
+              <button onClick={()=>setRoom(p=>p?{...p,topic:''}:p)} style={{background:'none',border:'none',cursor:'pointer',color:'#64748b',fontSize:16,flexShrink:0,padding:0}}>✕</button>
             </div>
           )}
 
