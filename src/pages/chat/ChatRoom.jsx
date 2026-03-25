@@ -33,13 +33,13 @@ const R   = r => RANKS[r] || RANKS.guest
 const RL  = r => RANKS[r]?.level || 0
 
 // ── ICON helper - use SVG from public folder with fi fallback ──
-function UIIcon({name, size=22, fallback, style={}}) {
+function UIIcon({name, size=18, fallback, style={}}) {
   const [err,setErr]=useState(false)
   if(!err) return <img src={`/default_images/icons/${name}.svg`} alt="" style={{width:size,height:size,objectFit:'contain',flexShrink:0,...style}} onError={()=>setErr(true)}/>
   return <i className={`fi ${fallback||'fi-sr-info'}`} style={{fontSize:size-2,...style}}/>
 }
 
-function RIcon({rank,size=20}) {
+function RIcon({rank,size=16}) {
   const ri = R(rank)
   return <img src={`/icons/ranks/${ri.icon}`} alt="" style={{width:size,height:size,objectFit:'contain',background:'transparent',flexShrink:0,display:'inline-block'}} onError={e=>e.target.style.display='none'}/>
 }
@@ -471,8 +471,8 @@ function MiniCard({user,myLevel,pos,onClose,onFull,onGift,socket,roomId}) {
       <div style={{display:'flex',alignItems:'flex-end',gap:8,padding:'0 12px',marginTop:-18,marginBottom:8}}>
         <img src={user.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{width:38,height:38,borderRadius:'50%',border:`2px solid ${bdr}`,objectFit:'cover',background:'#fff',flexShrink:0}} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
         <div style={{paddingBottom:2,minWidth:0}}>
-          <div style={{fontFamily:'Outfit,sans-serif',fontWeight:800,fontSize:'0.875rem',color:user.nameColor||'#111827',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.username}</div>
-          <div style={{display:'flex',alignItems:'center',gap:4}}><RIcon rank={user.rank} size={12}/><span style={{fontSize:'0.68rem',color:ri.color,fontWeight:700}}>{ri.label}</span></div>
+          <div style={{fontFamily:'Outfit,sans-serif',fontWeight:800,fontSize:'1rem',color:user.nameColor||'#111827',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.username}</div>
+          <div style={{display:'flex',alignItems:'center',gap:4}}><RIcon rank={user.rank} size={18}/><span style={{fontSize:'0.82rem',color:ri.color,fontWeight:700}}>{ri.label}</span></div>
         </div>
       </div>
       <div style={{padding:'0 8px 8px',display:'grid',gridTemplateColumns:'1fr 1fr',gap:4}}>
@@ -516,8 +516,8 @@ function ProfileModal({user,myLevel,socket,roomId,onClose,onGift}) {
           <img src={user.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{width:72,height:72,borderRadius:'50%',border:`3px solid ${bdr}`,objectFit:'cover',background:'#fff'}} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
         </div>
         <div style={{padding:'10px 18px 18px',textAlign:'center'}}>
-          <div style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1.05rem',color:user.nameColor||'#111827'}}>{user.username}</div>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:5,margin:'4px 0 12px'}}><RIcon rank={user.rank} size={14}/><span style={{fontSize:'0.75rem',color:ri.color,fontWeight:700}}>{ri.label}</span></div>
+          <div style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1.15rem',color:user.nameColor||'#111827'}}>{user.username}</div>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:5,margin:'4px 0 12px'}}><RIcon rank={user.rank} size={20}/><span style={{fontSize:'0.88rem',color:ri.color,fontWeight:700}}>{ri.label}</span></div>
           {user.mood&&<p style={{fontSize:'0.8rem',color:'#6b7280',marginBottom:8,fontStyle:'italic'}}>"{user.mood}"</p>}
           {user.about&&<p style={{fontSize:'0.8rem',color:'#6b7280',marginBottom:12,lineHeight:1.5}}>{user.about}</p>}
           <div style={{display:'flex',gap:8,justifyContent:'center',marginBottom:14}}>
@@ -559,7 +559,7 @@ function Msg({msg,onMiniCard,onMention,onHide,myId,myLevel,socket,roomId}) {
     const cfg = SYS_CFG[msg.type] || SYS_CFG.system
     const ts2 = new Date(msg.createdAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
     return (
-      <div style={{textAlign:'left',padding:'3px 12px',margin:'2px 0'}}>
+      <div style={{textAlign:'center',padding:'3px 12px',margin:'2px 0'}}>
         <span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f3f4f6',padding:'3px 14px',borderRadius:20,fontSize:'0.72rem',color:cfg.color,fontWeight:600}}>
           <span style={{fontSize:'0.82rem'}}>{cfg.icon}</span>
           <span style={{color:'#374151'}}>{msg.content}</span>
@@ -627,8 +627,8 @@ function Msg({msg,onMiniCard,onMention,onHide,myId,myLevel,socket,roomId}) {
       />
       <div style={{flex:1,minWidth:0}}>
         <div style={{display:'flex',alignItems:'center',gap:4,marginBottom:1}}>
-          <RIcon rank={msg.sender?.rank} size={12}/>
-          <span onClick={()=>onMention(msg.sender?.username)} style={{fontSize:'0.82rem',fontWeight:700,color:col,cursor:'pointer'}} onMouseEnter={e=>e.currentTarget.style.textDecoration='underline'} onMouseLeave={e=>e.currentTarget.style.textDecoration='none'}>
+          <RIcon rank={msg.sender?.rank} size={18}/>
+          <span onClick={()=>onMention(msg.sender?.username)} style={{fontSize:'0.95rem',fontWeight:700,color:col,cursor:'pointer'}} onMouseEnter={e=>e.currentTarget.style.textDecoration='underline'} onMouseLeave={e=>e.currentTarget.style.textDecoration='none'}>
             {msg.sender?.username}
           </span>
           <span style={{fontSize:'0.63rem',color:'#9ca3af'}}>{ts}</span>
@@ -661,8 +661,8 @@ function UserItem({u,onClick,onWhisper}) {
         <img src={u.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{width:28,height:28,borderRadius:'50%',objectFit:'cover',border:`1.5px solid ${GBR(u.gender,u.rank)}`,display:'block'}} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
         <span style={{position:'absolute',bottom:0,right:0,width:6,height:6,background:'#22c55e',borderRadius:'50%',border:'1.5px solid #fff'}}/>
       </div>
-      <span style={{flex:1,fontSize:'0.8rem',fontWeight:700,color:col,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{u.username}</span>
-      <RIcon rank={u.rank} size={24}/>
+      <span style={{flex:1,fontSize:'0.92rem',fontWeight:700,color:col,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{u.username}</span>
+      <RIcon rank={u.rank} size={14}/>
       {u.countryCode&&u.countryCode!=='ZZ'&&<img src={`/icons/flags/${u.countryCode.toUpperCase()}.png`} alt="" style={{width:15,height:10,flexShrink:0,borderRadius:1}} onError={e=>e.target.style.display='none'}/>}
       {hov&&onWhisper&&<button onClick={e=>{e.stopPropagation();onWhisper(u)}} title="Whisper" style={{position:'absolute',right:6,background:'#eef2ff',border:'1px solid #6366f1',borderRadius:5,padding:'2px 6px',cursor:'pointer',fontSize:'0.7rem',color:'#6366f1',fontWeight:700}}>👁️</button>}
     </div>
@@ -695,10 +695,10 @@ function RightSidebar({users,myLevel,onUserClick,onWhisper,onClose}) {
     })
 
   const TABS=[
-    {id:'users',   icon:'fi-sr-users-alt',        title:'Users'},
-    {id:'friends', icon:'fi-sr-user',             title:'Friends'},
-    {id:'staff',   icon:'fi-sr-user-shield',      title:'Staff'},
-    {id:'search',  icon:'fi-sr-search',           title:'Search'},
+    {id:'users',   icon:'fi-sr-users',        title:'Users'},
+    {id:'friends', icon:'fi-sr-user',          title:'Friends'},
+    {id:'staff',   icon:'fi-sr-shield-check',  title:'Staff'},
+    {id:'search',  icon:'fi-sr-search',        title:'Search'},
   ]
 
   return (
@@ -743,15 +743,15 @@ function LeftSidebar({room,nav,socket,roomId,onClose}) {
   const [panel,setPanel]=useState(null)
   // Icons match adultchat: fa-rss for wall, fa-newspaper for news, fa-comments for forum
   const ITEMS=[
-    {id:'rooms',       icon:'fi-sr-house-building',  label:'Room List',    color:'#1a73e8'},
+    {id:'rooms',       icon:'fi-sr-house-chimney',  label:'Room List',    color:'#1a73e8'},
     {id:'wall',        icon:'fi-sr-rss',             label:'Friends Wall', color:'#7c3aed'},
     {id:'news',        icon:'fi-sr-newspaper',       label:'News',         color:'#059669'},
-    {id:'forum',       icon:'fi-sr-data-report',     label:'Forum',        color:'#f59e0b'},
-    {id:'games',       icon:'fi-sc-gamepad',         label:'Games',        color:'#ec4899'},
+    {id:'forum',       icon:'fi-sr-comments-alt',    label:'Forum',        color:'#f59e0b'},
+    {id:'games',       icon:'fi-sr-dice',            label:'Games',        color:'#ec4899'},
     {id:'leaderboard', icon:'fi-sr-medal',           label:'Leaderboards', color:'#d97706'},
     {id:'username',    icon:'fi-sr-user-pen',        label:'Username',     color:'#6366f1'},
     {id:'contact',     icon:'fi-sr-envelope',        label:'Contact',      color:'#14b8a6'},
-    {id:'premium',     img:'premium.svg',            label:'Premium',      color:'#f59e0b'},
+    {id:'premium',     icon:'fi-sr-diamond',         label:'Premium',      color:'#f59e0b'},
   ]
 
   return (
@@ -1103,17 +1103,6 @@ function GamesPanel({socket,roomId,myGold=0}) {
         </button>
       ))}
       {showDice&&diceVal&&<DiceRoll value={diceVal} onDone={()=>{setShowDice(false);setDiceVal(null)}}/>}
-      {whisperTarget&&<WhisperBox target={whisperTarget} roomId={roomId} socket={sockRef.current} onClose={()=>setWhisper(null)}/>}
-      {showPaint&&<PaintingCanvas onClose={()=>setShowPaint(false)} onSend={async(dataUrl)=>{
-        // Upload to imgbb then send as image message
-        try {
-          const blob=await(await fetch(dataUrl)).blob()
-          const fd=new FormData(); fd.append('image',blob,'drawing.png')
-          const r=await fetch(`${API}/api/upload/image`,{method:'POST',headers:{Authorization:`Bearer ${localStorage.getItem('cgz_token')}`},body:fd})
-          const d=await r.json()
-          if(r.ok&&d.url){ sockRef.current?.emit('sendMessage',{roomId,content:d.url,type:'image'}); setShowPaint(false) }
-        } catch{ setShowPaint(false) }
-      }}/>}
       {showSpin&&<SpinWheelGame socket={socket} myGold={myGold||0} onClose={()=>setShowSpin(false)}/>}
       {showKeno&&<KenoGame socket={socket} roomId={roomId} myGold={myGold||0} onClose={()=>setShowKeno(false)}/>}
     </div>
@@ -1563,7 +1552,7 @@ function AvatarDropdown({me,status,setStatus,onLeave,socket}) {
             <img src={me?.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{width:52,height:52,borderRadius:'50%',objectFit:'cover',border:`2.5px solid ${border}`,flexShrink:0}} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
             <div style={{flex:1,minWidth:0}}>
               <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:2}}>
-                <RIcon rank={me?.rank} size={24}/>
+                <RIcon rank={me?.rank} size={12}/>
                 <span style={{fontSize:'0.65rem',fontWeight:700,color:ri.color}}>{ri.label}</span>
               </div>
               <div style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'0.95rem',color:'#fff',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{me?.username}</div>
@@ -1571,7 +1560,7 @@ function AvatarDropdown({me,status,setStatus,onLeave,socket}) {
             </div>
             {/* Rank badge top right */}
             <div style={{position:'absolute',top:10,right:10,width:30,height:30,borderRadius:'50%',background:'#2d3555',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-              <RIcon rank={me?.rank} size={20}/>
+              <RIcon rank={me?.rank} size={18}/>
             </div>
           </div>
           {/* Gold + Level row */}
@@ -1836,7 +1825,7 @@ export default function ChatRoom() {
         </button>
 
         {/* Webcam button */}
-        <HBtn img="/default_images/icons/webcam.svg" title="Webcam" active={true} onClick={e=>e.stopPropagation()}/>
+        <HBtn img="/default_images/icons/webcam.svg" title="Webcam" active={false} onClick={e=>e.stopPropagation()}/>
 
         {/* Room name - center */}
         <div style={{flex:1,textAlign:'center',minWidth:0}}>
@@ -1846,7 +1835,7 @@ export default function ChatRoom() {
 
         {/* Right icons - using SVGs from public folder */}
         <div style={{position:'relative'}}>
-          <HBtn icon= "fi-sr-envelope" title="Messages" badge={notif.dm} active={showDM} onClick={e=>{e.stopPropagation();setShowDM(p=>!p);setShowNotif(false)}}/>
+          <HBtn img="/default_images/icons/comment.svg" title="Messages" badge={notif.dm} active={showDM} onClick={e=>{e.stopPropagation();setShowDM(p=>!p);setShowNotif(false)}}/>
           {showDM&&<DMPanel me={me} socket={sockRef.current} onClose={()=>setShowDM(false)} onCount={n=>setNotif(p=>({...p,dm:n}))}/>}
         </div>
 
@@ -1856,11 +1845,11 @@ export default function ChatRoom() {
         </div>
 
         <div style={{position:'relative'}}>
-          <HBtn icon ="fi-ss-bell" title="Notifications" badge={notif.notif} active={showNotif} onClick={e=>{e.stopPropagation();setShowNotif(p=>!p);setShowDM(false)}}/>
+          <HBtn img="/default_images/icons/congratulation.svg" title="Notifications" badge={notif.notif} active={showNotif} onClick={e=>{e.stopPropagation();setShowNotif(p=>!p);setShowDM(false)}}/>
           {showNotif&&<NotifPanel onClose={()=>setShowNotif(false)} onCount={n=>setNotif(p=>({...p,notif:n}))}/>}
         </div>
 
-        {isStaff&&<HBtn icon= "fi-sr-flag" title="Reports" badge={notif.reports}/>}
+        {isStaff&&<HBtn img="/default_images/icons/warning.svg" title="Reports" badge={notif.reports}/>}
 
         <AvatarDropdown me={me} status={status} setStatus={setStatus} onLeave={leave} socket={sockRef.current}/>
       </div>
@@ -1875,7 +1864,7 @@ export default function ChatRoom() {
             <div style={{background:'#1e293b',borderBottom:'1px solid #334155',padding:'8px 14px',fontSize:'0.78rem',color:'#e2e8f0',flexShrink:0,display:'flex',alignItems:'flex-start',gap:10}}>
               <i className="fi fi-sr-envelope" style={{fontSize:16,color:'#fbbf24',marginTop:1,flexShrink:0}}/>
               <span style={{flex:1,lineHeight:1.5}}>{room.topic}</span>
-              <button onClick={()=>setRoom(p=>p?{...p,topic:''}:p)} style={{background:'none',border:'none',cursor:'pointer',color:'#64748b',fontSize:16,flexShrink:0,padding:0}}>✕</button>
+              <button onClick={()=>setRoom(p=>p?{...p,topic:''}:p)} style={{background:'none',border:'none',cursor:'pointer',color:'#64748b',fontSize:14,flexShrink:0,padding:0}}>✕</button>
             </div>
           )}
 
