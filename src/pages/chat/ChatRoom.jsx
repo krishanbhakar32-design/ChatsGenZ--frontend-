@@ -559,7 +559,7 @@ function Msg({msg,onMiniCard,onMention,onHide,myId,myLevel,socket,roomId}) {
     const cfg = SYS_CFG[msg.type] || SYS_CFG.system
     const ts2 = new Date(msg.createdAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
     return (
-      <div style={{textAlign:'center',padding:'3px 12px',margin:'2px 0'}}>
+      <div style={{textAlign:'left',padding:'3px 12px',margin:'2px 0'}}>
         <span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f3f4f6',padding:'3px 14px',borderRadius:20,fontSize:'0.72rem',color:cfg.color,fontWeight:600}}>
           <span style={{fontSize:'0.82rem'}}>{cfg.icon}</span>
           <span style={{color:'#374151'}}>{msg.content}</span>
@@ -696,9 +696,9 @@ function RightSidebar({users,myLevel,onUserClick,onWhisper,onClose}) {
 
   const TABS=[
     {id:'users',   icon:'fi-sr-users-alt',        title:'Users'},
-    {id:'friends', icon:'fi-sr-user',          title:'Friends'},
-    {id:'staff',   icon:'fi-sr-user-shield',  title:'Staff'},
-    {id:'search',  icon:'fi-rs-search',        title:'Search'},
+    {id:'friends', icon:'fi-sr-user',             title:'Friends'},
+    {id:'staff',   icon:'fi-sr-user-shield',      title:'Staff'},
+    {id:'search',  icon:'fi-sr-search',           title:'Search'},
   ]
 
   return (
@@ -746,12 +746,12 @@ function LeftSidebar({room,nav,socket,roomId,onClose}) {
     {id:'rooms',       icon:'fi-sr-house-building',  label:'Room List',    color:'#1a73e8'},
     {id:'wall',        icon:'fi-sr-rss',             label:'Friends Wall', color:'#7c3aed'},
     {id:'news',        icon:'fi-sr-newspaper',       label:'News',         color:'#059669'},
-    {id:'forum',       icon:'fi-rs-rss',             label:'Forum',        color:'#f59e0b'},
+    {id:'forum',       icon:'fi-sr-data-report',     label:'Forum',        color:'#f59e0b'},
     {id:'games',       icon:'fi-sc-gamepad',         label:'Games',        color:'#ec4899'},
     {id:'leaderboard', icon:'fi-sr-medal',           label:'Leaderboards', color:'#d97706'},
     {id:'username',    icon:'fi-sr-user-pen',        label:'Username',     color:'#6366f1'},
     {id:'contact',     icon:'fi-sr-envelope',        label:'Contact',      color:'#14b8a6'},
-    {id:'premium',     icon:'premium.svg',           label:'Premium',      color:'#f59e0b'},
+    {id:'premium',     img:'premium.svg',            label:'Premium',      color:'#f59e0b'},
   ]
 
   return (
