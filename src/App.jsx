@@ -14,7 +14,7 @@ const NotFound      = lazy(() => import('./pages/NotFound.jsx'))
 const Kicked        = lazy(() => import('./pages/Kicked.jsx'))
 const Leaderboard   = lazy(() => import('./pages/Leaderboard.jsx'))
 const Gifts         = lazy(() => import('./pages/Gifts.jsx'))
-
+const AdminPanel    = lazy(() => import('./pages/admin/AdminPanel.jsx'))
 // Info pages
 const About         = lazy(() => import('./pages/info/About.jsx'))
 const Blog          = lazy(() => import('./pages/info/Blog.jsx'))
@@ -61,7 +61,7 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/chat"           element={<ChatLobby />} />
           <Route path="/chat/:roomId"     element={<ChatRoom />} />
-
+          <Route path="/admin" element={<AdminPanel />} />
           {/* Info */}
           <Route path="/about"          element={<About />} />
           <Route path="/blog"           element={<Blog />} />
