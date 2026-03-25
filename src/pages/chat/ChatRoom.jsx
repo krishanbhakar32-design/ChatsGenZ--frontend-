@@ -695,10 +695,10 @@ function RightSidebar({users,myLevel,onUserClick,onWhisper,onClose}) {
     })
 
   const TABS=[
-    {id:'users',   icon:'fi-sr-users',        title:'Users'},
+    {id:'users',   icon:'fi-sr-users-alt',        title:'Users'},
     {id:'friends', icon:'fi-sr-user',          title:'Friends'},
-    {id:'staff',   icon:'fi-sr-shield-check',  title:'Staff'},
-    {id:'search',  icon:'fi-sr-search',        title:'Search'},
+    {id:'staff',   icon:'fi-sr-user-shield',  title:'Staff'},
+    {id:'search',  icon:'fi-rs-search',        title:'Search'},
   ]
 
   return (
@@ -743,15 +743,15 @@ function LeftSidebar({room,nav,socket,roomId,onClose}) {
   const [panel,setPanel]=useState(null)
   // Icons match adultchat: fa-rss for wall, fa-newspaper for news, fa-comments for forum
   const ITEMS=[
-    {id:'rooms',       icon:'fi-sr-house-chimney',  label:'Room List',    color:'#1a73e8'},
+    {id:'rooms',       icon:'fi-sr-house-building',  label:'Room List',    color:'#1a73e8'},
     {id:'wall',        icon:'fi-sr-rss',             label:'Friends Wall', color:'#7c3aed'},
     {id:'news',        icon:'fi-sr-newspaper',       label:'News',         color:'#059669'},
-    {id:'forum',       icon:'fi-sr-comments-alt',    label:'Forum',        color:'#f59e0b'},
-    {id:'games',       icon:'fi-sr-dice',            label:'Games',        color:'#ec4899'},
+    {id:'forum',       icon:'fi-rs-rss',             label:'Forum',        color:'#f59e0b'},
+    {id:'games',       icon:'fi-sc-gamepad',         label:'Games',        color:'#ec4899'},
     {id:'leaderboard', icon:'fi-sr-medal',           label:'Leaderboards', color:'#d97706'},
     {id:'username',    icon:'fi-sr-user-pen',        label:'Username',     color:'#6366f1'},
     {id:'contact',     icon:'fi-sr-envelope',        label:'Contact',      color:'#14b8a6'},
-    {id:'premium',     icon:'fi-sr-diamond',         label:'Premium',      color:'#f59e0b'},
+    {id:'premium',     icon:'premium.svg',           label:'Premium',      color:'#f59e0b'},
   ]
 
   return (
@@ -1836,7 +1836,7 @@ export default function ChatRoom() {
         </button>
 
         {/* Webcam button */}
-        <HBtn img="/default_images/icons/webcam.svg" title="Webcam" active={false} onClick={e=>e.stopPropagation()}/>
+        <HBtn img="/default_images/icons/webcam.svg" title="Webcam" active={true} onClick={e=>e.stopPropagation()}/>
 
         {/* Room name - center */}
         <div style={{flex:1,textAlign:'center',minWidth:0}}>
@@ -1846,7 +1846,7 @@ export default function ChatRoom() {
 
         {/* Right icons - using SVGs from public folder */}
         <div style={{position:'relative'}}>
-          <HBtn img="/default_images/icons/comment.svg" title="Messages" badge={notif.dm} active={showDM} onClick={e=>{e.stopPropagation();setShowDM(p=>!p);setShowNotif(false)}}/>
+          <HBtn icon= "fi-sr-envelope" title="Messages" badge={notif.dm} active={showDM} onClick={e=>{e.stopPropagation();setShowDM(p=>!p);setShowNotif(false)}}/>
           {showDM&&<DMPanel me={me} socket={sockRef.current} onClose={()=>setShowDM(false)} onCount={n=>setNotif(p=>({...p,dm:n}))}/>}
         </div>
 
@@ -1856,11 +1856,11 @@ export default function ChatRoom() {
         </div>
 
         <div style={{position:'relative'}}>
-          <HBtn img="/default_images/icons/congratulation.svg" title="Notifications" badge={notif.notif} active={showNotif} onClick={e=>{e.stopPropagation();setShowNotif(p=>!p);setShowDM(false)}}/>
+          <HBtn icon ="fi-ss-bell" title="Notifications" badge={notif.notif} active={showNotif} onClick={e=>{e.stopPropagation();setShowNotif(p=>!p);setShowDM(false)}}/>
           {showNotif&&<NotifPanel onClose={()=>setShowNotif(false)} onCount={n=>setNotif(p=>({...p,notif:n}))}/>}
         </div>
 
-        {isStaff&&<HBtn img="/default_images/icons/warning.svg" title="Reports" badge={notif.reports}/>}
+        {isStaff&&<HBtn icon= "fi-sr-flag" title="Reports" badge={notif.reports}/>}
 
         <AvatarDropdown me={me} status={status} setStatus={setStatus} onLeave={leave} socket={sockRef.current}/>
       </div>
