@@ -88,7 +88,7 @@ export default function App() {
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/safety"         element={<SafetyTerms />} />
           <Route path="/terms"          element={<Terms />} />
-
+          <Route path="/admin" element={<AdminPanel />} />
           {/* 404 */}
           {/* Leaderboard and Gifts are inside ChatRoom left sidebar */}
           <Route path="/kicked"         element={<Kicked />} />
