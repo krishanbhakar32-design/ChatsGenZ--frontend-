@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import StyleModal, { getNameStyle, getBubbleStyle, FONTS } from '../../components/StyleModal.jsx'
 import { io } from 'socket.io-client'
 import { useToast } from '../../components/Toast.jsx'
 import { Sounds } from '../../utils/sounds.js'
@@ -471,8 +472,8 @@ function MiniCard({user,myLevel,pos,onClose,onFull,onGift,socket,roomId}) {
       <div style={{display:'flex',alignItems:'flex-end',gap:8,padding:'0 12px',marginTop:-18,marginBottom:8}}>
         <img src={user.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{width:38,height:38,borderRadius:'50%',border:`2px solid ${bdr}`,objectFit:'cover',background:'#fff',flexShrink:0}} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
         <div style={{paddingBottom:2,minWidth:0}}>
-          <div style={{fontFamily:'Outfit,sans-serif',fontWeight:800,fontSize:'1rem',color:user.nameColor||'#111827',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.username}</div>
-          <div style={{display:'flex',alignItems:'center',gap:4}}><RIcon rank={user.rank} size={18}/><span style={{fontSize:'0.82rem',color:ri.color,fontWeight:700}}>{ri.label}</span></div>
+          <div style={{fontFamily:'Outfit,sans-serif',fontWeight:800,fontSize:'0.875rem',color:user.nameColor||'#111827',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.username}</div>
+          <div style={{display:'flex',alignItems:'center',gap:4}}><RIcon rank={user.rank} size={12}/><span style={{fontSize:'0.68rem',color:ri.color,fontWeight:700}}>{ri.label}</span></div>
         </div>
       </div>
       <div style={{padding:'0 8px 8px',display:'grid',gridTemplateColumns:'1fr 1fr',gap:4}}>
@@ -516,8 +517,8 @@ function ProfileModal({user,myLevel,socket,roomId,onClose,onGift}) {
           <img src={user.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{width:72,height:72,borderRadius:'50%',border:`3px solid ${bdr}`,objectFit:'cover',background:'#fff'}} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
         </div>
         <div style={{padding:'10px 18px 18px',textAlign:'center'}}>
-          <div style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1.15rem',color:user.nameColor||'#111827'}}>{user.username}</div>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:5,margin:'4px 0 12px'}}><RIcon rank={user.rank} size={20}/><span style={{fontSize:'0.88rem',color:ri.color,fontWeight:700}}>{ri.label}</span></div>
+          <div style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1.05rem',color:user.nameColor||'#111827'}}>{user.username}</div>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:5,margin:'4px 0 12px'}}><RIcon rank={user.rank} size={14}/><span style={{fontSize:'0.75rem',color:ri.color,fontWeight:700}}>{ri.label}</span></div>
           {user.mood&&<p style={{fontSize:'0.8rem',color:'#6b7280',marginBottom:8,fontStyle:'italic'}}>"{user.mood}"</p>}
           {user.about&&<p style={{fontSize:'0.8rem',color:'#6b7280',marginBottom:12,lineHeight:1.5}}>{user.about}</p>}
           <div style={{display:'flex',gap:8,justifyContent:'center',marginBottom:14}}>
@@ -559,26 +560,23 @@ function Msg({msg,onMiniCard,onMention,onHide,myId,myLevel,socket,roomId}) {
     const cfg = SYS_CFG[msg.type] || SYS_CFG.system
     const ts2 = new Date(msg.createdAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
     return (
-      <div style={{display:'flex',alignItems:'flex-start',padding:'3px 12px 3px 10px',margin:'2px 0'}}>
-        <div style={{
-          maxWidth:'80%',
-          background:cfg.bg||'#f3f4f6',
-          border:`1px solid ${cfg.border||'#e4e6ea'}`,
-          borderRadius:'0 12px 12px 12px',
-          padding:'5px 12px 5px 10px',
-          display:'inline-flex',
-          alignItems:'center',
-          gap:6,
-          boxShadow:'0 1px 2px rgba(0,0,0,.05)'
-        }}>
-          <span style={{fontSize:'0.78rem',color:cfg.color,fontWeight:600,lineHeight:1.4}}>{msg.content}</span>
-          <span style={{fontSize:'0.6rem',color:'#9ca3af',flexShrink:0,marginLeft:2}}>{ts2}</span>
-        </div>
+      <div style={{textAlign:'center',padding:'3px 12px',margin:'2px 0'}}>
+        <span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f3f4f6',padding:'3px 14px',borderRadius:20,fontSize:'0.72rem',color:cfg.color,fontWeight:600}}>
+          <span style={{fontSize:'0.82rem'}}>{cfg.icon}</span>
+          <span style={{color:'#374151'}}>{msg.content}</span>
+          <span style={{fontSize:'0.62rem',color:'#9ca3af',marginLeft:2}}>{ts2}</span>
+        </span>
       </div>
     )
   }
   const ri=R(msg.sender?.rank), bdr=GBR(msg.sender?.gender,msg.sender?.rank)
-  const col=msg.sender?.nameColor||ri.color
+  const col = (() => {
+    const nc = msg.sender?.nameColor
+    if(!nc) return ri.color
+    if(nc.startsWith('bcolor')) return ['#ff3333','#ff6633','#ff9933','#ffcc33','#cccc00','#99cc00','#59b300','#829356','#008000','#00e639','#00e673','#00e6ac','#00cccc','#03add8','#3366ff','#107896','#004d99','#6633ff','#9933ff','#cc33ff','#ff33ff','#ff33cc','#ff3399','#ff3366','#604439','#795548','#a97f70','#bc9b8f','#9E9E9E','#879fab','#698796','#495f69'][parseInt(nc.replace('bcolor',''))-1] || ri.color
+    if(nc.startsWith('bgrad')||nc.startsWith('bneon')) return ri.color // gradient handled separately
+    return ri.color
+  })()
   const ts=new Date(msg.createdAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
   const isMine=(msg.sender?._id===myId||msg.sender?.userId===myId)
   const canDel=isMine||myLevel>=11
@@ -636,14 +634,37 @@ function Msg({msg,onMiniCard,onMention,onHide,myId,myLevel,socket,roomId}) {
       />
       <div style={{flex:1,minWidth:0}}>
         <div style={{display:'flex',alignItems:'center',gap:4,marginBottom:1}}>
-          <RIcon rank={msg.sender?.rank} size={18}/>
-          <span onClick={()=>onMention(msg.sender?.username)} style={{fontSize:'0.95rem',fontWeight:700,color:col,cursor:'pointer'}} onMouseEnter={e=>e.currentTarget.style.textDecoration='underline'} onMouseLeave={e=>e.currentTarget.style.textDecoration='none'}>
+          <RIcon rank={msg.sender?.rank} size={12}/>
+          <span onClick={()=>onMention(msg.sender?.username)} style={{fontSize:'0.82rem',fontWeight:700,color:col,cursor:'pointer'}} onMouseEnter={e=>e.currentTarget.style.textDecoration='underline'} onMouseLeave={e=>e.currentTarget.style.textDecoration='none'}>
             {msg.sender?.username}
           </span>
           <span style={{fontSize:'0.63rem',color:'#9ca3af'}}>{ts}</span>
           {canDel&&<button onClick={()=>socket?.emit('deleteMessage',{messageId:msg._id,roomId})} style={{background:'none',border:'none',cursor:'pointer',color:'#d1d5db',fontSize:10,padding:0,marginLeft:2,display:'none'}} className="del-btn"><i className="fi fi-sr-trash"/></button>}
         </div>
-        <div className="msg-bubble" style={{fontSize:'0.875rem',lineHeight:1.4,color:'#111827',wordBreak:'break-word'}}>
+        <div className="msg-bubble" style={{
+          fontSize: msg.sender?.msgFontSize ? `${msg.sender.msgFontSize}px` : '0.875rem',
+          lineHeight: 1.4,
+          color: msg.sender?.msgFontColor || '#111827',
+          wordBreak: 'break-word',
+          fontFamily: msg.sender?.msgFontStyle
+            ? ({'font1':"'Kalam',cursive",'font2':"'Signika',sans-serif",'font3':"'Orbitron',sans-serif",'font4':"'Comic Neue',cursive",'font5':"'Quicksand',sans-serif",'font6':"'Pacifico',cursive",'font7':"'Dancing Script',cursive",'font8':"'Lobster Two',cursive",'font9':"'Caveat',cursive",'font10':"'Rajdhani',sans-serif",'font11':"'Audiowide',sans-serif",'font12':"'Nunito',sans-serif"}[msg.sender.msgFontStyle] || 'inherit')
+            : 'inherit',
+          fontWeight: msg.sender?.bubbleStyle?.includes('bold') ? 700 : 400,
+          fontStyle: msg.sender?.bubbleStyle?.includes('italic') ? 'italic' : 'normal',
+          ...(msg.sender?.bubbleColor && msg.sender.bubbleColor.startsWith('bubcolor') ? {
+            background: ['#ff3333','#ff6633','#ff9933','#ffcc33','#cccc00','#99cc00','#59b300','#829356','#008000','#00e639','#00e673','#00e6ac','#00cccc','#03add8','#3366ff','#107896','#004d99','#6633ff','#9933ff','#cc33ff','#ff33ff','#ff33cc','#ff3399','#ff3366','#604439','#795548','#a97f70','#bc9b8f','#9E9E9E','#879fab','#698796','#495f69'][parseInt(msg.sender.bubbleColor.replace('bubcolor',''))-1],
+            color: msg.sender.msgFontColor || '#fff',
+            padding: '6px 10px',
+            borderRadius: '3px 10px 10px 10px',
+            display: 'inline-block',
+          } : msg.sender?.bubbleColor && (msg.sender.bubbleColor.startsWith('bubgrad') || msg.sender.bubbleColor.startsWith('bubneon')) ? {
+            background: ['linear-gradient(90deg,#667eea,#764ba2)','linear-gradient(90deg,#f093fb,#f5576c)','linear-gradient(90deg,#4facfe,#00f2fe)','linear-gradient(90deg,#43e97b,#38f9d7)','linear-gradient(90deg,#fa709a,#fee140)','linear-gradient(90deg,#ff9a56,#ff6b9d)','linear-gradient(90deg,#c471f5,#fa71cd)','linear-gradient(90deg,#12c2e9,#c471ed)','linear-gradient(90deg,#f64f59,#c471ed)','linear-gradient(90deg,#24fe41,#fdbb2d)','linear-gradient(45deg,#ff0844,#ffb199)','linear-gradient(45deg,#00d2ff,#3a7bd5)','linear-gradient(45deg,#f953c6,#b91d73)','linear-gradient(45deg,#36d1dc,#5b86e5)','linear-gradient(45deg,#ff9068,#fd746c)','linear-gradient(45deg,#667eea,#764ba2)'][parseInt(msg.sender.bubbleColor.replace(/bubgrad|bubneon/,''))-1] || '',
+            color: '#fff',
+            padding: '6px 10px',
+            borderRadius: '3px 10px 10px 10px',
+            display: 'inline-block',
+          } : {}),
+        }}>
           {msg.type==='gift'   ?<span>🎁 {msg.content}</span>
           :msg.type==='image'  ?<img src={msg.content} alt="" style={{maxWidth:'min(200px,60vw)',borderRadius:8,display:'block'}}/>
           :msg.type==='gif'    ?<img src={msg.content} alt="GIF" style={{maxWidth:'min(200px,60vw)',borderRadius:8,display:'block'}}/>
@@ -667,13 +688,11 @@ function UserItem({u,onClick,onWhisper}) {
       onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
       style={{display:'flex',alignItems:'center',gap:7,padding:'6px 10px',cursor:'pointer',transition:'background .12s',position:'relative',background:hov?'#f3f4f6':'transparent'}}>
       <div style={{position:'relative',flexShrink:0}}>
-        {/* 36×36px avatar — same as CodyChat user list */}
-        <img src={u.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{width:36,height:36,borderRadius:'50%',objectFit:'cover',border:`1.5px solid ${GBR(u.gender,u.rank)}`,display:'block'}} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
-        <span style={{position:'absolute',bottom:0,right:0,width:8,height:8,background:'#22c55e',borderRadius:'50%',border:'1.5px solid #fff'}}/>
+        <img src={u.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{width:28,height:28,borderRadius:'50%',objectFit:'cover',border:`1.5px solid ${GBR(u.gender,u.rank)}`,display:'block'}} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
+        <span style={{position:'absolute',bottom:0,right:0,width:6,height:6,background:'#22c55e',borderRadius:'50%',border:'1.5px solid #fff'}}/>
       </div>
-      {/* 18px rank icon — matches Msg component */}
-      <RIcon rank={u.rank} size={18}/>
-      <span style={{flex:1,fontSize:'14px',fontWeight:700,color:col,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{u.username}</span>
+      <span style={{flex:1,fontSize:'0.8rem',fontWeight:700,color:col,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{u.username}</span>
+      <RIcon rank={u.rank} size={14}/>
       {u.countryCode&&u.countryCode!=='ZZ'&&<img src={`/icons/flags/${u.countryCode.toUpperCase()}.png`} alt="" style={{width:15,height:10,flexShrink:0,borderRadius:1}} onError={e=>e.target.style.display='none'}/>}
       {hov&&onWhisper&&<button onClick={e=>{e.stopPropagation();onWhisper(u)}} title="Whisper" style={{position:'absolute',right:6,background:'#eef2ff',border:'1px solid #6366f1',borderRadius:5,padding:'2px 6px',cursor:'pointer',fontSize:'0.7rem',color:'#6366f1',fontWeight:700}}>👁️</button>}
     </div>
@@ -750,57 +769,251 @@ function RightSidebar({users,myLevel,onUserClick,onWhisper,onClose}) {
 // ─────────────────────────────────────────────────────────────
 // LEFT SIDEBAR — icon strip + label (like adultchat)
 // ─────────────────────────────────────────────────────────────
-// SidebarIcon: renders SVG from /icons/ui/ with fi-sr fallback for left sidebar items
-function SidebarIcon({svgName, fiClass, color, active, size=18}) {
-  const [err,setErr]=useState(false)
-  const style={width:size,height:size,objectFit:'contain',flexShrink:0,
-    filter:active?'none':'grayscale(30%) opacity(0.75)'}
-  if(!err && svgName)
-    return <img src={`/icons/ui/${svgName}.svg`} alt="" style={style} onError={()=>setErr(true)}/>
-  return <i className={`fi ${fiClass}`} style={{fontSize:size-2,color:active?color:'#6b7280'}}/>
+
+// ─────────────────────────────────────────────────────────────
+// STYLE PANEL — Inline version inside left sidebar
+// ─────────────────────────────────────────────────────────────
+const API_S = import.meta.env.VITE_API_URL || 'https://chatsgenz-backend-production.up.railway.app'
+
+const SOLID_COLORS = [
+  '#ff3333','#ff6633','#ff9933','#ffcc33','#cccc00','#99cc00','#59b300','#829356',
+  '#008000','#00e639','#00e673','#00e6ac','#00cccc','#03add8','#3366ff','#107896',
+  '#004d99','#6633ff','#9933ff','#cc33ff','#ff33ff','#ff33cc','#ff3399','#ff3366',
+  '#604439','#795548','#a97f70','#bc9b8f','#9E9E9E','#879fab','#698796','#495f69',
+]
+const BUB_GRADS = [
+  'linear-gradient(90deg,#667eea,#764ba2)','linear-gradient(90deg,#f093fb,#f5576c)',
+  'linear-gradient(90deg,#4facfe,#00f2fe)','linear-gradient(90deg,#43e97b,#38f9d7)',
+  'linear-gradient(90deg,#fa709a,#fee140)','linear-gradient(90deg,#ff9a56,#ff6b9d)',
+  'linear-gradient(90deg,#c471f5,#fa71cd)','linear-gradient(90deg,#12c2e9,#c471ed)',
+  'linear-gradient(90deg,#f64f59,#c471ed)','linear-gradient(90deg,#24fe41,#fdbb2d)',
+  'linear-gradient(45deg,#ff0844,#ffb199)','linear-gradient(45deg,#00d2ff,#3a7bd5)',
+  'linear-gradient(45deg,#f953c6,#b91d73)','linear-gradient(45deg,#36d1dc,#5b86e5)',
+  'linear-gradient(45deg,#ff9068,#fd746c)','linear-gradient(45deg,#667eea,#764ba2)',
+]
+const CHAT_THEMES = [
+  {id:'Dark',        name:'Dark',        bg:'#151515', header:'#111', accent:'#03add8'},
+  {id:'Arc',         name:'Arc',         bg:'#181a21', header:'linear-gradient(to top,#21252f,#2b3140)', accent:'#5774b7'},
+  {id:'Purple',      name:'Purple',      bg:'#29165f', header:'#150442', accent:'#9773fb'},
+  {id:'Blue',        name:'Blue',        bg:'#013259', header:'#001e37', accent:'#1e9aff'},
+  {id:'Whatsapp',    name:'Whatsapp',    bg:'#0b141a', header:'linear-gradient(#202c33,#0b141a)', accent:'#00a884'},
+  {id:'Nord',        name:'Nord',        bg:'#2e3440', header:'linear-gradient(#272833,#30343e)', accent:'#6e89c4'},
+  {id:'Obsidian',    name:'Obsidian',    bg:'#0b0d18', header:'linear-gradient(#0d101e,#121425)', accent:'#4a63cf'},
+  {id:'Remix',       name:'Remix',       bg:'#0F1221', header:'#011448', accent:'#3b6cff'},
+  {id:'Lite',        name:'Lite',        bg:'#fff',    header:'#222', accent:'#03add8'},
+  {id:'Dolphin',     name:'Dolphin',     bg:'#fff',    header:'#edf1f4', accent:'#ff5c00'},
+  {id:'Halloween',   name:'Halloween',   bg:'#000',    header:'linear-gradient(#000,#672e00)', accent:'#ff7607'},
+  {id:'Forest',      name:'Forest',      bg:'#1a1a1a', header:'rgba(17,17,17,.7)', accent:'#eeb266'},
+]
+const FONT_LIST = [
+  {id:'font1',name:'Kalam',f:"'Kalam',cursive"},
+  {id:'font2',name:'Signika',f:"'Signika',sans-serif"},
+  {id:'font3',name:'Orbitron',f:"'Orbitron',sans-serif"},
+  {id:'font4',name:'Comic Neue',f:"'Comic Neue',cursive"},
+  {id:'font5',name:'Quicksand',f:"'Quicksand',sans-serif"},
+  {id:'font6',name:'Pacifico',f:"'Pacifico',cursive"},
+  {id:'font7',name:'Dancing Script',f:"'Dancing Script',cursive"},
+  {id:'font8',name:'Lobster Two',f:"'Lobster Two',cursive"},
+  {id:'font9',name:'Caveat',f:"'Caveat',cursive"},
+  {id:'font10',name:'Rajdhani',f:"'Rajdhani',sans-serif"},
+  {id:'font11',name:'Audiowide',f:"'Audiowide',sans-serif"},
+  {id:'font12',name:'Nunito',f:"'Nunito',sans-serif"},
+]
+
+function StylePanelInline({type,onSaved}) {
+  const [tab,setTab]=useState('solid')
+  const [sel,setSel]=useState('')
+  const [selFont,setSelFont]=useState('')
+  const [fontStyle,setFontStyle]=useState('normal')
+  const [msgColor,setMsgColor]=useState('#ffffff')
+  const [selTheme,setSelTheme]=useState('Dark')
+  const [saving,setSaving]=useState(false)
+  const [ok,setOk]=useState('')
+
+  const SW={width:28,height:28,borderRadius:5,cursor:'pointer',border:'2px solid transparent',display:'inline-flex',alignItems:'center',justifyContent:'center',flexShrink:0,margin:2,transition:'transform .1s'}
+
+  async function save() {
+    setSaving(true); setOk('')
+    const token=localStorage.getItem('cgz_token')
+    let body={}
+    if(type==='nameColor') body={nameColor:sel||'',nameFont:selFont}
+    else if(type==='bubbleColor') body={bubbleColor:sel,bubbleStyle:fontStyle,msgFontColor:msgColor,msgFontStyle:selFont}
+    else if(type==='theme') body={chatTheme:selTheme}
+    try{
+      const r=await fetch(`${API_S}/api/users/me/style`,{method:'PUT',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify(body)})
+      const d=await r.json()
+      if(r.ok){setOk('Saved!');onSaved&&onSaved(d.user)}
+    }catch{}
+    setSaving(false)
+  }
+
+  return (
+    <div style={{flex:1,overflowY:'auto',padding:'10px 8px'}}>
+      {ok&&<div style={{background:'#f0fdf4',border:'1px solid #86efac',borderRadius:6,padding:'6px 10px',fontSize:11,color:'#15803d',marginBottom:8,textAlign:'center'}}>✅ {ok}</div>}
+
+      {type==='nameColor'&&(
+        <>
+          {/* Preview */}
+          <div style={{textAlign:'center',marginBottom:10,padding:'8px',background:'#f9fafb',borderRadius:6}}>
+            <span style={{fontSize:14,fontWeight:800,fontFamily:FONT_LIST.find(f=>f.id===selFont)?.f||'inherit',
+              ...(tab==='solid'&&sel?{color:SOLID_COLORS[parseInt(sel.replace('bcolor',''))-1]}:
+                 tab==='gradient'&&sel?{background:BUB_GRADS[parseInt(sel.replace('bgrad',''))-1],WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}:
+                 {})}}>
+              Preview Name
+            </span>
+          </div>
+          <div style={{display:'flex',gap:4,marginBottom:8}}>
+            {['solid','gradient'].map(t=>(
+              <button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:'4px',borderRadius:4,border:`1px solid ${tab===t?'#1a73e8':'#e4e6ea'}`,background:tab===t?'#eff6ff':'none',color:tab===t?'#1a73e8':'#9ca3af',fontSize:10,fontWeight:700,cursor:'pointer',textTransform:'capitalize'}}>{t}</button>
+            ))}
+          </div>
+          {tab==='solid'&&(
+            <div style={{display:'flex',flexWrap:'wrap',marginBottom:10}}>
+              <div onClick={()=>setSel('')} style={{...SW,background:'#f3f4f6',border:`2px solid ${sel===''?'#1a73e8':'#e4e6ea'}`}}>
+                {sel===''&&<span style={{fontSize:10}}>✓</span>}
+              </div>
+              {SOLID_COLORS.map((c,i)=>(
+                <div key={i} onClick={()=>setSel(`bcolor${i+1}`)} style={{...SW,background:c,border:`2px solid ${sel===`bcolor${i+1}`?'#fff':'transparent'}`,transform:sel===`bcolor${i+1}`?'scale(1.2)':'scale(1)'}}>
+                  {sel===`bcolor${i+1}`&&<span style={{color:'#fff',fontSize:9}}>✓</span>}
+                </div>
+              ))}
+            </div>
+          )}
+          {tab==='gradient'&&(
+            <div style={{display:'flex',flexWrap:'wrap',marginBottom:10}}>
+              {BUB_GRADS.map((g,i)=>(
+                <div key={i} onClick={()=>setSel(`bgrad${i+1}`)} style={{...SW,background:g,border:`2px solid ${sel===`bgrad${i+1}`?'#fff':'transparent'}`,transform:sel===`bgrad${i+1}`?'scale(1.2)':'scale(1)'}}>
+                  {sel===`bgrad${i+1}`&&<span style={{color:'#fff',fontSize:9}}>✓</span>}
+                </div>
+              ))}
+            </div>
+          )}
+          <div style={{fontSize:10,fontWeight:700,color:'#6b7280',marginBottom:5,textTransform:'uppercase',letterSpacing:.5}}>Name Font</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4,marginBottom:10}}>
+            <div onClick={()=>setSelFont('')} style={{padding:'5px 6px',borderRadius:5,border:`1px solid ${selFont===''?'#1a73e8':'#e4e6ea'}`,background:selFont===''?'#eff6ff':'#f9fafb',cursor:'pointer',fontSize:11,textAlign:'center',color:selFont===''?'#1a73e8':'#374151'}}>Default</div>
+            {FONT_LIST.slice(0,5).map(f=>(
+              <div key={f.id} onClick={()=>setSelFont(f.id)} style={{padding:'5px 6px',borderRadius:5,border:`1px solid ${selFont===f.id?'#1a73e8':'#e4e6ea'}`,background:selFont===f.id?'#eff6ff':'#f9fafb',cursor:'pointer',fontSize:11,textAlign:'center',fontFamily:f.f,color:selFont===f.id?'#1a73e8':'#374151',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{f.name}</div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {type==='bubbleColor'&&(
+        <>
+          {/* Preview bubble */}
+          <div style={{marginBottom:10,padding:'8px',background:'#f9fafb',borderRadius:6}}>
+            <div style={{display:'inline-block',padding:'6px 10px',borderRadius:'3px 10px 10px 10px',fontSize:12,
+              fontWeight:fontStyle.includes('bold')?700:400,
+              fontStyle:fontStyle.includes('italic')?'italic':'normal',
+              fontFamily:FONT_LIST.find(f=>f.id===selFont)?.f||'inherit',
+              color:msgColor||'#fff',
+              ...(tab==='solid'&&sel?{background:SOLID_COLORS[parseInt(sel.replace('bubcolor',''))-1]}:
+                 (tab==='gradient'||tab==='neon')&&sel?{background:BUB_GRADS[parseInt(sel.replace(/bubgrad|bubneon/,''))-1]}:
+                 {background:'#f3f4f6',color:'#111'})}}>
+              Hey! Preview 👋
+            </div>
+          </div>
+          <div style={{display:'flex',gap:4,marginBottom:8}}>
+            {['solid','gradient','neon'].map(t=>(
+              <button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:'4px',borderRadius:4,border:`1px solid ${tab===t?'#1a73e8':'#e4e6ea'}`,background:tab===t?'#eff6ff':'none',color:tab===t?'#1a73e8':'#9ca3af',fontSize:10,fontWeight:700,cursor:'pointer',textTransform:'capitalize'}}>{t}</button>
+            ))}
+          </div>
+          <div style={{display:'flex',flexWrap:'wrap',marginBottom:10}}>
+            <div onClick={()=>setSel('')} style={{...SW,background:'#f3f4f6',border:`2px solid ${sel===''?'#1a73e8':'#e4e6ea'}`}}>
+              {sel===''&&<span style={{fontSize:9}}>def</span>}
+            </div>
+            {SOLID_COLORS.map((c,i)=>(
+              <div key={i} onClick={()=>setSel(`bubcolor${i+1}`)} style={{...SW,background:c,border:`2px solid ${sel===`bubcolor${i+1}`?'#fff':'transparent'}`,transform:sel===`bubcolor${i+1}`?'scale(1.2)':'scale(1)'}}>
+                {sel===`bubcolor${i+1}`&&<span style={{color:'#fff',fontSize:9}}>✓</span>}
+              </div>
+            ))}
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
+            <div>
+              <div style={{fontSize:10,fontWeight:700,color:'#6b7280',marginBottom:4,textTransform:'uppercase'}}>Text Color</div>
+              <input type="color" value={msgColor} onChange={e=>setMsgColor(e.target.value)} style={{width:'100%',height:32,borderRadius:5,border:'1px solid #e4e6ea',cursor:'pointer'}}/>
+            </div>
+            <div>
+              <div style={{fontSize:10,fontWeight:700,color:'#6b7280',marginBottom:4,textTransform:'uppercase'}}>Style</div>
+              <select value={fontStyle} onChange={e=>setFontStyle(e.target.value)} style={{width:'100%',padding:'5px 6px',border:'1px solid #e4e6ea',borderRadius:5,fontSize:11,background:'#f9fafb',outline:'none',cursor:'pointer'}}>
+                <option value="normal">Normal</option>
+                <option value="bold">Bold</option>
+                <option value="italic">Italic</option>
+                <option value="bold italic">Bold Italic</option>
+              </select>
+            </div>
+          </div>
+          <div style={{fontSize:10,fontWeight:700,color:'#6b7280',marginBottom:5,textTransform:'uppercase'}}>Font</div>
+          <select value={selFont} onChange={e=>setSelFont(e.target.value)} style={{width:'100%',padding:'6px 8px',border:'1px solid #e4e6ea',borderRadius:5,fontSize:12,background:'#f9fafb',outline:'none',cursor:'pointer',marginBottom:10}}>
+            <option value="">Default Font</option>
+            {FONT_LIST.map(f=><option key={f.id} value={f.id}>{f.name}</option>)}
+          </select>
+        </>
+      )}
+
+      {type==='theme'&&(
+        <>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:10}}>
+            {CHAT_THEMES.map(t=>(
+              <div key={t.id} onClick={()=>setSelTheme(t.id)} style={{borderRadius:7,overflow:'hidden',border:`2px solid ${selTheme===t.id?'#1a73e8':'#e4e6ea'}`,cursor:'pointer',transform:selTheme===t.id?'scale(1.03)':'scale(1)',transition:'all .15s'}}>
+                <div style={{background:t.header,padding:'4px 8px',display:'flex',alignItems:'center',gap:4}}>
+                  {selTheme===t.id&&<span style={{fontSize:8,color:t.accent}}>✓</span>}
+                  <span style={{fontSize:9,fontWeight:700,color:'#fff',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{t.name}</span>
+                </div>
+                <div style={{background:t.bg,padding:'4px 8px',height:24}}>
+                  <div style={{background:t.accent+'44',borderRadius:3,padding:'2px 6px',display:'inline-block'}}>
+                    <span style={{fontSize:8,color:t.accent}}>Hello 👋</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      <button onClick={save} disabled={saving} style={{width:'100%',padding:'9px',borderRadius:7,border:'none',background:saving?'#9ca3af':'#1a73e8',color:'#fff',fontWeight:800,fontSize:12,cursor:saving?'not-allowed':'pointer',fontFamily:'inherit'}}>
+        {saving?'Saving…':'💾 Apply Style'}
+      </button>
+    </div>
+  )
 }
 
-function LeftSidebar({room,nav,socket,roomId,myRank,onClose}) {
+function LeftSidebar({room,nav,socket,roomId,onClose,me,onStyleSaved}) {
   const [panel,setPanel]=useState(null)
-  const isPremium = myRank && RANKS[myRank] && RANKS[myRank].level >= 10
-
-  // Each item: svgName maps to /icons/ui/<svgName>.svg, fiClass is flaticon fallback
+  // Icons match adultchat: fa-rss for wall, fa-newspaper for news, fa-comments for forum
   const ITEMS=[
-    {id:'rooms',       svgName:'dashboard',  fiClass:'fi-sr-house-chimney', label:'Room List',    color:'#1a73e8'},
-    {id:'wall',        svgName:'note',       fiClass:'fi-sr-rss',           label:'Friends Wall', color:'#7c3aed'},
-    {id:'news',        svgName:'badge',      fiClass:'fi-sr-newspaper',     label:'News',         color:'#059669'},
-    {id:'forum',       svgName:'comment',    fiClass:'fi-sr-comments-alt',  label:'Forum',        color:'#f59e0b'},
-    {id:'games',       svgName:'gold',       fiClass:'fi-sr-dice',          label:'Games',        color:'#ec4899'},
-    {id:'leaderboard', svgName:'medal1',     fiClass:'fi-sr-medal',         label:'Leaderboards', color:'#d97706'},
-    {id:'username',    svgName:'create',     fiClass:'fi-sr-user-pen',      label:'Username',     color:'#6366f1'},
-    {id:'contact',     svgName:'contact',    fiClass:'fi-sr-envelope',      label:'Contact',      color:'#14b8a6'},
-    {id:'premium',     svgName:null,         fiClass:'fi-sr-diamond',       label:'Premium',      color:'#aa44ff', rankIcon: isPremium},
+    {id:'rooms',       icon:'fi-sr-house-chimney',  label:'Room List',    color:'#1a73e8'},
+    {id:'wall',        icon:'fi-sr-rss',             label:'Friends Wall', color:'#7c3aed'},
+    {id:'news',        icon:'fi-sr-newspaper',       label:'News',         color:'#059669'},
+    {id:'forum',       icon:'fi-sr-comments-alt',    label:'Forum',        color:'#f59e0b'},
+    {id:'games',       icon:'fi-sr-dice',            label:'Games',        color:'#ec4899'},
+    {id:'leaderboard', icon:'fi-sr-medal',           label:'Leaderboards', color:'#d97706'},
+    {id:'username',    icon:'fi-sr-user-pen',        label:'Username',     color:'#6366f1'},
+    {id:'contact',     icon:'fi-sr-envelope',        label:'Contact',      color:'#14b8a6'},
+    {id:'premium',     icon:'fi-sr-diamond',         label:'Premium',      color:'#f59e0b'},
+    {id:'namecolor',   icon:'fi-sr-brush',           label:'Name Style',   color:'#ec4899'},
+    {id:'bubblesyle',  icon:'fi-sr-comment-alt',     label:'Bubble Style', color:'#8b5cf6'},
+    {id:'theme',       icon:'fi-sr-palette',         label:'Theme',        color:'#14b8a6'},
   ]
 
   return (
     <div style={{display:'flex',height:'100%',flexShrink:0}}>
-      {/* Icon strip with labels */}
+      {/* Icon strip with labels - like adultchat left menu */}
       <div style={{width:56,background:'#f8f9fa',borderRight:'1px solid #e4e6ea',display:'flex',flexDirection:'column',alignItems:'center',padding:'6px 0',gap:1,overflowY:'auto'}}>
         {/* Room icon at top */}
         <div style={{padding:'4px 0 8px',borderBottom:'1px solid #2d3148',width:'100%',textAlign:'center',marginBottom:4}}>
           <img src={room?.icon||'/default_images/rooms/default_room.png'} alt="" style={{width:28,height:28,borderRadius:7,objectFit:'cover',margin:'0 auto',display:'block'}} onError={e=>e.target.style.display='none'}/>
           <div style={{fontSize:'0.5rem',color:'#9ca3af',fontWeight:600,marginTop:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',padding:'0 2px'}}>{room?.name||'Room'}</div>
         </div>
-        {ITEMS.map(item=>{
-          const active=panel===item.id
-          return (
-            <button key={item.id} title={item.label} onClick={()=>setPanel(p=>p===item.id?null:item.id)}
-              style={{width:'100%',padding:'7px 2px 5px',border:'none',background:active?`${item.color}15`:'none',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:2,color:active?item.color:'#6b7280',transition:'all .12s',borderLeft:active?`2px solid ${item.color}`:'2px solid transparent'}}
-              onMouseEnter={e=>{if(!active){e.currentTarget.style.background=`${item.color}10`;e.currentTarget.style.color=item.color}}}
-              onMouseLeave={e=>{if(!active){e.currentTarget.style.background='none';e.currentTarget.style.color='#6b7280'}}}>
-              {item.rankIcon
-                ? <img src={`/icons/ranks/premium.svg`} alt="" style={{width:18,height:18,objectFit:'contain',flexShrink:0}} onError={e=>{e.target.outerHTML=`<i class="fi fi-sr-diamond" style="font-size:16px;color:${active?item.color:'#6b7280'}"></i>`}}/>
-                : <SidebarIcon svgName={item.svgName} fiClass={item.fiClass} color={item.color} active={active} size={18}/>
-              }
-              <span style={{fontSize:'0.48rem',fontWeight:700,letterSpacing:'0.2px',textAlign:'center',lineHeight:1.2,maxWidth:48,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.label}</span>
-            </button>
-          )
-        })}
+        {ITEMS.map(item=>(
+          <button key={item.id} title={item.label} onClick={()=>setPanel(p=>p===item.id?null:item.id)}
+            style={{width:'100%',padding:'7px 2px 5px',border:'none',background:panel===item.id?`${item.color}15`:'none',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:2,color:panel===item.id?item.color:'#6b7280',transition:'all .12s',borderLeft:panel===item.id?`2px solid ${item.color}`:'2px solid transparent'}}
+            onMouseEnter={e=>{if(panel!==item.id){e.currentTarget.style.background=`${item.color}10`;e.currentTarget.style.color=item.color}}}
+            onMouseLeave={e=>{if(panel!==item.id){e.currentTarget.style.background='none';e.currentTarget.style.color='#8892b0'}}}>
+            <i className={`fi ${item.icon}`} style={{fontSize:16}}/>
+            <span style={{fontSize:'0.48rem',fontWeight:700,letterSpacing:'0.2px',textAlign:'center',lineHeight:1.2,maxWidth:48,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.label}</span>
+          </button>
+        ))}
       </div>
 
       {/* Panel content */}
@@ -819,6 +1032,7 @@ function LeftSidebar({room,nav,socket,roomId,myRank,onClose}) {
           {panel==='forum'      &&<SimplePanel icon="💬" msg="Forum coming soon!"/>}
           {panel==='contact'    &&<ContactPanel/>}
           {panel==='premium'    &&<PremiumPanel/>}
+          {(panel==='namecolor'||panel==='bubblesyle'||panel==='theme')&&<StylePanelInline type={panel==='namecolor'?'nameColor':panel==='bubblesyle'?'bubbleColor':'theme'} onSaved={onStyleSaved}/>}
         </div>
       )}
     </div>
@@ -1132,6 +1346,17 @@ function GamesPanel({socket,roomId,myGold=0}) {
         </button>
       ))}
       {showDice&&diceVal&&<DiceRoll value={diceVal} onDone={()=>{setShowDice(false);setDiceVal(null)}}/>}
+      {whisperTarget&&<WhisperBox target={whisperTarget} roomId={roomId} socket={sockRef.current} onClose={()=>setWhisper(null)}/>}
+      {showPaint&&<PaintingCanvas onClose={()=>setShowPaint(false)} onSend={async(dataUrl)=>{
+        // Upload to imgbb then send as image message
+        try {
+          const blob=await(await fetch(dataUrl)).blob()
+          const fd=new FormData(); fd.append('image',blob,'drawing.png')
+          const r=await fetch(`${API}/api/upload/image`,{method:'POST',headers:{Authorization:`Bearer ${localStorage.getItem('cgz_token')}`},body:fd})
+          const d=await r.json()
+          if(r.ok&&d.url){ sockRef.current?.emit('sendMessage',{roomId,content:d.url,type:'image'}); setShowPaint(false) }
+        } catch{ setShowPaint(false) }
+      }}/>}
       {showSpin&&<SpinWheelGame socket={socket} myGold={myGold||0} onClose={()=>setShowSpin(false)}/>}
       {showKeno&&<KenoGame socket={socket} roomId={roomId} myGold={myGold||0} onClose={()=>setShowKeno(false)}/>}
     </div>
@@ -1642,17 +1867,15 @@ function AvatarDropdown({me,status,setStatus,onLeave,socket}) {
 // ─────────────────────────────────────────────────────────────
 // HEADER BUTTON
 // ─────────────────────────────────────────────────────────────
-function HBtn({icon,img,faIcon,title,badge,active,onClick,transparent}) {
+function HBtn({icon,img,title,badge,active,onClick}) {
   return (
     <button onClick={onClick} title={title}
-      style={{position:'relative',background:transparent?'transparent':active?'#e8f0fe':'none',border:'none',cursor:'pointer',color:active?'#1a73e8':'#6b7280',width:38,height:38,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,transition:'all .15s',flexShrink:0}}
-      onMouseEnter={e=>{if(!transparent)e.currentTarget.style.background='#f3f4f6'}}
-      onMouseLeave={e=>{if(!transparent)e.currentTarget.style.background=active?'#e8f0fe':'none'}}>
+      style={{position:'relative',background:active?'#e8f0fe':'none',border:'none',cursor:'pointer',color:active?'#1a73e8':'#6b7280',width:38,height:38,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,transition:'all .15s',flexShrink:0}}
+      onMouseEnter={e=>{e.currentTarget.style.background='#f3f4f6'}}
+      onMouseLeave={e=>{e.currentTarget.style.background=active?'#e8f0fe':'none'}}>
       {img
-        ? <img src={img} alt={title} style={{width:22,height:22,objectFit:'contain',filter:active?'none':'grayscale(20%)',opacity:active?1:0.8,background:'transparent'}} onError={e=>e.target.style.display='none'}/>
-        : faIcon
-          ? <i className={`fa ${faIcon}`} style={{fontSize:17}}/>
-          : <i className={`fi ${icon}`}/>
+        ? <img src={img} alt={title} style={{width:22,height:22,objectFit:'contain',filter:active?'none':'grayscale(20%)',opacity:active?1:0.8}} onError={e=>e.target.style.display='none'}/>
+        : <i className={`fi ${icon}`}/>
       }
       {badge>0&&<span style={{position:'absolute',top:4,right:4,minWidth:7,height:7,background:'#ef4444',borderRadius:'50%',border:'1.5px solid #fff'}}/>}
     </button>
@@ -1684,7 +1907,7 @@ function FBtn({icon,active,onClick,title,badge}) {
 // MAIN CHATROOM
 // ─────────────────────────────────────────────────────────────
 export default function ChatRoom() {
-  const {roomId}=useParams(), nav=useNavigate(), toast=useToast()
+  const {roomSlug}=useParams(), nav=useNavigate(), toast=useToast()
   const token=localStorage.getItem('cgz_token')
 
   const [me,        setMe]       =useState(null)
@@ -1723,7 +1946,7 @@ export default function ChatRoom() {
     if(!token){nav('/login');return}
     loadRoom()
     return()=>sockRef.current?.disconnect()
-  },[roomId])
+  },[roomSlug])
 
   useEffect(()=>{ bottomRef.current?.scrollIntoView({behavior:'smooth'}) },[messages])
 
@@ -1732,7 +1955,7 @@ export default function ChatRoom() {
     try {
       const [mr,rr]=await Promise.all([
         fetch(`${API}/api/auth/me`,{headers:{Authorization:`Bearer ${token}`}}),
-        fetch(`${API}/api/rooms/${roomId}`,{headers:{Authorization:`Bearer ${token}`}}),
+        fetch(`${API}/api/rooms/${roomSlug}`,{headers:{Authorization:`Bearer ${token}`}}),
       ])
       if(mr.status===401){localStorage.removeItem('cgz_token');nav('/login');return}
       const md=await mr.json()
@@ -1740,7 +1963,7 @@ export default function ChatRoom() {
       const rd=await rr.json()
       if(!rr.ok){setErr(rd.error||'Room not found');setLoad(false);return}
       setRoom(rd.room)
-      fetch(`${API}/api/rooms/${roomId}/messages?limit=50`,{headers:{Authorization:`Bearer ${token}`}}).then(r=>r.json()).then(d=>{if(d.messages)setMsgs(d.messages)}).catch(()=>{})
+      fetch(`${API}/api/rooms/${roomSlug}/messages?limit=50`,{headers:{Authorization:`Bearer ${token}`}}).then(r=>r.json()).then(d=>{if(d.messages)setMsgs(d.messages)}).catch(()=>{})
     } catch{setErr('Connection failed.')}
     setLoad(false)
     connectSocket()
@@ -1855,40 +2078,39 @@ export default function ChatRoom() {
           <i className="fi fi-sr-bars-sort"/>
         </button>
 
-        {/* Webcam button - fully transparent, no background */}
-        <HBtn img="/default_images/icons/webcam.svg" title="Webcam" transparent={true} active={false} onClick={e=>e.stopPropagation()}/>
+        {/* Webcam button */}
+        <HBtn img="/default_images/icons/webcam.svg" title="Webcam" active={false} onClick={e=>e.stopPropagation()}/>
 
-        {/* Online count - center, no room name */}
+        {/* Room name - center */}
         <div style={{flex:1,textAlign:'center',minWidth:0}}>
-          <div style={{fontSize:'0.72rem',color:connected?'#22c55e':'#9ca3af',fontWeight:600}}>
-            {connected?`● ${Math.max(users.length,onlineCount)||users.length} online`:'Connecting...'}
-          </div>
+          <div style={{fontSize:'0.84rem',fontWeight:800,color:'#111827',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontFamily:'Outfit,sans-serif'}}>{room?.name||'Chat Room'}</div>
+          <div style={{fontSize:'0.62rem',color:connected?'#22c55e':'#9ca3af'}}>{connected?`● ${Math.max(users.length,onlineCount)||users.length} online`:'Connecting...'}</div>
         </div>
 
-        {/* Right icons - CodyChat style FA icons */}
+        {/* Right icons - using SVGs from public folder */}
         <div style={{position:'relative'}}>
-          <HBtn faIcon="fa-envelope" title="Messages" badge={notif.dm} active={showDM} onClick={e=>{e.stopPropagation();setShowDM(p=>!p);setShowNotif(false)}}/>
+          <HBtn img="/default_images/icons/comment.svg" title="Messages" badge={notif.dm} active={showDM} onClick={e=>{e.stopPropagation();setShowDM(p=>!p);setShowNotif(false)}}/>
           {showDM&&<DMPanel me={me} socket={sockRef.current} onClose={()=>setShowDM(false)} onCount={n=>setNotif(p=>({...p,dm:n}))}/>}
         </div>
 
         <div style={{position:'relative'}}>
-          <HBtn faIcon="fa-user-plus" title="Friend Requests" badge={notif.friends} active={showFriends} onClick={e=>{e.stopPropagation();setShowFriends(p=>!p);setShowDM(false);setShowNotif(false)}}/>
+          <HBtn icon="fi-sr-user-add" title="Friend Requests" badge={notif.friends} active={showFriends} onClick={e=>{e.stopPropagation();setShowFriends(p=>!p);setShowDM(false);setShowNotif(false)}}/>
           {showFriends&&<FriendReqPanel onClose={()=>setShowFriends(false)} onCount={n=>setNotif(p=>({...p,friends:n}))}/>}
         </div>
 
         <div style={{position:'relative'}}>
-          <HBtn faIcon="fa-bell" title="Notifications" badge={notif.notif} active={showNotif} onClick={e=>{e.stopPropagation();setShowNotif(p=>!p);setShowDM(false)}}/>
+          <HBtn img="/default_images/icons/congratulation.svg" title="Notifications" badge={notif.notif} active={showNotif} onClick={e=>{e.stopPropagation();setShowNotif(p=>!p);setShowDM(false)}}/>
           {showNotif&&<NotifPanel onClose={()=>setShowNotif(false)} onCount={n=>setNotif(p=>({...p,notif:n}))}/>}
         </div>
 
-        {isStaff&&<HBtn faIcon="fa-flag" title="Reports" badge={notif.reports}/>}
+        {isStaff&&<HBtn img="/default_images/icons/warning.svg" title="Reports" badge={notif.reports}/>}
 
         <AvatarDropdown me={me} status={status} setStatus={setStatus} onLeave={leave} socket={sockRef.current}/>
       </div>
 
       {/* ── BODY ── */}
       <div style={{flex:1,display:'flex',overflow:'hidden'}}>
-        {showLeft&&<LeftSidebar room={room} nav={nav} socket={sockRef.current} roomId={roomId} myRank={me?.rank} onClose={()=>setLeft(false)}/>}
+        {showLeft&&<LeftSidebar room={room} nav={nav} socket={sockRef.current} roomId={room?._id||roomSlug} onClose={()=>setLeft(false)} me={me} onStyleSaved={(updated)=>{if(updated)setMe(p=>({...p,...updated}))}}/>}
 
         {/* MESSAGES */}
         <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',minWidth:0}}>
