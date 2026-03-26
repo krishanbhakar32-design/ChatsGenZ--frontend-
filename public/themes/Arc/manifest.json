@@ -1,0 +1,12 @@
+{
+	"name": "Arc",
+	"author": "8lackmask",
+	"background_header": "linear-gradient(to top,#21252f,#2b3140)",
+	"text_header": "#fff",
+	"background_chat": "#181a21",
+	"background_image": "css/themes/Arc/images/background.png",
+	"background_log": "rgba(84, 96, 121, 0.2)",
+	"text_color": "#fff",
+	"theme_color": "#5774b7",
+	"default_color": "#546079"
+}

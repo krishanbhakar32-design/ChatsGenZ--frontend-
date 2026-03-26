@@ -1,0 +1,12 @@
+{
+	"name": "Blue",
+	"author": "8lackmask",
+	"background_header": "#001e37",
+	"text_header": "#fff",
+	"background_chat": "#013259",
+	"background_image": "css/themes/Blue/images/decoration.png",
+	"background_log": "rgba(0, 83, 151, 0.5)",
+	"text_color": "#fff",
+	"theme_color": "#1e9aff",
+	"default_color": "#005ca6"
+}
