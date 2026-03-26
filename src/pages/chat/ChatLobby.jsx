@@ -1,14 +1,3 @@
-/**
- * ChatLobby.jsx — COMPLETE REWRITE
- * Fixes:
- * - Add Room / Edit Room with full fields (name, desc, type, minRank, password, pin, topic, permissions)
- * - minRank based access: auto-enforced, floating toast on top
- * - Pin/Unpin room (route order fixed in rooms.js)
- * - Room card: icon, name, desc, type badge, user count, lock/pin icons
- * - Floating notifications at TOP of screen
- * - All rank icons shown correctly
- * - WebSocket error suppression handled
- */
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -44,100 +33,84 @@ const ROOM_TYPES = {
   admin:   { label:'Admin',    color:'#7c3aed', bg:'#f5f3ff', icon:'fi-sr-dashboard'   },
 }
 
-// ── TOP FLOATING TOAST ──────────────────────────────────────────
+// ── TOAST ──────────────────────────────────────────────────────
 function TopToast({ toasts }) {
   return (
-    <div style={{ position:'fixed', top:12, left:'50%', transform:'translateX(-50%)', zIndex:9999, display:'flex', flexDirection:'column', gap:6, alignItems:'center', pointerEvents:'none' }}>
-      {toasts.map(t => (
-        <div key={t.id} style={{
-          background: t.type==='error'?'#fef2f2':t.type==='success'?'#f0fdf4':'#eff6ff',
-          border: `1px solid ${t.type==='error'?'#fecaca':t.type==='success'?'#86efac':'#bfdbfe'}`,
-          color: t.type==='error'?'#dc2626':t.type==='success'?'#15803d':'#1d4ed8',
-          padding:'10px 20px', borderRadius:30, fontWeight:700, fontSize:'0.875rem',
-          boxShadow:'0 4px 20px rgba(0,0,0,.18)', fontFamily:'Outfit,sans-serif',
-          animation:'toastIn .25s ease-out', whiteSpace:'nowrap', maxWidth:'90vw',
-          overflow:'hidden', textOverflow:'ellipsis'
-        }}>
+    <div style={{ position:'fixed',top:12,left:'50%',transform:'translateX(-50%)',zIndex:9999,display:'flex',flexDirection:'column',gap:6,alignItems:'center',pointerEvents:'none' }}>
+      {toasts.map(t=>(
+        <div key={t.id} style={{ background:t.type==='error'?'#fef2f2':t.type==='success'?'#f0fdf4':'#eff6ff', border:`1px solid ${t.type==='error'?'#fecaca':t.type==='success'?'#86efac':'#bfdbfe'}`, color:t.type==='error'?'#dc2626':t.type==='success'?'#15803d':'#1d4ed8', padding:'10px 20px',borderRadius:30,fontWeight:700,fontSize:'0.875rem',boxShadow:'0 4px 20px rgba(0,0,0,.18)',animation:'toastIn .25s ease-out',whiteSpace:'nowrap',maxWidth:'90vw',overflow:'hidden',textOverflow:'ellipsis' }}>
           {t.type==='error'?'❌':t.type==='success'?'✅':'ℹ️'} {t.msg}
         </div>
       ))}
     </div>
   )
 }
-
 function useToastTop() {
-  const [toasts, setToasts] = useState([])
-  const show = useCallback((msg, type='info', duration=3500) => {
-    const id = Date.now() + Math.random()
-    setToasts(p => [...p, { id, msg, type }])
-    setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), duration)
-  }, [])
-  return { toasts, show }
+  const [toasts,setToasts]=useState([])
+  const show=useCallback((msg,type='info',duration=3500)=>{
+    const id=Date.now()+Math.random()
+    setToasts(p=>[...p,{id,msg,type}])
+    setTimeout(()=>setToasts(p=>p.filter(t=>t.id!==id)),duration)
+  },[])
+  return{toasts,show}
 }
 
 // ── RANK ICON ──────────────────────────────────────────────────
-function RIcon({ rank, size=14 }) {
-  const ri = R(rank)
-  return <img src={`/icons/ranks/${ri.icon}`} alt="" style={{ width:size, height:size, objectFit:'contain', flexShrink:0 }} onError={e=>e.target.style.display='none'}/>
+function RIcon({rank,size=14}){
+  const ri=R(rank)
+  return <img src={`/icons/ranks/${ri.icon}`} alt="" style={{width:size,height:size,objectFit:'contain',flexShrink:0}} onError={e=>e.target.style.display='none'}/>
 }
 
-// ── ADMIN FLOATING BUTTON ──────────────────────────────────────
-function AdminBtn({ icon, bg, title, onClick }) {
-  return (
-    <button onClick={onClick} title={title}
-      style={{ width:26, height:26, borderRadius:'50%', border:'none', background:bg, color:'#fff', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, boxShadow:'0 2px 6px rgba(0,0,0,.3)', flexShrink:0 }}>
+// ── TOGGLE SWITCH ─────────────────────────────────────────────
+function Toggle({value,onChange}){
+  return(
+    <div onClick={()=>onChange(!value)} style={{width:44,height:24,borderRadius:99,background:value?'#1a73e8':'#d1d5db',position:'relative',cursor:'pointer',transition:'background .2s',flexShrink:0}}>
+      <div style={{position:'absolute',top:3,left:value?21:3,width:18,height:18,borderRadius:'50%',background:'#fff',transition:'left .2s'}}/>
+    </div>
+  )
+}
+
+// ── ADMIN BUTTON ──────────────────────────────────────────────
+function AdminBtn({icon,bg,title,onClick}){
+  return(
+    <button onClick={onClick} title={title} style={{width:26,height:26,borderRadius:'50%',border:'none',background:bg,color:'#fff',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,boxShadow:'0 2px 6px rgba(0,0,0,.3)',flexShrink:0}}>
       <i className={`fi ${icon}`}/>
     </button>
   )
 }
 
-// ── PASS MODAL ─────────────────────────────────────────────────
-function PassModal({ room, onClose, onEnter }) {
-  const [val, setVal] = useState('')
-  const [err, setErr] = useState('')
-  return (
-    <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:1500, background:'rgba(0,0,0,.5)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
-      <div onClick={e=>e.stopPropagation()} style={{ background:'#fff', borderRadius:18, padding:'28px 24px', maxWidth:320, width:'100%', boxShadow:'0 24px 64px rgba(0,0,0,.22)', textAlign:'center' }}>
-        <div style={{ width:52, height:52, background:'#f3f4f6', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 12px' }}>
-          <i className="fi fi-sr-lock" style={{ fontSize:20, color:'#6b7280' }}/>
-        </div>
-        <h3 style={{ fontFamily:'Outfit,sans-serif', fontWeight:900, color:'#111827', fontSize:'1rem', marginBottom:5 }}>{room.name}</h3>
-        <p style={{ fontSize:'0.8rem', color:'#9ca3af', marginBottom:16 }}>Enter room password to continue</p>
-        {err && <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:8, padding:'7px 12px', fontSize:'0.78rem', color:'#dc2626', marginBottom:10 }}>{err}</div>}
-        <form onSubmit={e=>{e.preventDefault();if(val.trim())onEnter(val.trim());else setErr('Enter password')}} style={{ display:'flex', flexDirection:'column', gap:10 }}>
-          <input type="password" autoFocus value={val} onChange={e=>{setVal(e.target.value);setErr('')}}
-            placeholder="Password"
-            style={{ width:'100%', padding:'11px 14px', background:'#f9fafb', border:'1.5px solid #e4e6ea', borderRadius:10, fontSize:'0.875rem', outline:'none', boxSizing:'border-box', color:'#111827', textAlign:'center', letterSpacing:3 }}
-            onFocus={e=>e.target.style.borderColor='#1a73e8'} onBlur={e=>e.target.style.borderColor='#e4e6ea'}/>
-          <button type="submit" style={{ padding:'11px', borderRadius:10, border:'none', background:'linear-gradient(135deg,#1a73e8,#1464cc)', color:'#fff', fontWeight:800, fontSize:'0.875rem', fontFamily:'Outfit,sans-serif', cursor:'pointer' }}>
-            Enter Room
-          </button>
-          <button type="button" onClick={onClose} style={{ padding:'9px', borderRadius:10, border:'1.5px solid #e4e6ea', background:'none', color:'#6b7280', fontWeight:600, fontSize:'0.84rem', cursor:'pointer' }}>Cancel</button>
-        </form>
+// ── PASSWORD MODAL ────────────────────────────────────────────
+function PassModal({room,onClose,onEnter}){
+  const[val,setVal]=useState('');const[err,setErr]=useState('')
+  function tryEnter(){
+    if(!val.trim()){setErr('Please enter the password.');return}
+    onEnter(val.trim())
+  }
+  return(
+    <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:1500,background:'rgba(0,0,0,.5)',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:'#fff',borderRadius:18,padding:'28px 24px',maxWidth:320,width:'100%',boxShadow:'0 24px 64px rgba(0,0,0,.22)',textAlign:'center'}}>
+        <div style={{fontSize:40,marginBottom:12}}>🔒</div>
+        <h3 style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1rem',color:'#111827',marginBottom:6}}>{room.name}</h3>
+        <p style={{fontSize:'0.82rem',color:'#6b7280',marginBottom:16}}>This room is password protected.</p>
+        {err&&<div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'8px 12px',fontSize:'0.8rem',color:'#dc2626',marginBottom:12}}>{err}</div>}
+        <input value={val} onChange={e=>{setVal(e.target.value);setErr('')}} onKeyDown={e=>e.key==='Enter'&&tryEnter()} placeholder="Enter room password" type="password" autoFocus
+          style={{width:'100%',padding:'10px 13px',border:'1.5px solid #e4e6ea',borderRadius:9,fontSize:'0.875rem',outline:'none',marginBottom:12,boxSizing:'border-box',textAlign:'center',letterSpacing:4}}/>
+        <button onClick={tryEnter} style={{width:'100%',padding:'11px',borderRadius:10,border:'none',background:'linear-gradient(135deg,#1a73e8,#1464cc)',color:'#fff',fontWeight:800,cursor:'pointer',fontFamily:'Outfit,sans-serif'}}>
+          Enter Room
+        </button>
       </div>
     </div>
   )
 }
 
-// ── TOGGLE SWITCH ──────────────────────────────────────────────
-function Toggle({ value, onChange }) {
-  return (
-    <button type="button" onClick={()=>onChange(!value)}
-      style={{ width:44, height:24, borderRadius:12, border:'none', background:value?'#1a73e8':'#d1d5db', cursor:'pointer', position:'relative', transition:'background .2s', flexShrink:0 }}>
-      <span style={{ position:'absolute', top:3, left:value?22:3, width:18, height:18, borderRadius:'50%', background:'#fff', transition:'left .2s', boxShadow:'0 1px 4px rgba(0,0,0,.25)' }}/>
-    </button>
-  )
-}
-
-// ── ROOM MODAL (Add / Edit) ─────────────────────────────────────
-function RoomModal({ editRoom, onClose, onSave, showToast }) {
-  const token = localStorage.getItem('cgz_token')
-  const [saving, setSaving] = useState(false)
-  const [prev,   setPrev]   = useState(editRoom?.icon || '')
-  const [file,   setFile]   = useState(null)
-  const [activeTab, setActiveTab] = useState('basic')
-
-  const [form, setForm] = useState({
+// ── ROOM MODAL ────────────────────────────────────────────────
+function RoomModal({editRoom,onClose,onSave,showToast}){
+  const token=localStorage.getItem('cgz_token')
+  const[saving,setSaving]=useState(false)
+  const[prev,setPrev]=useState(editRoom?.icon||'')
+  const[file,setFile]=useState(null)
+  const[activeTab,setActiveTab]=useState('basic')
+  const[form,setForm]=useState({
     name:        editRoom?.name        || '',
     description: editRoom?.description || '',
     type:        editRoom?.type        || 'public',
@@ -157,17 +130,17 @@ function RoomModal({ editRoom, onClose, onSave, showToast }) {
       slowMode:      editRoom?.permissions?.slowMode      || 0,
     }
   })
-  const set = (k,v) => setForm(p=>({...p,[k]:v}))
-  const setPerm = (k,v) => setForm(p=>({...p,permissions:{...p.permissions,[k]:v}}))
+  const set=(k,v)=>setForm(p=>({...p,[k]:v}))
+  const setPerm=(k,v)=>setForm(p=>({...p,permissions:{...p.permissions,[k]:v}}))
 
-  async function submit(e) {
+  async function submit(e){
     e.preventDefault()
     if(!form.name.trim()){showToast('Room name required','error');return}
     setSaving(true)
-    try {
-      let iconUrl = editRoom?.icon || '/default_images/rooms/default_room.png'
-      if(file) {
-        const fd=new FormData(); fd.append('icon',file)
+    try{
+      let iconUrl=editRoom?.icon||'/default_images/rooms/default_room.png'
+      if(file){
+        const fd=new FormData();fd.append('icon',file)
         const ur=await fetch(`${API}/api/upload/room-icon`,{method:'POST',headers:{Authorization:`Bearer ${token}`},body:fd})
         const ud=await ur.json()
         if(ur.ok&&ud.url) iconUrl=ud.url
@@ -181,28 +154,28 @@ function RoomModal({ editRoom, onClose, onSave, showToast }) {
       if(!r.ok){showToast(d.error||'Failed to save room','error');setSaving(false);return}
       showToast(editRoom?'Room updated!':'Room created!','success')
       onSave(d.room)
-    } catch{showToast('Network error','error')}
+    }catch{showToast('Network error','error')}
     setSaving(false)
   }
 
-  const inp = {width:'100%',padding:'9px 12px',background:'#f9fafb',border:'1.5px solid #e4e6ea',borderRadius:9,fontSize:'0.875rem',outline:'none',color:'#111827',boxSizing:'border-box',fontFamily:'Nunito,sans-serif',transition:'border-color .15s'}
+  const inp={width:'100%',padding:'9px 12px',background:'#f9fafb',border:'1.5px solid #e4e6ea',borderRadius:9,fontSize:'0.875rem',outline:'none',color:'#111827',boxSizing:'border-box',fontFamily:'Nunito,sans-serif',transition:'border-color .15s'}
   const onF=e=>e.target.style.borderColor='#1a73e8'
   const onB=e=>e.target.style.borderColor='#e4e6ea'
   const lab={display:'block',fontSize:'0.78rem',fontWeight:700,color:'#374151',marginBottom:5}
 
-  const TABS = [
-    {id:'basic',    label:'Basic',       icon:'fi-sr-info'},
-    {id:'access',   label:'Access',      icon:'fi-sr-shield-check'},
-    {id:'perms',    label:'Permissions', icon:'fi-sr-settings'},
+  const TABS=[
+    {id:'basic',  label:'Basic',       icon:'fi-sr-info'},
+    {id:'access', label:'Access',      icon:'fi-sr-shield-check'},
+    {id:'perms',  label:'Permissions', icon:'fi-sr-settings'},
   ]
 
-  return (
+  return(
     <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:2000,background:'rgba(0,0,0,.55)',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',justifyContent:'center',padding:12}}>
       <div onClick={e=>e.stopPropagation()} style={{background:'#fff',borderRadius:18,maxWidth:480,width:'100%',maxHeight:'95dvh',overflowY:'auto',boxShadow:'0 24px 64px rgba(0,0,0,.22)'}}>
         {/* Header */}
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'16px 18px 12px',borderBottom:'1px solid #f0f2f5',position:'sticky',top:0,background:'#fff',zIndex:5}}>
-          <h2 style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1rem',color:'#111827',margin:0}}>
-            <i className={`fi fi-sr-${editRoom?'pencil':'plus-small'}`} style={{color:'#1a73e8',marginRight:8}}/>
+          <h2 style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1rem',color:'#111827',margin:0,display:'flex',alignItems:'center',gap:8}}>
+            <i className={`fi fi-sr-${editRoom?'pencil':'plus-small'}`} style={{color:'#1a73e8'}}/>
             {editRoom?'Edit Room':'Add Room'}
           </h2>
           <button onClick={onClose} style={{background:'#f3f4f6',border:'none',width:30,height:30,borderRadius:8,cursor:'pointer',color:'#6b7280',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>
@@ -211,7 +184,7 @@ function RoomModal({ editRoom, onClose, onSave, showToast }) {
         </div>
 
         {/* Tabs */}
-        <div style={{display:'flex',borderBottom:'1px solid #f0f2f5',flexShrink:0}}>
+        <div style={{display:'flex',borderBottom:'1px solid #f0f2f5'}}>
           {TABS.map(t=>(
             <button key={t.id} onClick={()=>setActiveTab(t.id)}
               style={{flex:1,padding:'10px 4px',border:'none',background:'none',cursor:'pointer',borderBottom:`2px solid ${activeTab===t.id?'#1a73e8':'transparent'}`,color:activeTab===t.id?'#1a73e8':'#9ca3af',fontSize:'0.82rem',fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',gap:5,transition:'all .15s'}}>
@@ -225,7 +198,6 @@ function RoomModal({ editRoom, onClose, onSave, showToast }) {
           {/* ── BASIC TAB ── */}
           {activeTab==='basic'&&(
             <>
-              {/* Room icon */}
               <div style={{display:'flex',alignItems:'center',gap:12}}>
                 <div style={{width:60,height:60,borderRadius:12,overflow:'hidden',background:'#f3f4f6',flexShrink:0,border:'1.5px solid #e4e6ea'}}>
                   <img src={prev||'/default_images/rooms/default_room.png'} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>{e.target.src='/default_images/rooms/default_room.png'}}/>
@@ -244,8 +216,8 @@ function RoomModal({ editRoom, onClose, onSave, showToast }) {
                 <textarea style={{...inp,resize:'vertical',minHeight:65,lineHeight:1.5}} placeholder="What's this room about?" value={form.description} onChange={e=>set('description',e.target.value)} onFocus={onF} onBlur={onB}/>
               </div>
               <div>
-                <label style={lab}>Topic</label>
-                <input style={inp} placeholder="Current topic for this room..." value={form.topic} onChange={e=>set('topic',e.target.value)} onFocus={onF} onBlur={onB}/>
+                <label style={lab}>Topic / Welcome Message</label>
+                <input style={inp} placeholder="Current topic shown at top of chat..." value={form.topic} onChange={e=>set('topic',e.target.value)} onFocus={onF} onBlur={onB}/>
               </div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
                 <div>
@@ -257,7 +229,6 @@ function RoomModal({ editRoom, onClose, onSave, showToast }) {
                   <input style={inp} placeholder="Leave empty for no lock" value={form.password} onChange={e=>set('password',e.target.value)} onFocus={onF} onBlur={onB}/>
                 </div>
               </div>
-              {/* Pin toggle */}
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'11px 13px',background:'#f9fafb',border:'1.5px solid #e4e6ea',borderRadius:9}}>
                 <div style={{display:'flex',alignItems:'center',gap:9}}>
                   <i className="fi fi-sr-thumbtack" style={{color:'#f59e0b',fontSize:16}}/>
@@ -275,7 +246,7 @@ function RoomModal({ editRoom, onClose, onSave, showToast }) {
           {activeTab==='access'&&(
             <>
               <div style={{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:10,padding:'10px 13px',fontSize:'0.8rem',color:'#1d4ed8'}}>
-                <strong>How it works:</strong> Set minimum rank required to enter. Users below this rank will be blocked with a toast notification at top of screen.
+                Set room type and minimum rank required to enter. Users below this rank will be blocked.
               </div>
               <div>
                 <label style={lab}>Room Type</label>
@@ -319,19 +290,19 @@ function RoomModal({ editRoom, onClose, onSave, showToast }) {
                 Set minimum rank required for each action in this room.
               </div>
               {[
-                {key:'sendMessages', label:'Send Messages',   icon:'fi-sr-comment'},
-                {key:'sendImages',   label:'Send Images',     icon:'fi-sr-picture'},
-                {key:'sendGifs',     label:'Send GIFs',       icon:'fi-sr-gif'},
-                {key:'sendGifts',    label:'Send Gifts',      icon:'fi-sr-gift'},
-                {key:'useCam',       label:'Use Webcam',      icon:'fi-sr-video-camera'},
-                {key:'makeCalls',    label:'Make Calls',      icon:'fi-sr-phone-call'},
+                {key:'sendMessages',label:'Send Messages',   icon:'fi-sr-comment'},
+                {key:'sendImages',  label:'Send Images',     icon:'fi-sr-picture'},
+                {key:'sendGifs',    label:'Send GIFs',       icon:'fi-sr-gif'},
+                {key:'sendGifts',   label:'Send Gifts',      icon:'fi-sr-gift'},
+                {key:'useCam',      label:'Use Webcam',      icon:'fi-sr-video-camera'},
+                {key:'makeCalls',   label:'Make Calls',      icon:'fi-sr-phone-call'},
               ].map(item=>(
                 <div key={item.key} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 12px',background:'#f9fafb',border:'1px solid #e4e6ea',borderRadius:9}}>
                   <i className={`fi ${item.icon}`} style={{color:'#6b7280',fontSize:15,width:18,textAlign:'center',flexShrink:0}}/>
                   <span style={{flex:1,fontSize:'0.84rem',fontWeight:600,color:'#374151'}}>{item.label}</span>
                   <select value={form.permissions[item.key]} onChange={e=>setPerm(item.key,e.target.value)}
                     style={{padding:'5px 8px',border:'1.5px solid #e4e6ea',borderRadius:7,fontSize:'0.78rem',outline:'none',color:'#374151',background:'#fff',cursor:'pointer'}}>
-                    {RANK_LIST.map(([k,v])=><option key={k} value={k}>{v.label}+</option>)}
+                    {RANK_LIST.map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
                   </select>
                 </div>
               ))}
@@ -358,18 +329,15 @@ function RoomModal({ editRoom, onClose, onSave, showToast }) {
   )
 }
 
-// ── ROOM CARD ───────────────────────────────────────────────────
-function RoomCard({ room, myLevel, onClick, onEdit, onDelete, onPin }) {
-  const [hov, setHov] = useState(false)
-  const typeInfo = ROOM_TYPES[room.type] || ROOM_TYPES.public
-  const canAdmin = myLevel >= 12
-  const minRankInfo = R(room.minRank)
-
-  return (
+// ── ROOM CARD ─────────────────────────────────────────────────
+function RoomCard({room,myLevel,onClick,onEdit,onDelete,onPin}){
+  const[hov,setHov]=useState(false)
+  const typeInfo=ROOM_TYPES[room.type]||ROOM_TYPES.public
+  const canAdmin=myLevel>=12
+  const minRankInfo=R(room.minRank)
+  return(
     <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
       style={{background:'#fff',border:`1.5px solid ${hov?'#1a73e8':'#e4e6ea'}`,borderRadius:13,cursor:'pointer',transition:'all .18s',position:'relative',boxShadow:hov?'0 4px 18px rgba(26,115,232,.13)':'0 1px 4px rgba(0,0,0,.05)',transform:hov?'translateY(-2px)':'none'}}>
-
-      {/* Admin buttons - top right on hover */}
       {canAdmin&&hov&&(
         <div onClick={e=>e.stopPropagation()} style={{position:'absolute',top:-10,right:-8,display:'flex',gap:4,zIndex:10}}>
           <AdminBtn icon="fi-sr-thumbtack" bg={room.isPinned?'#f59e0b':'#9ca3af'} title={room.isPinned?'Unpin':'Pin'} onClick={()=>onPin(room)}/>
@@ -377,42 +345,28 @@ function RoomCard({ room, myLevel, onClick, onEdit, onDelete, onPin }) {
           <AdminBtn icon="fi-sr-trash"     bg="#ef4444" title="Delete Room" onClick={()=>onDelete(room)}/>
         </div>
       )}
-
       <div onClick={()=>onClick(room)} style={{display:'flex',alignItems:'center',padding:'11px 13px',gap:11}}>
-        {/* Room icon */}
         <div style={{width:56,height:56,borderRadius:11,overflow:'hidden',flexShrink:0,background:'#f3f4f6',border:'1px solid #f0f2f5'}}>
           <img src={room.icon||'/default_images/rooms/default_room.png'} alt="" style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}} onError={e=>{e.target.src='/default_images/rooms/default_room.png'}}/>
         </div>
-
         <div style={{flex:1,minWidth:0}}>
-          {/* Name row */}
           <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:3}}>
             <span style={{fontFamily:'Outfit,sans-serif',fontWeight:800,fontSize:'0.95rem',color:'#111827',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:1}}>{room.name}</span>
             {room.isPinned&&<i className="fi fi-sr-thumbtack" style={{fontSize:10,color:'#f59e0b',flexShrink:0}}/>}
             {room.password&&<i className="fi fi-sr-lock" style={{fontSize:10,color:'#9ca3af',flexShrink:0}}/>}
           </div>
-
-          {/* Description */}
           {room.description&&<div style={{fontSize:'0.73rem',color:'#6b7280',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginBottom:6}}>{room.description}</div>}
-
-          {/* Bottom row: type badge + minRank + user count */}
           <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
-            {/* Type badge */}
             <span style={{display:'inline-flex',alignItems:'center',gap:4,background:typeInfo.bg,color:typeInfo.color,fontSize:'0.65rem',fontWeight:700,padding:'2px 7px',borderRadius:20}}>
               <i className={`fi ${typeInfo.icon}`} style={{fontSize:9}}/>{typeInfo.label}
             </span>
-
-            {/* Min rank badge */}
             {room.minRank&&room.minRank!=='guest'&&(
               <span style={{display:'inline-flex',alignItems:'center',gap:3,background:'#f3f4f6',color:'#374151',fontSize:'0.65rem',fontWeight:700,padding:'2px 7px',borderRadius:20}}>
                 <img src={`/icons/ranks/${minRankInfo.icon}`} alt="" style={{width:10,height:10,objectFit:'contain'}} onError={e=>e.target.style.display='none'}/>
-                {minRankInfo.label}+
+                {minRankInfo.label}
               </span>
             )}
-
             <div style={{flex:1}}/>
-
-            {/* User count */}
             <span style={{display:'inline-flex',alignItems:'center',gap:4,fontSize:'0.78rem',fontWeight:800,color:(room.currentUsers||0)>0?'#22c55e':'#9ca3af'}}>
               <i className="fi fi-sr-user" style={{fontSize:11}}/>{room.currentUsers||0}
             </span>
@@ -424,12 +378,12 @@ function RoomCard({ room, myLevel, onClick, onEdit, onDelete, onPin }) {
 }
 
 // ── PROFILE DROPDOWN ──────────────────────────────────────────
-function ProfileDropdown({ user, onClose, onLogout }) {
-  const nav = useNavigate()
-  const ri = R(user?.rank)
-  const border = GBR(user?.gender,user?.rank)
-  const isAdmin = RL(user?.rank) >= 12
-  return (
+function ProfileDropdown({user,onClose,onLogout}){
+  const nav=useNavigate()
+  const ri=R(user?.rank)
+  const border=GBR(user?.gender,user?.rank)
+  const isAdmin=RL(user?.rank)>=12
+  return(
     <div style={{position:'absolute',right:0,top:'calc(100% + 8px)',background:'#fff',border:'1px solid #e4e6ea',borderRadius:14,minWidth:210,boxShadow:'0 8px 32px rgba(0,0,0,.14)',zIndex:1000,overflow:'hidden'}}>
       <div style={{padding:'13px 14px 11px',borderBottom:'1px solid #f0f2f5'}}>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
@@ -445,7 +399,7 @@ function ProfileDropdown({ user, onClose, onLogout }) {
       </div>
       <div style={{padding:'4px'}}>
         {[
-          {icon:'fi-ss-user',       label:'My Profile', onClick:()=>{onClose();nav(`/profile/${user?.username}`)}},
+          {icon:'fi-ss-user',label:'My Profile',onClick:()=>{onClose();nav(`/profile/${user?.username}`)}},
           isAdmin&&{icon:'fi-sr-dashboard',label:'Admin Panel',color:'#ef4444',onClick:()=>{onClose();window.location.href='/admin'}},
         ].filter(Boolean).map((item,i)=>(
           <button key={i} onClick={item.onClick}
@@ -466,24 +420,23 @@ function ProfileDropdown({ user, onClose, onLogout }) {
 }
 
 // ── MAIN LOBBY ────────────────────────────────────────────────
-export default function ChatLobby() {
-  const [user,      setUser]     = useState(null)
-  const [rooms,     setRooms]    = useState([])
-  const [load,      setLoad]     = useState(true)
-  const [error,     setError]    = useState('')
-  const [search,    setSearch]   = useState('')
-  const [typeFilter,setTypeFilter]=useState('all')
-  const [passRoom,  setPassRoom] = useState(null)
-  const [dropOpen,  setDrop]     = useState(false)
-  const [showModal, setModal]    = useState(false)
-  const [editRoom,  setEditRoom] = useState(null)
+export default function ChatLobby(){
+  const[user,setUser]     =useState(null)
+  const[rooms,setRooms]   =useState([])
+  const[load,setLoad]     =useState(true)
+  const[error,setError]   =useState('')
+  const[search,setSearch] =useState('')
+  const[passRoom,setPassRoom]=useState(null)
+  const[dropOpen,setDrop] =useState(false)
+  const[showModal,setModal]=useState(false)
+  const[editRoom,setEditRoom]=useState(null)
 
-  const dropRef = useRef(null)
-  const nav     = useNavigate()
-  const token   = localStorage.getItem('cgz_token')
-  const { toasts, show: showToast } = useToastTop()
-  const myLevel   = RL(user?.rank)
-  const canAdmin  = myLevel >= 12
+  const dropRef=useRef(null)
+  const nav=useNavigate()
+  const token=localStorage.getItem('cgz_token')
+  const{toasts,show:showToast}=useToastTop()
+  const myLevel=RL(user?.rank)
+  const canAdmin=myLevel>=12
 
   useEffect(()=>{
     if(!token){nav('/login');return}
@@ -498,20 +451,20 @@ export default function ChatLobby() {
     return()=>document.removeEventListener('mousedown',fn)
   },[dropOpen])
 
-  async function init() {
-    try {
+  async function init(){
+    try{
       const r=await fetch(`${API}/api/auth/me`,{headers:{Authorization:`Bearer ${token}`}})
       const d=await r.json()
       if(r.ok&&d.user){if(d.freshToken)localStorage.setItem('cgz_token',d.freshToken);setUser(d.user)}
       else if(r.status===401){localStorage.removeItem('cgz_token');nav('/login');return}
-    } catch{}
+    }catch{}
     fetchRooms()
   }
 
-  async function fetchRooms() {
+  async function fetchRooms(){
     const tk=localStorage.getItem('cgz_token')
     if(!tk) return
-    try {
+    try{
       const r=await fetch(`${API}/api/rooms`,{headers:{Authorization:`Bearer ${tk}`}})
       const d=await r.json()
       if(!r.ok){
@@ -520,112 +473,89 @@ export default function ChatLobby() {
         return
       }
       const list=d.rooms||[]
-      // Fetch live user counts
-      try {
+      try{
         const cr=await fetch(`${API}/api/rooms/live-counts`)
         if(cr.ok){const cd=await cr.json();if(cd.counts)list.forEach(room=>{room.currentUsers=cd.counts[room._id]||0})}
-      } catch{}
-      setRooms(list)
-      setError('')
-    } catch{setError('Network error - check your connection')}
+      }catch{}
+      setRooms(list);setError('')
+    }catch{setError('Network error - check your connection')}
     finally{setLoad(false)}
   }
 
-  function logout() {
+  function logout(){
     if(token) fetch(`${API}/api/auth/logout`,{method:'POST',headers:{Authorization:`Bearer ${token}`}}).catch(()=>{})
-    localStorage.removeItem('cgz_token'); nav('/login')
+    localStorage.removeItem('cgz_token');nav('/login')
   }
 
-  // ── JOIN ROOM with rank check ──
-  function join(room) {
-    // Check type-based access
-    const typeMinLevel = { staff:11, admin:12 }
-    const typeMin = typeMinLevel[room.type]
+  function join(room){
+    const typeMinLevel={staff:11,admin:12}
+    const typeMin=typeMinLevel[room.type]
     if(typeMin&&myLevel<typeMin){
-      const needed = Object.entries(RANKS).find(([,v])=>v.level===typeMin)?.[1]?.label || 'Staff'
-      showToast(`This room requires ${needed} rank or higher`,'error',4000)
-      return
+      const needed=Object.entries(RANKS).find(([,v])=>v.level===typeMin)?.[1]?.label||'Staff'
+      showToast(`This room requires ${needed} rank or higher`,'error',4000);return
     }
-
-    // Check minRank
-    const roomMinLevel = RL(room.minRank)
+    const roomMinLevel=RL(room.minRank)
     if(roomMinLevel>1&&myLevel<roomMinLevel){
-      const needed = R(room.minRank).label
-      showToast(`You need ${needed} rank or higher to enter this room`,'error',4000)
-      return
+      showToast(`You need ${R(room.minRank).label} rank or higher to enter this room`,'error',4000);return
     }
-
-    // Guest check
     if(user?.isGuest&&room.type==='private'){
-      showToast('Guests cannot enter private rooms. Please register.','error',4000)
-      return
+      showToast('Guests cannot enter private rooms. Please register.','error',4000);return
     }
-
     if(room.password) setPassRoom(room)
-    else nav(`/chat/${room._id}`)
+    // Use slug if available, fallback to _id
+    else nav(`/chat/${room.slug||room._id}`)
   }
 
-  function enterPassRoom(password) {
-    nav(`/chat/${passRoom._id}`,{state:{enteredPassword:password}})
+  function enterPassRoom(password){
+    nav(`/chat/${passRoom.slug||passRoom._id}`,{state:{enteredPassword:password}})
     setPassRoom(null)
   }
 
-  async function handlePin(room) {
-    try {
+  async function handlePin(room){
+    try{
       const r=await fetch(`${API}/api/rooms/${room._id}/pin`,{method:'PUT',headers:{Authorization:`Bearer ${token}`}})
-      if(r.ok){
-        const d=await r.json()
-        showToast(d.message||'Done','success',2000)
-        fetchRooms()
-      } else {
-        showToast('Failed to pin room','error')
-      }
-    } catch{showToast('Network error','error')}
+      if(r.ok){const d=await r.json();showToast(d.message||'Done','success',2000);fetchRooms()}
+      else showToast('Failed to pin room','error')
+    }catch{showToast('Network error','error')}
   }
 
-  async function handleDelete(room) {
+  async function handleDelete(room){
     if(!window.confirm(`Delete "${room.name}"? This cannot be undone.`)) return
-    try {
+    try{
       const r=await fetch(`${API}/api/rooms/${room._id}`,{method:'DELETE',headers:{Authorization:`Bearer ${token}`}})
-      if(r.ok){
-        setRooms(p=>p.filter(x=>x._id!==room._id))
-        showToast('Room deleted','success')
-      } else {
-        showToast('Failed to delete room','error')
-      }
-    } catch{showToast('Network error','error')}
+      if(r.ok){setRooms(p=>p.filter(x=>x._id!==room._id));showToast('Room deleted','success')}
+      else showToast('Failed to delete room','error')
+    }catch{showToast('Network error','error')}
   }
 
-  function handleSave(saved) {
+  function handleSave(saved){
     if(!saved){fetchRooms();setModal(false);setEditRoom(null);return}
     setRooms(p=>{
       const idx=p.findIndex(r=>r._id===saved._id)
       if(idx>=0){const n=[...p];n[idx]={...saved,currentUsers:p[idx].currentUsers||0};return n}
-      return [saved,...p]
+      return[saved,...p]
     })
-    setModal(false); setEditRoom(null)
+    setModal(false);setEditRoom(null)
     setTimeout(fetchRooms,800)
   }
 
-  const ri     = R(user?.rank)
-  const border = GBR(user?.gender,user?.rank)
+  const ri=R(user?.rank)
+  const border=GBR(user?.gender,user?.rank)
 
-  // Filter rooms
-  let filtered = rooms.filter(r=>{
-    const matchSearch = !search||r.name.toLowerCase().includes(search.toLowerCase())||(r.description||'').toLowerCase().includes(search.toLowerCase())
-    const matchType   = typeFilter==='all'||r.type===typeFilter
-    return matchSearch&&matchType
+  // Filter rooms by search only (no type filter bar)
+  let filtered=rooms.filter(r=>{
+    if(!search) return true
+    return r.name.toLowerCase().includes(search.toLowerCase())||(r.description||'').toLowerCase().includes(search.toLowerCase())
   })
-  const pinned  = filtered.filter(r=>r.isPinned)
-  const regular = filtered.filter(r=>!r.isPinned)
+  const pinned=filtered.filter(r=>r.isPinned)
+  const regular=filtered.filter(r=>!r.isPinned)
 
-  return (
+  return(
     <div style={{minHeight:'100dvh',background:'#f0f2f5'}}>
       <TopToast toasts={toasts}/>
 
-      {/* ── HEADER ── */}
+      {/* HEADER */}
       <header style={{background:'#fff',borderBottom:'1px solid #e4e6ea',height:52,display:'flex',alignItems:'center',padding:'0 16px',position:'sticky',top:0,zIndex:900,boxShadow:'0 1px 4px rgba(0,0,0,.07)'}}>
-        {/* Logo */}
         <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
           <img src="/favicon/favicon-192.png" alt="" style={{width:28,height:28,borderRadius:7}} onError={e=>e.target.style.display='none'}/>
           <span style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1.1rem',letterSpacing:'-0.3px'}}>
@@ -633,8 +563,6 @@ export default function ChatLobby() {
           </span>
         </div>
         <div style={{flex:1}}/>
-
-        {/* User avatar + dropdown */}
         <div ref={dropRef} style={{position:'relative'}}>
           <button onClick={()=>setDrop(o=>!o)} style={{background:'none',border:'none',cursor:'pointer',padding:2,borderRadius:'50%',display:'flex'}}>
             <div style={{position:'relative'}}>
@@ -646,39 +574,25 @@ export default function ChatLobby() {
         </div>
       </header>
 
-      {/* ── SEARCH + FILTERS + ADD ── */}
+      {/* SEARCH + ADD — NO TYPE FILTER BAR */}
       <div style={{background:'#fff',borderBottom:'1px solid #e4e6ea',padding:'10px 16px'}}>
-        <div style={{maxWidth:860,margin:'0 auto'}}>
-          {/* Search + Add button row */}
-          <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:8}}>
-            <div style={{flex:1,position:'relative'}}>
-              <i className="fi fi-sr-search" style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'#9ca3af',fontSize:13,pointerEvents:'none'}}/>
-              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search rooms..."
-                style={{width:'100%',padding:'8px 12px 8px 34px',background:'#f9fafb',border:'1.5px solid #e4e6ea',borderRadius:10,color:'#111827',fontSize:'0.875rem',outline:'none',boxSizing:'border-box',fontFamily:'Nunito,sans-serif'}}
-                onFocus={e=>e.target.style.borderColor='#1a73e8'} onBlur={e=>e.target.style.borderColor='#e4e6ea'}/>
-            </div>
-            {canAdmin&&(
-              <button onClick={()=>{setEditRoom(null);setModal(true)}}
-                style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'linear-gradient(135deg,#1a73e8,#1464cc)',color:'#fff',border:'none',borderRadius:10,cursor:'pointer',fontFamily:'Outfit,sans-serif',fontWeight:700,fontSize:'0.84rem',flexShrink:0,boxShadow:'0 2px 8px rgba(26,115,232,.3)',whiteSpace:'nowrap'}}>
-                <i className="fi fi-sr-plus-small" style={{fontSize:14}}/>
-                <span>Add Room</span>
-              </button>
-            )}
+        <div style={{maxWidth:860,margin:'0 auto',display:'flex',gap:8,alignItems:'center'}}>
+          <div style={{flex:1,position:'relative'}}>
+            <i className="fi fi-sr-search" style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'#9ca3af',fontSize:13,pointerEvents:'none'}}/>
+            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search rooms..."
+              style={{width:'100%',padding:'8px 12px 8px 34px',background:'#f9fafb',border:'1.5px solid #e4e6ea',borderRadius:10,color:'#111827',fontSize:'0.875rem',outline:'none',boxSizing:'border-box',fontFamily:'Nunito,sans-serif'}}
+              onFocus={e=>e.target.style.borderColor='#1a73e8'} onBlur={e=>e.target.style.borderColor='#e4e6ea'}/>
           </div>
-
-          {/* Type filters */}
-          <div style={{display:'flex',gap:5,overflowX:'auto',paddingBottom:2}}>
-            {[{id:'all',label:'All',color:'#1a73e8'},...Object.entries(ROOM_TYPES).map(([k,v])=>({id:k,label:v.label,color:v.color}))].map(f=>(
-              <button key={f.id} onClick={()=>setTypeFilter(f.id)}
-                style={{padding:'4px 12px',borderRadius:20,border:`1.5px solid ${typeFilter===f.id?f.color:'#e4e6ea'}`,background:typeFilter===f.id?f.color+'18':'none',cursor:'pointer',fontSize:'0.75rem',fontWeight:700,color:typeFilter===f.id?f.color:'#6b7280',flexShrink:0,whiteSpace:'nowrap',transition:'all .15s'}}>
-                {f.label}
-              </button>
-            ))}
-          </div>
+          {canAdmin&&(
+            <button onClick={()=>{setEditRoom(null);setModal(true)}}
+              style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'linear-gradient(135deg,#1a73e8,#1464cc)',color:'#fff',border:'none',borderRadius:10,cursor:'pointer',fontFamily:'Outfit,sans-serif',fontWeight:700,fontSize:'0.84rem',flexShrink:0,boxShadow:'0 2px 8px rgba(26,115,232,.3)',whiteSpace:'nowrap'}}>
+              <i className="fi fi-sr-plus-small" style={{fontSize:14}}/><span>Add Room</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* ── ROOM LIST ── */}
+      {/* ROOM LIST */}
       <div style={{maxWidth:860,margin:'0 auto',padding:'16px 16px 60px'}}>
         {load&&(
           <div style={{textAlign:'center',padding:'80px 0'}}>
@@ -686,16 +600,13 @@ export default function ChatLobby() {
             <p style={{color:'#9ca3af',fontWeight:600,fontSize:'0.875rem'}}>Loading rooms...</p>
           </div>
         )}
-
         {error&&!load&&(
           <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:10,padding:'12px 16px',color:'#dc2626',fontSize:'0.875rem',textAlign:'center',marginBottom:16}}>
             {error} <button onClick={fetchRooms} style={{background:'none',border:'none',color:'#1a73e8',fontWeight:700,cursor:'pointer',marginLeft:6}}>Retry</button>
           </div>
         )}
-
         {!load&&!error&&(
           <>
-            {/* Pinned / Featured */}
             {pinned.length>0&&(
               <section style={{marginBottom:24}}>
                 <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:10}}>
@@ -707,8 +618,6 @@ export default function ChatLobby() {
                 </div>
               </section>
             )}
-
-            {/* All rooms */}
             {regular.length===0&&pinned.length===0?(
               <div style={{textAlign:'center',padding:'60px 20px'}}>
                 <i className="fi fi-sr-search" style={{fontSize:38,color:'#d1d5db',display:'block',marginBottom:10}}/>
@@ -736,13 +645,12 @@ export default function ChatLobby() {
         )}
       </div>
 
-      {/* Modals */}
       {passRoom&&<PassModal room={passRoom} onClose={()=>setPassRoom(null)} onEnter={enterPassRoom}/>}
       {(showModal||editRoom)&&<RoomModal editRoom={editRoom||null} onClose={()=>{setModal(false);setEditRoom(null)}} onSave={handleSave} showToast={showToast}/>}
 
       <style>{`
-        @keyframes spin { to { transform:rotate(360deg) } }
-        @keyframes toastIn { from { opacity:0;transform:translateX(-50%) translateY(-8px) } to { opacity:1;transform:translateX(-50%) translateY(0) } }
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
       `}</style>
     </div>
   )
