@@ -1,0 +1,14 @@
+{
+	"name": "Remix",
+	"author": "",
+	"background_header": "#011448",
+	"text_header": "#fff",
+	"background_chat": "#0F1221",
+	"background_image": "css/themes/Remix/images/background.jpg",
+	"background_log": "rgba(39, 66, 147, 0.5)",
+	"text_color": "#fff",
+	"theme_color": "#3b6cff",
+	"default_color": "#274293"
+}
+
+
