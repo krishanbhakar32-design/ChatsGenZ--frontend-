@@ -12,9 +12,9 @@ const ChatLobby     = lazy(() => import('./pages/chat/ChatLobby.jsx'))
 const ChatRoom      = lazy(() => import('./pages/chat/ChatRoom.jsx'))
 const NotFound      = lazy(() => import('./pages/NotFound.jsx'))
 const Kicked        = lazy(() => import('./pages/Kicked.jsx'))
-const Leaderboard   = lazy(() => import('./pages/Leaderboard.jsx'))
-const Gifts         = lazy(() => import('./pages/Gifts.jsx'))
-const AdminPanel    = lazy(() => import('./pages/admin/AdminPanel.jsx'))
+// Leaderboard and Gifts are embedded inside ChatRoom's left sidebar panel
+// No standalone pages needed
+
 // Info pages
 const About         = lazy(() => import('./pages/info/About.jsx'))
 const Blog          = lazy(() => import('./pages/info/Blog.jsx'))
@@ -29,6 +29,9 @@ const Moderation    = lazy(() => import('./pages/info/Moderation.jsx'))
 const Ranks         = lazy(() => import('./pages/info/Ranks.jsx'))
 const RTI           = lazy(() => import('./pages/info/RTI.jsx'))
 const Sitemap       = lazy(() => import('./pages/info/Sitemap.jsx'))
+
+// Admin Panel
+const AdminPanel    = lazy(() => import('./pages/admin/AdminPanel.jsx'))
 
 // Legal pages
 const ChatRules     = lazy(() => import('./pages/legal/ChatRules.jsx'))
@@ -60,8 +63,8 @@ export default function App() {
           <Route path="/verify-email"   element={<VerifyEmail />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/chat"           element={<ChatLobby />} />
-          <Route path="/chat/:roomId"     element={<ChatRoom />} />
-          <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/chat/:roomSlug"     element={<ChatRoom />} />
+
           {/* Info */}
           <Route path="/about"          element={<About />} />
           <Route path="/blog"           element={<Blog />} />
@@ -87,8 +90,7 @@ export default function App() {
           <Route path="/terms"          element={<Terms />} />
 
           {/* 404 */}
-          <Route path="/leaderboard"    element={<Leaderboard />} />
-          <Route path="/gifts"          element={<Gifts />} />
+          {/* Leaderboard and Gifts are inside ChatRoom left sidebar */}
           <Route path="/kicked"         element={<Kicked />} />
           <Route path="*"               element={<NotFound />} />
         </Routes>
