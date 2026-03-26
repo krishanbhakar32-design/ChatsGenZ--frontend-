@@ -1,0 +1,12 @@
+{
+	"name": "Purple",
+	"author": "8lackmask",
+	"background_header": "#150442",
+	"text_header": "#fff",
+	"background_chat": "#29165f",
+	"background_image": "css/themes/Purple/images/decoration.png",
+	"background_log": "rgba(36, 15, 94, 0.7)",
+	"text_color": "#fff",
+	"theme_color": "#9773fb",
+	"default_color": "#5027b9"
+}
