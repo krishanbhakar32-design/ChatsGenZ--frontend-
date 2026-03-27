@@ -1,94 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>ChatsGenZ — Free Live Chat Rooms</title>
-  <meta name="description" content="ChatsGenZ is a free live chat platform. Join public chat rooms, video chat, earn ranks, send gifts. No registration required."/>
-  <meta name="robots" content="index,follow"/>
-  <link rel="canonical" href="https://chatsgenz.vercel.app/"/>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChatsGenZ — Free Live Chat Rooms | Talk to Strangers Online</title>
+    <meta name="description" content="ChatsGenZ is a free live chat platform. Join free public chat rooms, talk to strangers, video chat, public cam chat, earn ranks, send virtual gifts and play games. No registration required." />
+    <meta name="keywords" content="ChatsGenZ, free chat rooms, live chatting site, stranger chatting site, no registration chat, vip chat, premium chatroom, free chatting site" />
+    <meta name="robots" content="index, follow" />
+    <meta name="author" content="ChatsGenZ" />
+    <link rel="canonical" href="https://chatsgenz.vercel.app/" />
 
-  <!-- Favicons -->
-  <link rel="icon" type="image/x-icon" href="/favicon/favicon.ico"/>
-  <link rel="icon" type="image/png" sizes="192x192" href="/favicon/favicon-192.png"/>
-  <link rel="apple-touch-icon" href="/favicon/apple-touch-icon.png"/>
-  <link rel="manifest" href="/manifest.json"/>
-  <meta name="theme-color" content="#1a73e8"/>
-  <meta name="mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicon/favicon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/favicon/favicon-512.png" />
+    <link rel="apple-touch-icon" href="/favicon/apple-touch-icon.png" />
 
-  <!-- OG -->
-  <meta property="og:type" content="website"/>
-  <meta property="og:title" content="ChatsGenZ — Free Live Chat Rooms"/>
-  <meta property="og:description" content="Free public chat rooms, meet people worldwide, video chat, earn ranks, send gifts."/>
-  <meta property="og:image" content="https://chatsgenz.vercel.app/favicon/favicon-512.png"/>
-  <meta name="twitter:card" content="summary_large_image"/>
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ChatsGenZ" />
+    <meta property="og:url" content="https://chatsgenz.vercel.app/" />
+    <meta property="og:title" content="ChatsGenZ — Free Live Chat Rooms | No Registration" />
+    <meta property="og:description" content="Join ChatsGenZ — free public chat rooms, meet people worldwide, video chat, earn ranks, send gifts. No registration required." />
+    <meta property="og:image" content="https://chatsgenz.vercel.app/favicon/favicon-512.png" />
 
-  <!-- FontAwesome local -->
-  <link rel="stylesheet" href="/fontawesome/css/all.min.css"/>
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ChatsGenZ — Free Live Chat Rooms" />
+    <meta name="twitter:description" content="Free public chat rooms on ChatsGenZ. No registration required." />
+    <meta name="twitter:image" content="https://chatsgenz.vercel.app/favicon/favicon-512.png" />
 
-  <!-- Flaticon uicons v2.6.0 -->
-  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.6.0/uicons-solid-rounded/css/uicons-solid-rounded.css"/>
-  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.6.0/uicons-regular-rounded/css/uicons-regular-rounded.css"/>
-  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.6.0/uicons-solid-straight/css/uicons-solid-straight.css"/>
-  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.6.0/uicons-brands/css/uicons-brands.css"/>
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#1a73e8" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="ChatsGenZ" />
 
-  <!-- CodyCat CSS -->
-  <link rel="stylesheet" href="/css/bubbles.css"/>
-  <link rel="stylesheet" href="/css/fonts.css"/>
-  <link rel="stylesheet" href="/css/colors.css"/>
-  <link rel="stylesheet" href="/css/main.css"/>
+    <!-- FontAwesome (bundled locally) -->
+    <link rel="stylesheet" href="/fontawesome/css/all.min.css" />
 
-  <!-- Google Fonts — UI + all 16 chat fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Nunito:wght@400;500;600;700;800&family=Kalam:wght@400;700&family=Signika:wght@400;700&family=Grandstander:wght@400;700&family=Comic+Neue:ital,wght@0,400;0,700&family=Quicksand:wght@400;700&family=Orbitron:wght@400;700&family=Lemonada:wght@400;700&family=Merienda:wght@400;700&family=Amita:wght@400;700&family=Averia+Libre:wght@400;700&family=Turret+Road:wght@400;700&family=Sansita:wght@400;700&family=Comfortaa:wght@400;700&family=Charm:wght@400;700&family=Lobster+Two:ital,wght@0,400;0,700&family=Pacifico&family=Dancing+Script:wght@400;700&family=Righteous&family=Fredoka+One&family=Caveat:wght@400;700&family=Satisfy&family=Indie+Flower&family=Gloria+Hallelujah&family=Exo+2:wght@400;700&family=Rajdhani:wght@400;700&family=Josefin+Sans:wght@400;700&family=Audiowide&display=swap" rel="stylesheet"/>
+    <!-- Flaticon uicons - v2.6.0 stable -->
+    <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.6.0/uicons-solid-rounded/css/uicons-solid-rounded.css" />
+    <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.6.0/uicons-regular-rounded/css/uicons-regular-rounded.css" />
+    <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.6.0/uicons-solid-straight/css/uicons-solid-straight.css" />
+    <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.6.0/uicons-brands/css/uicons-brands.css" />
 
-  <style>
-    /* ── BASE RESET ── */
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    html,body{height:100%;width:100%}
-    body{font-family:'Nunito',sans-serif;background:#f4f6fb;color:#111827;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
-    #root{min-height:100vh;display:flex;flex-direction:column}
-    /* prevent zoom on input focus on iOS */
-    input,textarea,select{font-size:16px}
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
-    /* ── RANK ICONS — all same visual height, width auto ──
-       Works for all SVGs regardless of internal viewBox size */
-    img.rank-icon    {height:16px;width:auto;display:inline-block;vertical-align:middle;object-fit:contain;flex-shrink:0}
-    img.rank-icon-xs {height:11px;width:auto;display:inline-block;vertical-align:middle;object-fit:contain;flex-shrink:0}
-    img.rank-icon-sm {height:14px;width:auto;display:inline-block;vertical-align:middle;object-fit:contain;flex-shrink:0}
-    img.rank-icon-md {height:20px;width:auto;display:inline-block;vertical-align:middle;object-fit:contain;flex-shrink:0}
-    img.rank-icon-lg {height:28px;width:auto;display:inline-block;vertical-align:middle;object-fit:contain;flex-shrink:0}
-    img.rank-icon-xl {height:40px;width:auto;display:inline-block;vertical-align:middle;object-fit:contain;flex-shrink:0}
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: 'Nunito', sans-serif; background: #f8f9fa; color: #111827; -webkit-font-smoothing: antialiased; }
+      #root { min-height: 100vh; }
+    </style>
 
-    /* ── UI ICONS — monochrome interface icons ── */
-    img.ui-icon   {width:18px;height:18px;object-fit:contain;display:inline-block;vertical-align:middle;flex-shrink:0;opacity:.85}
-    img.ui-icon-sm{width:14px;height:14px;object-fit:contain;display:inline-block;vertical-align:middle;flex-shrink:0;opacity:.85}
-    img.ui-icon-lg{width:22px;height:22px;object-fit:contain;display:inline-block;vertical-align:middle;flex-shrink:0;opacity:.85}
-
-    /* ── STATUS DOTS ── */
-    img.status-dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0}
-
-    /* ── GIFT ICONS ── */
-    img.gift-icon{width:44px;height:44px;object-fit:contain;display:block}
-    img.gift-icon-sm{width:28px;height:28px;object-fit:contain;display:block}
-
-    /* ── BADGE ICONS ── */
-    img.badge-icon{width:24px;height:24px;object-fit:contain;display:inline-block;vertical-align:middle}
-
-    /* scrollbar */
-    ::-webkit-scrollbar{width:4px;height:4px}
-    ::-webkit-scrollbar-track{background:transparent}
-    ::-webkit-scrollbar-thumb{background:#c1c1c1;border-radius:4px}
-  </style>
-
-  <script type="application/ld+json">
-  {"@context":"https://schema.org","@type":"WebSite","name":"ChatsGenZ","url":"https://chatsgenz.vercel.app"}
-  </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"WebSite","name":"ChatsGenZ","url":"https://chatsgenz.vercel.app","description":"Free live chat rooms worldwide."}
+    </script>
+    <!-- Google Fonts for chat styles -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Signika:wght@400;700&family=Orbitron:wght@400;700&family=Comic+Neue:ital,wght@0,400;0,700;1,400&family=Quicksand:wght@400;700&family=Pacifico&family=Dancing+Script:wght@400;700&family=Lobster+Two:ital,wght@0,400;0,700&family=Caveat:wght@400;700&family=Rajdhani:wght@400;700&family=Audiowide&family=Nunito:wght@400;700;800;900&family=Grandstander:wght@400;700&family=Lemonada:wght@400;700&family=Merienda:wght@400;700&family=Comfortaa:wght@400;700&family=Exo+2:wght@400;700&family=Josefin+Sans:wght@400;700&family=Indie+Flower&family=Satisfy&family=Righteous&family=Fredoka+One&family=Playfair+Display:wght@900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/fonts.css">
 </head>
-<body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.jsx"></script>
-</body>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
