@@ -32,6 +32,9 @@ const Sitemap       = lazy(() => import('./pages/info/Sitemap.jsx'))
 
 // Admin Panel
 const AdminPanel    = lazy(() => import('./pages/admin/AdminPanel.jsx'))
+const Profile       = lazy(() => import('./pages/Profile.jsx'))
+const Gifts         = lazy(() => import('./pages/Gifts.jsx'))
+const Leaderboard   = lazy(() => import('./pages/Leaderboard.jsx'))
 
 // Legal pages
 const ChatRules     = lazy(() => import('./pages/legal/ChatRules.jsx'))
@@ -88,7 +91,10 @@ export default function App() {
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/safety"         element={<SafetyTerms />} />
           <Route path="/terms"          element={<Terms />} />
-          <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/admin"              element={<AdminPanel />} />
+          <Route path="/profile/:username" element={<Profile />} />
+          <Route path="/gifts"             element={<Gifts />} />
+          <Route path="/leaderboard"       element={<Leaderboard />} />
           {/* 404 */}
           {/* Leaderboard and Gifts are inside ChatRoom left sidebar */}
           <Route path="/kicked"         element={<Kicked />} />
