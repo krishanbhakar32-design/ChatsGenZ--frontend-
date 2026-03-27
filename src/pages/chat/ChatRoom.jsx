@@ -40,75 +40,28 @@ function UIIcon({name, size=18, fallback, style={}}) {
   return <i className={`fi ${fallback||'fi-sr-info'}`} style={{fontSize:size-2,...style}}/>
 }
 
-function RIcon({rank,size=16}) {
+function RIcon({rank,size='md'}) {
   const ri = R(rank)
-  return <img src={`/icons/ranks/${ri.icon}`} alt="" style={{width:size,height:size,objectFit:'contain',background:'transparent',flexShrink:0,display:'inline-block'}} onError={e=>e.target.style.display='none'}/>
-}
-
-
-// ── ALL 30 FONTS mapped to CSS families (exact from fonts.css) ──
-const FONT_FAMILIES = {
-  font1:'Kalam,cursive', font2:'Signika,sans-serif', font3:'Grandstander,cursive',
-  font4:"'Comic Neue',cursive", font5:'Quicksand,sans-serif', font6:'Orbitron,sans-serif',
-  font7:'Lemonada,cursive', font8:"'Grenze Gotisch',cursive", font9:'Merienda,cursive',
-  font10:'Amita,cursive', font11:"'Averia Libre',cursive", font12:"'Turret Road',cursive",
-  font13:'Sansita,sans-serif', font14:'Comfortaa,cursive', font15:'Charm,cursive',
-  font16:"'Lobster Two',cursive", font17:'Pacifico,cursive', font18:"'Dancing Script',cursive",
-  font19:'Righteous,cursive', font20:"'Fredoka One',cursive", font21:"'Press Start 2P',cursive",
-  font22:'Caveat,cursive', font23:'Satisfy,cursive', font24:"'Indie Flower',cursive",
-  font25:"'Gloria Hallelujah',cursive", font26:"'Exo 2',sans-serif", font27:'Rajdhani,sans-serif',
-  font28:"'Josefin Sans',sans-serif", font29:'Audiowide,sans-serif', font30:'Nunito,sans-serif',
-}
-const SOLID_COLORS_LIST = ['#ff3333','#ff6633','#ff9933','#ffcc33','#cccc00','#99cc00','#59b300','#829356','#008000','#00e639','#00e673','#00e6ac','#00cccc','#03add8','#3366ff','#107896','#004d99','#6633ff','#9933ff','#cc33ff','#ff33ff','#ff33cc','#ff3399','#ff3366','#604439','#795548','#a97f70','#bc9b8f','#9E9E9E','#879fab','#698796','#495f69']
-const BUB_GRAD_LIST = ['linear-gradient(90deg,#667eea,#764ba2)','linear-gradient(90deg,#f093fb,#f5576c)','linear-gradient(90deg,#4facfe,#00f2fe)','linear-gradient(90deg,#43e97b,#38f9d7)','linear-gradient(90deg,#fa709a,#fee140)','linear-gradient(90deg,#ff9a56,#ff6b9d)','linear-gradient(90deg,#c471f5,#fa71cd)','linear-gradient(90deg,#12c2e9,#c471ed)','linear-gradient(90deg,#f64f59,#c471ed)','linear-gradient(90deg,#24fe41,#fdbb2d)','linear-gradient(45deg,#ff0844,#ffb199)','linear-gradient(45deg,#00d2ff,#3a7bd5)','linear-gradient(45deg,#f953c6,#b91d73)','linear-gradient(45deg,#36d1dc,#5b86e5)','linear-gradient(45deg,#ff9068,#fd746c)','linear-gradient(45deg,#667eea,#764ba2)','linear-gradient(45deg,#f093fb,#f5576c)','linear-gradient(45deg,#4facfe,#00f2fe)','linear-gradient(45deg,#43e97b,#38f9d7)','linear-gradient(45deg,#fa709a,#fee140)','linear-gradient(90deg,#ff5f6d,#ffc371)','linear-gradient(90deg,#36d1dc,#ff6b6b)','linear-gradient(90deg,#11998e,#38ef7d)','linear-gradient(90deg,#ee0979,#ff6a00)','linear-gradient(90deg,#fc5c7d,#6a82fb)','linear-gradient(90deg,#8360c3,#2ebf91)','linear-gradient(90deg,#ff9966,#ff5e62)','linear-gradient(90deg,#56ccf2,#2f80ed)','linear-gradient(90deg,#e96443,#904e95)','linear-gradient(90deg,#f7971e,#ffd200)','linear-gradient(45deg,#00c6ff,#0072ff)','linear-gradient(45deg,#7f00ff,#e100ff)','linear-gradient(45deg,#ff416c,#ff4b2b)','linear-gradient(45deg,#00b09b,#96c93d)','linear-gradient(45deg,#ff6a00,#ee0979)','linear-gradient(45deg,#43cea2,#185a9d)','linear-gradient(45deg,#c33764,#1d2671)','linear-gradient(45deg,#da4453,#89216b)','linear-gradient(45deg,#06beb6,#48b1bf)','linear-gradient(45deg,#f12711,#f5af19)']
-
-function getNameColorStyle(nameColor) {
-  if (!nameColor) return {}
-  if (nameColor.startsWith('bcolor')) {
-    const idx = parseInt(nameColor.replace('bcolor','')) - 1
-    return { color: SOLID_COLORS_LIST[idx] || '#111' }
-  }
-  if (nameColor.startsWith('bgrad')) {
-    const idx = parseInt(nameColor.replace('bgrad','')) - 1
-    return { background: BUB_GRAD_LIST[idx] || '', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }
-  }
-  if (nameColor.startsWith('bneon')) {
-    const NEON_SHADOWS = ['1px 1px 1px #e60000,1px 1px 3px #ff3333,1px 1px 5px #ff3333','1px 1px 1px #e63900,1px 1px 3px #ff6633,1px 1px 5px #ff6633','1px 1px 1px #e67300,1px 1px 3px #ff9933,1px 1px 5px #ff9933','1px 1px 1px #b38600,1px 1px 3px #ffcc33,1px 1px 5px #ffcc33','1px 1px 1px #808000,1px 1px 3px #cccc00,1px 1px 5px #cccc00','1px 1px 1px #739900,1px 1px 3px #99cc00,1px 1px 5px #99cc00','1px 1px 1px #408000,1px 1px 3px #59b300,1px 1px 5px #59b300','1px 1px 1px #637042,1px 1px 3px #829356,1px 1px 5px #829356','1px 1px 1px #004d00,1px 1px 3px #008000,1px 1px 5px #008000','1px 1px 1px #009926,1px 1px 3px #00e639,1px 1px 5px #00e639']
-    const idx = parseInt(nameColor.replace('bneon','')) - 1
-    return { color: '#fff', textShadow: NEON_SHADOWS[idx] || '' }
-  }
-  return {}
-}
-
-function getBubbleColorStyle(bubbleColor) {
-  if (!bubbleColor) return {}
-  if (bubbleColor.startsWith('bubcolor')) {
-    const idx = parseInt(bubbleColor.replace('bubcolor','')) - 1
-    return { background: SOLID_COLORS_LIST[idx] || '', color:'#fff', textShadow:'0 0 3px rgba(0,0,0,.5)' }
-  }
-  if (bubbleColor.startsWith('bubgrad')) {
-    const idx = parseInt(bubbleColor.replace('bubgrad','')) - 1
-    return { background: BUB_GRAD_LIST[idx] || '', color:'#fff', textShadow:'0 0 3px rgba(0,0,0,.5)' }
-  }
-  if (bubbleColor.startsWith('bubneon')) {
-    const BUB_GLOWS = ['#a18cff','#ffb6ff','#7eefff','#8cffd9','#ffd580','#ffb38c','#e3b0ff','#9fe2ff','#ff99d9','#d2ff9c','#ff7ab3','#66e0ff','#ff88f5','#80e0ff','#ffb199','#a18cff','#ffb6ff','#7eefff','#8cffd9','#ffd580','#ffd1a3','#9ff5f0','#77ffbf','#ff85b3','#c9a9ff','#9bf6d5','#ffb199','#9fd4ff','#f7a0c2','#ffe680','#66d6ff','#d780ff','#ff9a80','#a8ff9f','#ff9abb','#7be2ff','#e06699','#ff8ca6','#7dfcff','#ffb866']
-    const idx = parseInt(bubbleColor.replace('bubneon','')) - 1
-    return { background: BUB_GRAD_LIST[idx] || '', boxShadow:`0 0 8px ${BUB_GLOWS[idx]||'#fff'}`, color:'#fff', textShadow:'0 0 3px rgba(0,0,0,.5)' }
-  }
-  return {}
+  // CSS class defined in index.html — uniform height, width:auto (handles any viewBox)
+  const cls = size==='xs'?'rank-icon-xs':size==='sm'?'rank-icon-sm':size==='lg'?'rank-icon-lg':size==='xl'?'rank-icon-xl':'rank-icon'
+  return <img src={`/icons/ranks/${ri.icon}`} alt={ri.label||rank} title={ri.label||rank} className={cls} style={{background:'transparent'}} onError={e=>e.target.style.display='none'}/>
 }
 
 // ── System message config (from adultchat pattern) ──
 const SYS_CFG = {
-  join:    { icon:'👋', color:'#22c55e', bg:'#f0fdf4', border:'#86efac' },
-  leave:   { icon:'🚪', color:'#6b7280', bg:'#f9fafb', border:'#e4e6ea' },
-  kick:    { icon:'👢', color:'#f59e0b', bg:'#fffbeb', border:'#fde68a' },
-  mute:    { icon:'🔇', color:'#f59e0b', bg:'#fffbeb', border:'#fde68a' },
-  ban:     { icon:'🚫', color:'#ef4444', bg:'#fef2f2', border:'#fecaca' },
-  mod:     { icon:'🛡️', color:'#6366f1', bg:'#eef2ff', border:'#c7d2fe' },
-  dice:    { icon:'🎲', color:'#7c3aed', bg:'#f5f3ff', border:'#ddd6fe' },
-  gift:    { icon:'🎁', color:'#ec4899', bg:'#fdf4ff', border:'#f0abfc' },
-  system:  { icon:'📢', color:'#1a73e8', bg:'#eff6ff', border:'#bfdbfe' },
+  // img = path to /default_images/system/ SVGs  |  border = pill border color
+  join:    { img:'/default_images/system/success.svg', border:'#86efac', color:'#22c55e' },
+  leave:   { img:'/default_images/icons/innactive.svg', border:'#e4e6ea', color:'#6b7280' },
+  kick:    { img:'/default_images/icons/kicked.svg',    border:'#fde68a', color:'#f59e0b' },
+  ban:     { img:'/default_images/icons/banned.svg',    border:'#fecaca', color:'#ef4444' },
+  mute:    { img:'/default_images/actions/muted.svg',   border:'#fde68a', color:'#f59e0b' },
+  mod:     { img:'/default_images/icons/verify.svg',    border:'#c7d2fe', color:'#6366f1' },
+  dice:    { img:'/default_images/icons/gold.svg',      border:'#ddd6fe', color:'#7c3aed' },
+  gift:    { img:'/default_images/notification/gift.svg',border:'#f0abfc',color:'#ec4899' },
+  system:  { img:'/default_images/system/warning.svg',  border:'#bfdbfe', color:'#1a73e8' },
+  warning: { img:'/default_images/system/warning.svg',  border:'#fde68a', color:'#f59e0b' },
+  error:   { img:'/default_images/system/error.svg',    border:'#fecaca', color:'#ef4444' },
+  success: { img:'/default_images/system/success.svg',  border:'#86efac', color:'#22c55e' },
 }
 
 
@@ -512,71 +465,37 @@ function SpinWheelGame({socket,myGold,onClose}) {
 // ─────────────────────────────────────────────────────────────
 // MINI CARD
 // ─────────────────────────────────────────────────────────────
-function MiniCard({user,myLevel,myUserId,pos,onClose,onFull,onGift,socket,roomId,onWhisper}) {
+function MiniCard({user,myLevel,pos,onClose,onFull,onGift,socket,roomId}) {
   if (!user) return null
   const ri=R(user.rank), bdr=GBR(user.gender,user.rank)
-  const isSelf = user._id===myUserId || user.userId===myUserId
-  const canMod=!isSelf&&myLevel>=11&&RL(user.rank)<myLevel
-  const canBan=!isSelf&&myLevel>=12&&RL(user.rank)<myLevel
+  const canMod=myLevel>=11&&RL(user.rank)<myLevel
+  const canBan=myLevel>=12&&RL(user.rank)<myLevel
   const token=localStorage.getItem('cgz_token')
-  const x=Math.min(pos.x,window.innerWidth-228), y=Math.min(pos.y,window.innerHeight-360)
-  const nameStyle = user.nameColor ? getNameColorStyle(user.nameColor) : {color:'#111827'}
-
-  const selfBtns = [
-    {icon:'fi-ss-user',label:'My Profile',onClick:onFull},
-  ]
-  const otherBtns = [
-    {icon:'fi-ss-user',label:'Profile',onClick:onFull},
-    {icon:'fi-sr-envelope',label:'PM'},
-    {icon:'fi-sr-phone-call',label:'Call',onClick:()=>{socket?.emit('callUser',{toUserId:user._id||user.userId,callType:'video',callId:`c_${Date.now()}`});onClose()}},
-    {icon:'fi-sr-gift',label:'Gift',color:'#7c3aed',onClick:()=>{onGift(user);onClose()}},
-    myLevel>=2&&{icon:'fi-sr-user-add',label:'Friend',color:'#059669',onClick:()=>{fetch(`${API}/api/users/friend/${user._id||user.userId}`,{method:'POST',headers:{Authorization:`Bearer ${token}`}}).catch(()=>{});onClose()}},
-    myLevel>=2&&{icon:'fi-sr-user-block',label:'Ignore',color:'#6b7280'},
-    {icon:'fi-sr-eye',label:'Whisper',color:'#6366f1',onClick:()=>{onWhisper&&onWhisper(user);onClose()}},
-    canMod&&{icon:'fi-sr-volume-mute',label:'Mute',color:'#f59e0b',onClick:()=>socket?.emit('muteUser',{targetUserId:user._id||user.userId,roomId,minutes:5})},
-    canMod&&{icon:'fi-sr-user-slash',label:'Kick',color:'#ef4444',onClick:()=>{socket?.emit('kickUser',{targetUserId:user._id||user.userId,roomId});onClose()}},
-    canBan&&{icon:'fi-sr-ban',label:'Ban',color:'#dc2626',onClick:()=>{socket?.emit('banUser',{targetUserId:user._id||user.userId,roomId});onClose()}},
-    !isSelf&&{icon:'fi-sr-flag',label:'Report',color:'#ef4444'},
-  ]
-
-  const btns = (isSelf ? selfBtns : otherBtns).filter(Boolean)
-
+  const x=Math.min(pos.x,window.innerWidth-225), y=Math.min(pos.y,window.innerHeight-320)
   return (
-    <div style={{position:'fixed',zIndex:9999,top:y,left:x,background:'#fff',border:'1px solid #e4e6ea',borderRadius:14,width:222,boxShadow:'0 10px 36px rgba(0,0,0,.18)',overflow:'hidden'}} onClick={e=>e.stopPropagation()}>
-      {/* Cover / BG */}
-      <div style={{height:52,background: user.coverImage ? `url(${user.coverImage}) center/cover` : `linear-gradient(135deg,${ri.color}55,${ri.color}22)`,position:'relative'}}>
-        <button onClick={onClose} style={{position:'absolute',top:6,right:6,background:'rgba(0,0,0,.35)',border:'none',width:22,height:22,borderRadius:'50%',cursor:'pointer',color:'#fff',fontSize:11,display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
-      </div>
-      {/* Avatar overlapping cover */}
-      <div style={{display:'flex',alignItems:'flex-end',gap:8,padding:'0 12px',marginTop:-22,marginBottom:6}}>
-        <div style={{flexShrink:0,position:'relative'}}>
-          <img src={user.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{width:44,height:44,borderRadius:'50%',border:`2.5px solid ${bdr}`,objectFit:'cover',background:'#fff',display:'block'}} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
-        </div>
-        <div style={{paddingBottom:2,minWidth:0,flex:1}}>
-          <div style={{fontFamily: user.nameFont?(FONT_FAMILIES[user.nameFont]||'Outfit,sans-serif'):'Outfit,sans-serif',fontWeight:800,fontSize:'0.875rem',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',...nameStyle}}>{user.username}</div>
-          <div style={{display:'flex',alignItems:'center',gap:3}}>
-            <RIcon rank={user.rank} size={11}/>
-            <span style={{fontSize:'0.65rem',color:ri.color,fontWeight:700}}>{ri.label}</span>
-            {user.countryCode&&user.countryCode!=='ZZ'&&<img src={`/icons/flags/${user.countryCode.toUpperCase()}.png`} alt="" style={{width:13,height:9,borderRadius:1,marginLeft:2}} onError={e=>e.target.style.display='none'}/>}
-          </div>
-          {user.mood&&<div style={{fontSize:'0.62rem',color:'#9ca3af',fontStyle:'italic',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>"{user.mood}"</div>}
+    <div style={{position:'fixed',zIndex:9999,top:y,left:x,background:'#fff',border:'1px solid #e4e6ea',borderRadius:12,width:218,boxShadow:'0 8px 28px rgba(0,0,0,.15)',overflow:'hidden'}} onClick={e=>e.stopPropagation()}>
+      <div style={{height:36,background:`linear-gradient(135deg,${ri.color}33,#e8f0fe)`}}/>
+      <div style={{display:'flex',alignItems:'flex-end',gap:8,padding:'0 12px',marginTop:-18,marginBottom:8}}>
+        <img src={user.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{width:38,height:38,borderRadius:'50%',border:`2px solid ${bdr}`,objectFit:'cover',background:'#fff',flexShrink:0}} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
+        <div style={{paddingBottom:2,minWidth:0}}>
+          <div style={{fontFamily:'Outfit,sans-serif',fontWeight:800,fontSize:'0.875rem',color:user.nameColor||'#111827',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.username}</div>
+          <div style={{display:'flex',alignItems:'center',gap:4}}><RIcon rank={user.rank} size={12}/><span style={{fontSize:'0.68rem',color:ri.color,fontWeight:700}}>{ri.label}</span></div>
         </div>
       </div>
-      {/* Stats row */}
-      <div style={{display:'flex',gap:4,padding:'0 10px 8px'}}>
-        {[['Lv',user.level||1,'#1a73e8'],['Gold',(user.gold||0).toLocaleString(),'#d97706'],['XP',user.xp||0,'#7c3aed']].map(([l,v,cl])=>(
-          <div key={l} style={{flex:1,textAlign:'center',background:'#f9fafb',borderRadius:6,padding:'4px 2px'}}>
-            <div style={{fontSize:'0.55rem',color:'#9ca3af',fontWeight:600}}>{l}</div>
-            <div style={{fontSize:'0.78rem',fontWeight:800,color:cl}}>{v}</div>
-          </div>
-        ))}
-      </div>
-      {/* Action buttons */}
-      <div style={{padding:'0 8px 10px',display:'grid',gridTemplateColumns:'1fr 1fr',gap:4}}>
-        {btns.map((b,i)=>(
-          <button key={i} onClick={b.onClick||undefined} style={{display:'flex',alignItems:'center',gap:4,padding:'6px 7px',background:'#f9fafb',border:'1px solid #e4e6ea',borderRadius:7,cursor:b.onClick?'pointer':'not-allowed',fontSize:'0.7rem',fontWeight:600,color:b.color||'#374151',transition:'all .12s',opacity:b.onClick?1:.6}}
-            onMouseEnter={e=>{if(b.onClick){e.currentTarget.style.background=b.color?`${b.color}18`:'#e8f0fe';e.currentTarget.style.borderColor=b.color||'#1a73e8'}}}
-            onMouseLeave={e=>{e.currentTarget.style.background='#f9fafb';e.currentTarget.style.borderColor='#e4e6ea'}}>
+      <div style={{padding:'0 8px 8px',display:'grid',gridTemplateColumns:'1fr 1fr',gap:4}}>
+        {[
+          {icon:'fi-ss-user',label:'Profile',onClick:onFull},
+          {icon:'fi-sr-comments',label:'PM'},
+          {icon:'fi-sr-phone-call',label:'Call',onClick:()=>{socket?.emit('callUser',{toUserId:user._id||user.userId,callType:'video',callId:`c_${Date.now()}`});onClose()}},
+          {icon:'fi-sr-gift',label:'Gift',color:'#7c3aed',onClick:()=>{onGift(user);onClose()}},
+          myLevel>=2&&{icon:'fi-sr-user-add',label:'Friend',color:'#059669',onClick:()=>{fetch(`${API}/api/users/friend/${user._id||user.userId}`,{method:'POST',headers:{Authorization:`Bearer ${token}`}}).catch(()=>{});onClose()}},
+          myLevel>=2&&{icon:'fi-sr-user-block',label:'Ignore',color:'#6b7280'},
+          canMod&&{icon:'fi-sr-volume-mute',label:'Mute',color:'#f59e0b',onClick:()=>socket?.emit('muteUser',{targetUserId:user._id||user.userId,roomId,minutes:5})},
+          canMod&&{icon:'fi-sr-user-slash',label:'Kick',color:'#ef4444',onClick:()=>{socket?.emit('kickUser',{targetUserId:user._id||user.userId,roomId});onClose()}},
+          canBan&&{icon:'fi-sr-ban',label:'Ban',color:'#dc2626',onClick:()=>{socket?.emit('banUser',{targetUserId:user._id||user.userId,roomId});onClose()}},
+          {icon:'fi-sr-flag',label:'Report',color:'#ef4444'},
+        ].filter(Boolean).map((b,i)=>(
+          <button key={i} onClick={b.onClick} style={{display:'flex',alignItems:'center',gap:4,padding:'6px 7px',background:'#f9fafb',border:'1px solid #e4e6ea',borderRadius:7,cursor:'pointer',fontSize:'0.72rem',fontWeight:600,color:b.color||'#374151',transition:'all .12s'}} onMouseEnter={e=>{e.currentTarget.style.background='#e8f0fe';e.currentTarget.style.borderColor='#1a73e8'}} onMouseLeave={e=>{e.currentTarget.style.background='#f9fafb';e.currentTarget.style.borderColor='#e4e6ea'}}>
             <i className={`fi ${b.icon}`} style={{fontSize:11}}/>{b.label}
           </button>
         ))}
@@ -588,73 +507,47 @@ function MiniCard({user,myLevel,myUserId,pos,onClose,onFull,onGift,socket,roomId
 // ─────────────────────────────────────────────────────────────
 // PROFILE MODAL
 // ─────────────────────────────────────────────────────────────
-function ProfileModal({user,myLevel,myUserId,socket,roomId,onClose,onGift,onWhisper,nav}) {
+function ProfileModal({user,myLevel,socket,roomId,onClose,onGift}) {
   if (!user) return null
   const ri=R(user.rank), bdr=GBR(user.gender,user.rank)
-  const isSelf = user._id===myUserId || user.userId===myUserId
-  const canMod=!isSelf&&myLevel>=11&&RL(user.rank)<myLevel
-  const canBan=!isSelf&&myLevel>=12&&RL(user.rank)<myLevel
-  const token=localStorage.getItem('cgz_token')
-  const nameStyle = user.nameColor ? getNameColorStyle(user.nameColor) : {color:'#111827'}
-
-  const selfBtns = [
-    {icon:'fi-sr-user',label:'Full Profile',onClick:()=>{onClose();nav&&nav(`/profile/${user.username}`)}},
-  ]
-  const otherBtns = [
-    {icon:'fi-sr-user',label:'Profile',onClick:()=>{onClose();nav&&nav(`/profile/${user.username}`)}},
-    {icon:'fi-sr-envelope',label:'PM'},
-    {icon:'fi-sr-phone-call',label:'Call',onClick:()=>{socket?.emit('callUser',{toUserId:user._id||user.userId,callType:'video',callId:`c_${Date.now()}`});onClose()}},
-    {icon:'fi-sr-gift',label:'Gift',color:'#7c3aed',onClick:()=>{onGift(user);onClose()}},
-    {icon:'fi-sr-user-add',label:'Friend',color:'#059669',onClick:()=>{fetch(`${API}/api/users/friend/${user._id||user.userId}`,{method:'POST',headers:{Authorization:`Bearer ${token}`}}).catch(()=>{});onClose()}},
-    {icon:'fi-sr-eye',label:'Whisper',color:'#6366f1',onClick:()=>{onWhisper&&onWhisper(user);onClose()}},
-    canMod&&{icon:'fi-sr-volume-mute',label:'Mute',color:'#f59e0b',onClick:()=>{socket?.emit('muteUser',{targetUserId:user._id||user.userId,roomId,minutes:5});onClose()}},
-    canMod&&{icon:'fi-sr-user-slash',label:'Kick',color:'#ef4444',onClick:()=>{socket?.emit('kickUser',{targetUserId:user._id||user.userId,roomId});onClose()}},
-    canBan&&{icon:'fi-sr-ban',label:'Ban',color:'#dc2626',onClick:()=>{socket?.emit('banUser',{targetUserId:user._id||user.userId,roomId});onClose()}},
-    {icon:'fi-sr-flag',label:'Report',color:'#ef4444'},
-  ]
-  const btns = (isSelf ? selfBtns : otherBtns).filter(Boolean)
-
+  const canMod=myLevel>=11&&RL(user.rank)<myLevel
+  const canBan=myLevel>=12&&RL(user.rank)<myLevel
   return (
-    <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:1000,background:'rgba(0,0,0,.5)',backdropFilter:'blur(5px)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:'#fff',borderRadius:20,maxWidth:340,width:'100%',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.25)'}}>
-        {/* Cover image */}
-        <div style={{height:100,background: user.coverImage?`url(${user.coverImage}) center/cover`:`linear-gradient(135deg,${ri.color}66,${ri.color}22)`,position:'relative'}}>
-          <button onClick={onClose} style={{position:'absolute',top:10,right:10,background:'rgba(0,0,0,.4)',border:'none',width:28,height:28,borderRadius:'50%',cursor:'pointer',color:'#fff',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center'}}><i className="fi fi-sr-cross-small"/></button>
-          {user.countryCode&&user.countryCode!=='ZZ'&&<img src={`/icons/flags/${user.countryCode.toUpperCase()}.png`} alt="" style={{position:'absolute',bottom:10,right:46,width:22,height:14,borderRadius:2}} onError={e=>e.target.style.display='none'}/>}
-          {isSelf&&<div style={{position:'absolute',bottom:8,left:10,background:'rgba(26,115,232,.85)',borderRadius:6,padding:'2px 8px',fontSize:'0.65rem',fontWeight:700,color:'#fff'}}>You</div>}
+    <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:1000,background:'rgba(0,0,0,.45)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:'#fff',borderRadius:18,maxWidth:340,width:'100%',overflow:'hidden',boxShadow:'0 16px 48px rgba(0,0,0,.18)'}}>
+        <div style={{height:88,background:`linear-gradient(135deg,${ri.color}44,#e8f0fe)`,position:'relative'}}>
+          <button onClick={onClose} style={{position:'absolute',top:10,right:10,background:'rgba(255,255,255,.8)',border:'none',width:28,height:28,borderRadius:'50%',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13}}><i className="fi fi-sr-cross-small"/></button>
+          {user.countryCode&&user.countryCode!=='ZZ'&&<img src={`/icons/flags/${user.countryCode.toUpperCase()}.png`} alt="" style={{position:'absolute',bottom:10,right:12,width:22,height:14,borderRadius:2}} onError={e=>e.target.style.display='none'}/>}
         </div>
-        {/* Avatar */}
-        <div style={{display:'flex',justifyContent:'center',marginTop:-38}}>
-          <div style={{position:'relative'}}>
-            <img src={user.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{width:76,height:76,borderRadius:'50%',border:`3px solid ${bdr}`,objectFit:'cover',background:'#fff',boxShadow:'0 4px 12px rgba(0,0,0,.15)'}} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
-            {user.isVerifiedAccount&&<span style={{position:'absolute',bottom:2,right:2,background:'#1a73e8',borderRadius:'50%',width:18,height:18,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,color:'#fff'}}>✓</span>}
-          </div>
+        <div style={{display:'flex',justifyContent:'center',marginTop:-36}}>
+          <img src={user.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{width:72,height:72,borderRadius:'50%',border:`3px solid ${bdr}`,objectFit:'cover',background:'#fff'}} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
         </div>
         <div style={{padding:'10px 18px 18px',textAlign:'center'}}>
-          <div style={{fontFamily: user.nameFont?(FONT_FAMILIES[user.nameFont]||'Outfit,sans-serif'):'Outfit,sans-serif',fontWeight:900,fontSize:'1.05rem',marginBottom:4,...nameStyle}}>{user.username}</div>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:5,marginBottom:10}}>
-            <RIcon rank={user.rank} size={14}/>
-            <span style={{fontSize:'0.75rem',color:ri.color,fontWeight:700}}>{ri.label}</span>
-          </div>
-          {user.mood&&<p style={{fontSize:'0.78rem',color:'#6b7280',marginBottom:6,fontStyle:'italic',lineHeight:1.4}}>"{user.mood}"</p>}
-          {user.about&&<p style={{fontSize:'0.78rem',color:'#6b7280',marginBottom:10,lineHeight:1.5}}>{user.about}</p>}
-          {/* Stats */}
-          <div style={{display:'flex',gap:6,justifyContent:'center',marginBottom:14}}>
-            {[['Level',user.level||1,'#1a73e8'],['Gold',(user.gold||0).toLocaleString(),'#d97706'],['XP',user.xp||0,'#7c3aed'],['Msgs',user.totalMessages||0,'#059669']].map(([l,v,cl])=>(
-              <div key={l} style={{textAlign:'center',background:'#f9fafb',borderRadius:8,padding:'5px 8px',flex:1}}>
-                <div style={{fontSize:'0.6rem',color:'#9ca3af',fontWeight:600}}>{l}</div>
-                <div style={{fontSize:'0.82rem',fontWeight:800,color:cl}}>{v}</div>
+          <div style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1.05rem',color:user.nameColor||'#111827'}}>{user.username}</div>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:5,margin:'4px 0 12px'}}><RIcon rank={user.rank} size={14}/><span style={{fontSize:'0.75rem',color:ri.color,fontWeight:700}}>{ri.label}</span></div>
+          {user.mood&&<p style={{fontSize:'0.8rem',color:'#6b7280',marginBottom:8,fontStyle:'italic'}}>"{user.mood}"</p>}
+          {user.about&&<p style={{fontSize:'0.8rem',color:'#6b7280',marginBottom:12,lineHeight:1.5}}>{user.about}</p>}
+          <div style={{display:'flex',gap:8,justifyContent:'center',marginBottom:14}}>
+            {[{l:'Level',v:user.level||1,c:'#1a73e8'},{l:'Gold',v:user.gold||0,c:'#d97706'},{l:'Msgs',v:user.totalMessages||0,c:'#7c3aed'}].map(s=>(
+              <div key={s.l} style={{textAlign:'center',background:'#f9fafb',borderRadius:8,padding:'5px 12px'}}>
+                <div style={{fontSize:'0.62rem',color:'#9ca3af'}}>{s.l}</div>
+                <div style={{fontSize:'0.9rem',fontWeight:800,color:s.c}}>{s.v}</div>
               </div>
             ))}
           </div>
-          {/* Action buttons */}
           <div style={{display:'flex',flexWrap:'wrap',gap:6,justifyContent:'center'}}>
-            {btns.map((b,i)=>(
-              <button key={i} onClick={b.onClick||undefined}
-                style={{display:'flex',alignItems:'center',gap:5,padding:'7px 11px',background:b.color?`${b.color}10`:'#f9fafb',border:`1.5px solid ${b.color?b.color+'44':'#e4e6ea'}`,borderRadius:9,cursor:b.onClick?'pointer':'not-allowed',fontSize:'0.76rem',fontWeight:600,color:b.color||'#374151',transition:'all .12s',opacity:b.onClick?1:.55}}
-                onMouseEnter={e=>{if(b.onClick){e.currentTarget.style.background=b.color?`${b.color}20`:'#e8f0fe';e.currentTarget.style.borderColor=b.color||'#1a73e8'}}}
-                onMouseLeave={e=>{e.currentTarget.style.background=b.color?`${b.color}10`:'#f9fafb';e.currentTarget.style.borderColor=b.color?`${b.color}44`:'#e4e6ea'}}>
-                <i className={`fi ${b.icon}`} style={{fontSize:13}}/>{b.label}
+            {[
+              {icon:'fi-sr-comments',label:'Private'},
+              {icon:'fi-sr-phone-call',label:'Call',onClick:()=>{socket?.emit('callUser',{toUserId:user._id||user.userId,callType:'video',callId:`c_${Date.now()}`});onClose()}},
+              {icon:'fi-sr-gift',label:'Gift',color:'#7c3aed',onClick:()=>{onGift(user);onClose()}},
+              {icon:'fi-sr-user-add',label:'Friend',color:'#059669'},
+              {icon:'fi-sr-flag',label:'Report',color:'#ef4444'},
+              canMod&&{icon:'fi-sr-volume-mute',label:'Mute',color:'#f59e0b',onClick:()=>socket?.emit('muteUser',{targetUserId:user._id||user.userId,roomId,minutes:5})},
+              canMod&&{icon:'fi-sr-user-slash',label:'Kick',color:'#ef4444',onClick:()=>{socket?.emit('kickUser',{targetUserId:user._id||user.userId,roomId});onClose()}},
+              canBan&&{icon:'fi-sr-ban',label:'Ban',color:'#dc2626'},
+            ].filter(Boolean).map((b,i)=>(
+              <button key={i} onClick={b.onClick} style={{display:'flex',alignItems:'center',gap:4,padding:'7px 10px',background:'#f9fafb',border:'1.5px solid #e4e6ea',borderRadius:8,cursor:'pointer',fontSize:'0.78rem',fontWeight:600,color:b.color||'#374151',transition:'all .12s'}} onMouseEnter={e=>{e.currentTarget.style.background='#f0f7ff';e.currentTarget.style.borderColor=b.color||'#1a73e8'}} onMouseLeave={e=>{e.currentTarget.style.background='#f9fafb';e.currentTarget.style.borderColor='#e4e6ea'}}>
+                <i className={`fi ${b.icon}`} style={{fontSize:12}}/>{b.label}
               </button>
             ))}
           </div>
@@ -667,17 +560,24 @@ function ProfileModal({user,myLevel,myUserId,socket,roomId,onClose,onGift,onWhis
 // ─────────────────────────────────────────────────────────────
 // MESSAGE — system messages styled like adultchat
 // ─────────────────────────────────────────────────────────────
-function Msg({msg,onMiniCard,onMention,onHide,onWhisper,myId,myLevel,socket,roomId}) {
+function Msg({msg,onMiniCard,onMention,onHide,myId,myLevel,socket,roomId}) {
   const isSystem = msg.type==='system'||msg.type==='join'||msg.type==='leave'||msg.type==='kick'||msg.type==='mute'||msg.type==='ban'||msg.type==='mod'||msg.type==='dice'
   if (isSystem) {
     const cfg = SYS_CFG[msg.type] || SYS_CFG.system
     const ts2 = new Date(msg.createdAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
     return (
-      <div style={{textAlign:'center',padding:'3px 12px',margin:'2px 0'}}>
-        <span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f3f4f6',padding:'3px 14px',borderRadius:20,fontSize:'0.72rem',color:cfg.color,fontWeight:600}}>
-          <span style={{fontSize:'0.82rem'}}>{cfg.icon}</span>
-          <span style={{color:'#374151'}}>{msg.content}</span>
-          <span style={{fontSize:'0.62rem',color:'#9ca3af',marginLeft:2}}>{ts2}</span>
+      <div style={{textAlign:'center',padding:'3px 12px',margin:'3px 0',clear:'both'}}>
+        <span style={{
+          display:'inline-flex',alignItems:'center',gap:5,
+          background:'rgba(0,0,0,.045)',border:`1px solid ${cfg.border||'#e4e6ea'}`,
+          padding:'3px 12px 3px 8px',borderRadius:20,
+          fontSize:'0.72rem',color:'#555',fontWeight:500,
+          maxWidth:'88%',overflow:'hidden'
+        }}>
+          <img src={cfg.img||`/default_images/system/success.svg`} alt="" style={{width:13,height:13,objectFit:'contain',flexShrink:0,opacity:.7}}
+            onError={e=>{e.target.style.display='none'}}/>
+          <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{msg.content}</span>
+          <span style={{fontSize:'0.6rem',color:'#bbb',flexShrink:0,marginLeft:2}}>{ts2}</span>
         </span>
       </div>
     )
@@ -717,13 +617,12 @@ function Msg({msg,onMiniCard,onMention,onHide,onWhisper,myId,myLevel,socket,room
     {menuPos&&(
       <div style={{position:'fixed',top:menuPos.y,left:menuPos.x,background:'#1e293b',border:'1px solid #334155',borderRadius:10,zIndex:8889,minWidth:170,overflow:'hidden',boxShadow:'0 8px 24px rgba(0,0,0,.4)'}}>
         {[
-          {icon:'fi-sr-reply-all',label:'Quote',sub:'Reply to message',  onClick:()=>{onMention(`@${msg.sender?.username} "${(msg.content||'').slice(0,60)}" `);setMenuPos(null)}},
+          {icon:'fi-sr-reply-all',label:'Quote',sub:'Reply to this post',  onClick:()=>{onMention(`@${msg.sender?.username} "${(msg.content||'').slice(0,50)}" `);setMenuPos(null)}},
           {icon:'fi-sr-eye-crossed',label:'Hide',sub:'Hide from my screen', onClick:()=>{onHide?.(msg._id);setMenuPos(null)}},
-          !isMine&&{icon:'fi-sr-eye',label:'Whisper',sub:'Send private whisper',color:'#6366f1',onClick:()=>{onWhisper&&onWhisper(msg.sender);setMenuPos(null)}},
           isMine
-            ?{icon:'fi-sr-trash',label:'Delete',sub:'Delete this message',color:'#ef4444',onClick:()=>{socket?.emit('deleteMessage',{messageId:msg._id,roomId});setMenuPos(null)}}
+            ?{icon:'fi-sr-trash',label:'Delete',sub:'Erase this content',color:'#ef4444',onClick:()=>{socket?.emit('deleteMessage',{messageId:msg._id,roomId});setMenuPos(null)}}
             :{icon:'fi-sr-flag',label:'Report',sub:'Report this content',color:'#ef4444',onClick:()=>setMenuPos(null)},
-        ].filter(Boolean).map((item,i)=>(
+        ].map((item,i)=>(
           <button key={i} onClick={item.onClick}
             style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'9px 13px',background:'none',border:'none',cursor:'pointer',textAlign:'left',borderBottom:i<2?'1px solid #334155':'none'}}
             onMouseEnter={e=>e.currentTarget.style.background='#334155'} onMouseLeave={e=>e.currentTarget.style.background='none'}>
@@ -749,7 +648,7 @@ function Msg({msg,onMiniCard,onMention,onHide,onWhisper,myId,myLevel,socket,room
       <div style={{flex:1,minWidth:0}}>
         <div style={{display:'flex',alignItems:'center',gap:4,marginBottom:1}}>
           <RIcon rank={msg.sender?.rank} size={12}/>
-          <span onClick={()=>onMention(`@${msg.sender?.username} `)} style={{fontSize:'0.82rem',fontWeight:700,cursor:'pointer',fontFamily: msg.sender?.nameFont?(FONT_FAMILIES[msg.sender.nameFont]||'inherit'):'inherit',...(msg.sender?.nameColor?getNameColorStyle(msg.sender.nameColor):{color:col})}} onMouseEnter={e=>e.currentTarget.style.textDecoration='underline'} onMouseLeave={e=>e.currentTarget.style.textDecoration='none'}>
+          <span onClick={()=>onMention(msg.sender?.username)} style={{fontSize:'0.82rem',fontWeight:700,color:col,cursor:'pointer'}} onMouseEnter={e=>e.currentTarget.style.textDecoration='underline'} onMouseLeave={e=>e.currentTarget.style.textDecoration='none'}>
             {msg.sender?.username}
           </span>
           <span style={{fontSize:'0.63rem',color:'#9ca3af'}}>{ts}</span>
@@ -757,18 +656,26 @@ function Msg({msg,onMiniCard,onMention,onHide,onWhisper,myId,myLevel,socket,room
         </div>
         <div className="msg-bubble" style={{
           fontSize: msg.sender?.msgFontSize ? `${msg.sender.msgFontSize}px` : '0.875rem',
-          lineHeight: 1.45,
+          lineHeight: 1.4,
           color: msg.sender?.msgFontColor || '#111827',
           wordBreak: 'break-word',
-          fontFamily: msg.sender?.msgFontStyle ? (FONT_FAMILIES[msg.sender.msgFontStyle]||'inherit') : 'inherit',
+          fontFamily: msg.sender?.msgFontStyle
+            ? ({'font1':"'Kalam',cursive",'font2':"'Signika',sans-serif",'font3':"'Orbitron',sans-serif",'font4':"'Comic Neue',cursive",'font5':"'Quicksand',sans-serif",'font6':"'Pacifico',cursive",'font7':"'Dancing Script',cursive",'font8':"'Lobster Two',cursive",'font9':"'Caveat',cursive",'font10':"'Rajdhani',sans-serif",'font11':"'Audiowide',sans-serif",'font12':"'Nunito',sans-serif"}[msg.sender.msgFontStyle] || 'inherit')
+            : 'inherit',
           fontWeight: msg.sender?.bubbleStyle?.includes('bold') ? 700 : 400,
           fontStyle: msg.sender?.bubbleStyle?.includes('italic') ? 'italic' : 'normal',
-          ...(msg.sender?.bubbleColor ? {
-            ...getBubbleColorStyle(msg.sender.bubbleColor),
+          ...(msg.sender?.bubbleColor && msg.sender.bubbleColor.startsWith('bubcolor') ? {
+            background: ['#ff3333','#ff6633','#ff9933','#ffcc33','#cccc00','#99cc00','#59b300','#829356','#008000','#00e639','#00e673','#00e6ac','#00cccc','#03add8','#3366ff','#107896','#004d99','#6633ff','#9933ff','#cc33ff','#ff33ff','#ff33cc','#ff3399','#ff3366','#604439','#795548','#a97f70','#bc9b8f','#9E9E9E','#879fab','#698796','#495f69'][parseInt(msg.sender.bubbleColor.replace('bubcolor',''))-1],
+            color: msg.sender.msgFontColor || '#fff',
             padding: '6px 10px',
             borderRadius: '3px 10px 10px 10px',
             display: 'inline-block',
-            maxWidth: '85%',
+          } : msg.sender?.bubbleColor && (msg.sender.bubbleColor.startsWith('bubgrad') || msg.sender.bubbleColor.startsWith('bubneon')) ? {
+            background: ['linear-gradient(90deg,#667eea,#764ba2)','linear-gradient(90deg,#f093fb,#f5576c)','linear-gradient(90deg,#4facfe,#00f2fe)','linear-gradient(90deg,#43e97b,#38f9d7)','linear-gradient(90deg,#fa709a,#fee140)','linear-gradient(90deg,#ff9a56,#ff6b9d)','linear-gradient(90deg,#c471f5,#fa71cd)','linear-gradient(90deg,#12c2e9,#c471ed)','linear-gradient(90deg,#f64f59,#c471ed)','linear-gradient(90deg,#24fe41,#fdbb2d)','linear-gradient(45deg,#ff0844,#ffb199)','linear-gradient(45deg,#00d2ff,#3a7bd5)','linear-gradient(45deg,#f953c6,#b91d73)','linear-gradient(45deg,#36d1dc,#5b86e5)','linear-gradient(45deg,#ff9068,#fd746c)','linear-gradient(45deg,#667eea,#764ba2)'][parseInt(msg.sender.bubbleColor.replace(/bubgrad|bubneon/,''))-1] || '',
+            color: '#fff',
+            padding: '6px 10px',
+            borderRadius: '3px 10px 10px 10px',
+            display: 'inline-block',
           } : {}),
         }}>
           {msg.type==='gift'   ?<span>🎁 {msg.content}</span>
@@ -786,25 +693,21 @@ function Msg({msg,onMiniCard,onMention,onHide,onWhisper,myId,myLevel,socket,room
 // ─────────────────────────────────────────────────────────────
 // USER ITEM
 // ─────────────────────────────────────────────────────────────
-function UserItem({u,onClick,myUserId}) {
-  const ri=R(u.rank)
-  const isSelf = u.userId===myUserId || u._id===myUserId
-  // Apply nameColor properly (bcolor/bgrad/bneon)
-  const nameStyle = u.nameColor ? getNameColorStyle(u.nameColor) : { color: ri.color }
+function UserItem({u,onClick,onWhisper}) {
+  const ri=R(u.rank), col=u.nameColor||ri.color
   const [hov,setHov]=useState(false)
   return (
     <div onClick={()=>onClick(u)}
       onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{display:'flex',alignItems:'center',gap:7,padding:'6px 10px',cursor:'pointer',transition:'background .12s',position:'relative',background:hov?'rgba(26,115,232,.07)':'transparent'}}>
+      style={{display:'flex',alignItems:'center',gap:7,padding:'6px 10px',cursor:'pointer',transition:'background .12s',position:'relative',background:hov?'#f3f4f6':'transparent'}}>
       <div style={{position:'relative',flexShrink:0}}>
-        <img src={u.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{width:30,height:30,borderRadius:'50%',objectFit:'cover',border:`2px solid ${GBR(u.gender,u.rank)}`,display:'block'}} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
-        <span style={{position:'absolute',bottom:0,right:0,width:7,height:7,background:'#22c55e',borderRadius:'50%',border:'1.5px solid #fff'}}/>
+        <img src={u.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{width:28,height:28,borderRadius:'50%',objectFit:'cover',border:`1.5px solid ${GBR(u.gender,u.rank)}`,display:'block'}} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
+        <span style={{position:'absolute',bottom:0,right:0,width:6,height:6,background:'#22c55e',borderRadius:'50%',border:'1.5px solid #fff'}}/>
       </div>
-      <span style={{flex:1,fontSize:'0.8rem',fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontFamily: u.nameFont ? (FONT_FAMILIES[u.nameFont]||'inherit') : 'inherit', ...nameStyle}}>
-        {u.username}{isSelf?' (You)':''}
-      </span>
+      <span style={{flex:1,fontSize:'0.8rem',fontWeight:700,color:col,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{u.username}</span>
       <RIcon rank={u.rank} size={14}/>
       {u.countryCode&&u.countryCode!=='ZZ'&&<img src={`/icons/flags/${u.countryCode.toUpperCase()}.png`} alt="" style={{width:15,height:10,flexShrink:0,borderRadius:1}} onError={e=>e.target.style.display='none'}/>}
+      {hov&&onWhisper&&<button onClick={e=>{e.stopPropagation();onWhisper(u)}} title="Whisper" style={{position:'absolute',right:6,background:'#eef2ff',border:'1px solid #6366f1',borderRadius:5,padding:'2px 6px',cursor:'pointer',fontSize:'0.7rem',color:'#6366f1',fontWeight:700}}>👁️</button>}
     </div>
   )
 }
@@ -812,7 +715,7 @@ function UserItem({u,onClick,myUserId}) {
 // ─────────────────────────────────────────────────────────────
 // RIGHT SIDEBAR
 // ─────────────────────────────────────────────────────────────
-function RightSidebar({users,myLevel,myUserId,onUserClick,onClose}) {
+function RightSidebar({users,myLevel,onUserClick,onWhisper,onClose}) {
   const [tab,setTab]=useState('users')
   const [search,setSearch]=useState('')
   const [rankF,setRankF]=useState('all')
@@ -835,9 +738,9 @@ function RightSidebar({users,myLevel,myUserId,onUserClick,onClose}) {
     })
 
   const TABS=[
-    {id:'users',   icon:'fi-ss-users-alt',     title:'Users'},
-    {id:'friends', icon:'fi-ss-users',         title:'Friends'},
-    {id:'staff',   icon:'fi-ss-user-shield',   title:'Staff'},
+    {id:'users',   icon:'fi-sr-users',        title:'Users'},
+    {id:'friends', icon:'fi-sr-user',          title:'Friends'},
+    {id:'staff',   icon:'fi-sr-shield-check',  title:'Staff'},
     {id:'search',  icon:'fi-sr-search',        title:'Search'},
   ]
 
@@ -869,7 +772,7 @@ function RightSidebar({users,myLevel,myUserId,onUserClick,onClose}) {
       <div style={{flex:1,overflowY:'auto'}}>
         {filtered.length===0
           ? <p style={{textAlign:'center',color:'#9ca3af',fontSize:'0.76rem',padding:'14px 10px'}}>{tab==='staff'?'No staff online':tab==='friends'?'No friends online':tab==='search'?'No results':'No users'}</p>
-          : filtered.map((u,i)=><UserItem key={u.userId||u._id||i} u={u} onClick={onUserClick} myUserId={myUserId}/>)
+          : filtered.map((u,i)=><UserItem key={u.userId||u._id||i} u={u} onClick={onUserClick} onWhisper={onWhisper}/>)
         }
       </div>
     </div>
@@ -1095,12 +998,12 @@ function LeftSidebar({room,nav,socket,roomId,onClose,me,onStyleSaved}) {
     {id:'rooms',       icon:'fi-sr-house-chimney',  label:'Room List',    color:'#1a73e8'},
     {id:'wall',        icon:'fi-sr-rss',             label:'Friends Wall', color:'#7c3aed'},
     {id:'news',        icon:'fi-sr-newspaper',       label:'News',         color:'#059669'},
-    {id:'forum',       icon:'fi-bs-comment-quote',   label:'Forum',        color:'#f59e0b'},
+    {id:'forum',       icon:'fi-sr-comments-alt',    label:'Forum',        color:'#f59e0b'},
     {id:'games',       icon:'fi-sr-dice',            label:'Games',        color:'#ec4899'},
     {id:'leaderboard', icon:'fi-sr-medal',           label:'Leaderboards', color:'#d97706'},
     {id:'username',    icon:'fi-sr-user-pen',        label:'Username',     color:'#6366f1'},
     {id:'contact',     icon:'fi-sr-envelope',        label:'Contact',      color:'#14b8a6'},
-    {id:'premium',     icon:null, img:'/icons/ranks/premium.svg', label:'Premium', color:'#aa44ff'},
+    {id:'premium',     icon:'fi-sr-diamond', img:'/icons/ranks/premium.svg', label:'Premium', color:'#aa44ff'},
     {id:'namecolor',   icon:'fi-sr-brush',           label:'Name Style',   color:'#ec4899'},
     {id:'bubblesyle',  icon:'fi-sr-comment-alt',     label:'Bubble Style', color:'#8b5cf6'},
     {id:'theme',       icon:'fi-sr-palette',         label:'Theme',        color:'#14b8a6'},
@@ -1120,9 +1023,7 @@ function LeftSidebar({room,nav,socket,roomId,onClose,me,onStyleSaved}) {
             style={{width:'100%',padding:'7px 2px 5px',border:'none',background:panel===item.id?`${item.color}15`:'none',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:2,color:panel===item.id?item.color:'#6b7280',transition:'all .12s',borderLeft:panel===item.id?`2px solid ${item.color}`:'2px solid transparent'}}
             onMouseEnter={e=>{if(panel!==item.id){e.currentTarget.style.background=`${item.color}10`;e.currentTarget.style.color=item.color}}}
             onMouseLeave={e=>{if(panel!==item.id){e.currentTarget.style.background='none';e.currentTarget.style.color='#8892b0'}}}>
-            {item.img
-              ? <img src={item.img} alt={item.label} style={{width:18,height:18,objectFit:'contain',filter:panel===item.id?'none':'grayscale(40%)',opacity:panel===item.id?1:0.7}} onError={e=>e.target.style.display='none'}/>
-              : <i className={`fi ${item.icon}`} style={{fontSize:16}}/>}
+            <i className={`fi ${item.icon}`} style={{fontSize:16}}/>
             <span style={{fontSize:'0.48rem',fontWeight:700,letterSpacing:'0.2px',textAlign:'center',lineHeight:1.2,maxWidth:48,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.label}</span>
           </button>
         ))}
@@ -1458,17 +1359,6 @@ function GamesPanel({socket,roomId,myGold=0}) {
         </button>
       ))}
       {showDice&&diceVal&&<DiceRoll value={diceVal} onDone={()=>{setShowDice(false);setDiceVal(null)}}/>}
-      {whisperTarget&&<WhisperBox target={whisperTarget} roomId={roomId} socket={sockRef.current} onClose={()=>setWhisper(null)}/>}
-      {showPaint&&<PaintingCanvas onClose={()=>setShowPaint(false)} onSend={async(dataUrl)=>{
-        // Upload to imgbb then send as image message
-        try {
-          const blob=await(await fetch(dataUrl)).blob()
-          const fd=new FormData(); fd.append('image',blob,'drawing.png')
-          const r=await fetch(`${API}/api/upload/image`,{method:'POST',headers:{Authorization:`Bearer ${localStorage.getItem('cgz_token')}`},body:fd})
-          const d=await r.json()
-          if(r.ok&&d.url){ sockRef.current?.emit('sendMessage',{roomId,content:d.url,type:'image'}); setShowPaint(false) }
-        } catch{ setShowPaint(false) }
-      }}/>}
       {showSpin&&<SpinWheelGame socket={socket} myGold={myGold||0} onClose={()=>setShowSpin(false)}/>}
       {showKeno&&<KenoGame socket={socket} roomId={roomId} myGold={myGold||0} onClose={()=>setShowKeno(false)}/>}
     </div>
@@ -2018,12 +1908,100 @@ function FBtn({icon,active,onClick,title,badge}) {
 // ─────────────────────────────────────────────────────────────
 // MAIN CHATROOM
 // ─────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────
+// WEBCAM PANEL — go live, viewer controls
+// ─────────────────────────────────────────────────────────────
+function WebcamPanel({socket,roomId,me,onClose}) {
+  const videoRef=useRef(null), streamRef=useRef(null)
+  const [hosting,setHosting]=useState(false)
+  const [devices,setDevices]=useState([])
+  const [selCam,setSelCam]=useState('')
+  const [micOn,setMicOn]=useState(true)
+  const [camOn,setCamOn]=useState(true)
+
+  useEffect(()=>{
+    navigator.mediaDevices?.enumerateDevices().then(devs=>{
+      const v=devs.filter(d=>d.kind==='videoinput')
+      setDevices(v)
+      if(v[0]) setSelCam(v[0].deviceId)
+    }).catch(()=>{})
+    return()=>stop()
+  },[])
+
+  async function start() {
+    try {
+      const stream=await navigator.mediaDevices.getUserMedia({
+        video:selCam?{deviceId:{exact:selCam}}:true, audio:true
+      })
+      streamRef.current=stream
+      if(videoRef.current){videoRef.current.srcObject=stream;videoRef.current.play().catch(()=>{})}
+      setHosting(true)
+      socket?.emit('camOffer',{roomId,offer:'live'})
+    } catch(e){alert('Camera error: '+e.message)}
+  }
+
+  function stop() {
+    streamRef.current?.getTracks().forEach(t=>t.stop())
+    streamRef.current=null
+    if(videoRef.current) videoRef.current.srcObject=null
+    setHosting(false)
+  }
+
+  function toggleMic(){
+    const t=streamRef.current?.getAudioTracks()[0]
+    if(t){t.enabled=!t.enabled;setMicOn(p=>!p);socket?.emit('callToggleMic',{enabled:!micOn})}
+  }
+  function toggleCam(){
+    const t=streamRef.current?.getVideoTracks()[0]
+    if(t){t.enabled=!t.enabled;setCamOn(p=>!p);socket?.emit('callToggleCam',{enabled:!camOn})}
+  }
+
+  const IBT=(props)=>(
+    <button title={props.t} onClick={props.fn}
+      style={{width:34,height:34,border:'none',borderRadius:8,background:props.active===false?'#ef4444':'#232334',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+      <img src={props.img} alt="" style={{width:16,height:16,filter:'invert(1)',opacity:.9}}
+        onError={e=>{e.target.outerHTML=`<i class="${props.fb}" style="font-size:14px;color:#fff"/>`}}/>
+    </button>
+  )
+
+  return (
+    <div style={{position:'fixed',bottom:56,right:8,zIndex:900,background:'#16162a',borderRadius:14,overflow:'hidden',width:'min(290px,94vw)',boxShadow:'0 6px 32px rgba(0,0,0,.55)',border:'1px solid #2d2d44'}} onClick={e=>e.stopPropagation()}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 12px',background:'#0f0f1e'}}>
+        <div style={{display:'flex',alignItems:'center',gap:7}}>
+          <img src="/default_images/icons/webcam.svg" alt="" style={{width:15,height:15,filter:'invert(1)',opacity:.7}}/>
+          <span style={{color:'#e0e0f0',fontWeight:700,fontSize:'0.82rem'}}>Webcam</span>
+          {hosting&&<span style={{background:'#ef4444',color:'#fff',fontSize:'0.6rem',fontWeight:700,padding:'1px 6px',borderRadius:10}}>LIVE</span>}
+        </div>
+        <button onClick={onClose} style={{background:'none',border:'none',color:'#666',cursor:'pointer',fontSize:16,lineHeight:1}}>✕</button>
+      </div>
+      <video ref={videoRef} autoPlay muted playsInline style={{width:'100%',background:'#000',display:'block',aspectRatio:'4/3',objectFit:'cover'}}/>
+      <div style={{padding:'8px 10px',display:'flex',gap:7,alignItems:'center',background:'#0f0f1e'}}>
+        {devices.length>1&&(
+          <select value={selCam} onChange={e=>setSelCam(e.target.value)}
+            style={{flex:1,padding:'5px 7px',background:'#232334',color:'#e0e0f0',border:'1px solid #3d3d55',borderRadius:7,fontSize:'0.72rem',minWidth:0}}>
+            {devices.map((d,i)=><option key={d.deviceId} value={d.deviceId}>{d.label||`Cam ${i+1}`}</option>)}
+          </select>
+        )}
+        <IBT t={micOn?'Mute mic':'Unmute'} fn={toggleMic} img="/default_images/icons/audio.svg" fb="fi fi-sr-microphone" active={micOn?undefined:false}/>
+        <IBT t={camOn?'Hide cam':'Show cam'} fn={toggleCam} img="/default_images/icons/video.svg" fb="fi fi-sr-video-camera" active={camOn?undefined:false}/>
+        {!hosting
+          ?<button onClick={start} style={{flex:1,padding:'7px',borderRadius:8,border:'none',background:'#22c55e',color:'#fff',fontWeight:700,cursor:'pointer',fontSize:'0.8rem'}}>Go Live</button>
+          :<button onClick={stop}  style={{flex:1,padding:'7px',borderRadius:8,border:'none',background:'#ef4444',color:'#fff',fontWeight:700,cursor:'pointer',fontSize:'0.8rem'}}>Stop</button>
+        }
+      </div>
+    </div>
+  )
+}
+
 export default function ChatRoom() {
   const {roomSlug}=useParams(), nav=useNavigate(), toast=useToast()
   const token=localStorage.getItem('cgz_token')
 
   const [me,        setMe]       =useState(null)
   const [room,      setRoom]     =useState(null)
+  // roomId = resolved _id once room loads, fallback slug for API calls
+  const roomId = room?._id || roomSlug
   const [messages,  setMsgs]     =useState([])
   const [users,     setUsers]    =useState([])
   const [input,     setInput]    =useState('')
@@ -2036,6 +2014,7 @@ export default function ChatRoom() {
   const [showFriends,setShowFriends]=useState(false)
   const [showPlus,  setShowPlus] =useState(false)
   const [showPaint, setShowPaint]=useState(false)
+  const [showCam,   setShowCam]  =useState(false)
   const [whisperTarget,setWhisper]=useState(null)
   const [showGif,   setShowGif]  =useState(false)
   const [showYT,    setShowYT]   =useState(false)
@@ -2078,8 +2057,14 @@ export default function ChatRoom() {
       fetch(`${API}/api/rooms/${roomSlug}/messages?limit=50`,{headers:{Authorization:`Bearer ${token}`}}).then(r=>r.json()).then(d=>{if(d.messages)setMsgs(d.messages)}).catch(()=>{})
     } catch{setErr('Connection failed.')}
     setLoad(false)
-    connectSocket()
   }
+
+  // Connect socket only after room object is available (so roomId = room._id works)
+  useEffect(()=>{
+    if(!room?._id) return
+    connectSocket()
+    return()=>sockRef.current?.disconnect()
+  },[room?._id])
 
   function connectSocket() {
     sockRef.current?.disconnect()
@@ -2191,7 +2176,7 @@ export default function ChatRoom() {
         </button>
 
         {/* Webcam button */}
-        <HBtn img="/default_images/icons/webcam.svg" title="Webcam" active={false} onClick={e=>e.stopPropagation()}/>
+        <HBtn img="/default_images/icons/webcam.svg" title="Webcam" active={showCam} onClick={e=>{e.stopPropagation();setShowCam(p=>!p)}}/>
 
         {/* Room name - center */}
         <div style={{flex:1,textAlign:'center',minWidth:0}}>
@@ -2201,7 +2186,7 @@ export default function ChatRoom() {
 
         {/* Right icons - using SVGs from public folder */}
         <div style={{position:'relative'}}>
-          <HBtn icon="fi-sr-envelope" title="Messages" badge={notif.dm} active={showDM} onClick={e=>{e.stopPropagation();setShowDM(p=>!p);setShowNotif(false)}}/>
+          <HBtn img="/default_images/icons/comment.svg" title="Messages" badge={notif.dm} active={showDM} onClick={e=>{e.stopPropagation();setShowDM(p=>!p);setShowNotif(false)}}/>
           {showDM&&<DMPanel me={me} socket={sockRef.current} onClose={()=>setShowDM(false)} onCount={n=>setNotif(p=>({...p,dm:n}))}/>}
         </div>
 
@@ -2211,11 +2196,11 @@ export default function ChatRoom() {
         </div>
 
         <div style={{position:'relative'}}>
-          <HBtn icon="fi-ss-bell" title="Notifications" badge={notif.notif} active={showNotif} onClick={e=>{e.stopPropagation();setShowNotif(p=>!p);setShowDM(false)}}/>
+          <HBtn img="/default_images/icons/congratulation.svg" title="Notifications" badge={notif.notif} active={showNotif} onClick={e=>{e.stopPropagation();setShowNotif(p=>!p);setShowDM(false)}}/>
           {showNotif&&<NotifPanel onClose={()=>setShowNotif(false)} onCount={n=>setNotif(p=>({...p,notif:n}))}/>}
         </div>
 
-        {isStaff&&<HBtn icon="fi-sr-flag" title="Reports" badge={notif.reports}/>}
+        {isStaff&&<HBtn img="/default_images/icons/warning.svg" title="Reports" badge={notif.reports}/>}
 
         <AvatarDropdown me={me} status={status} setStatus={setStatus} onLeave={leave} socket={sockRef.current}/>
       </div>
@@ -2237,8 +2222,8 @@ export default function ChatRoom() {
           <div style={{flex:1,overflowY:'auto',padding:'6px 0'}}>
             {messages.map((m,i)=>(
               !hiddenMsgs.has(m._id)&&<Msg key={m._id||i} msg={m} myId={me?._id} myLevel={myLevel}
-                onMiniCard={handleMiniCard} onMention={handleMention} onHide={handleHide} onWhisper={u=>setWhisper(u)}
-                socket={sockRef.current} roomId={room?._id||roomSlug}/>
+                onMiniCard={handleMiniCard} onMention={handleMention} onHide={handleHide}
+                socket={sockRef.current} roomId={roomId}/>
             ))}
             {typers.filter(t=>t!==me?.username).length>0&&(
               <div style={{padding:'2px 12px 4px',display:'flex',alignItems:'center',gap:7}}>
@@ -2326,7 +2311,7 @@ export default function ChatRoom() {
           </div>
         </div>
 
-        {showRight&&<RightSidebar users={users} myLevel={myLevel} myUserId={me?._id} onUserClick={u=>{setProf(u);setMini(null)}} onClose={()=>setRight(false)}/>}
+        {showRight&&<RightSidebar users={users} myLevel={myLevel} onUserClick={u=>{setProf(u);setMini(null)}} onWhisper={u=>setWhisper(u)} onClose={()=>setRight(false)}/>}
       </div>
 
       {/* ── FOOTER ── */}
@@ -2336,8 +2321,9 @@ export default function ChatRoom() {
       </div>
 
       {/* OVERLAYS */}
-      {miniCard&&<MiniCard user={miniCard.user} myLevel={myLevel} myUserId={me?._id} pos={miniCard.pos} onClose={()=>setMini(null)} onFull={()=>{setProf(miniCard.user);setMini(null)}} onGift={u=>setGiftTgt(u)} socket={sockRef.current} roomId={room?._id||roomSlug} onWhisper={u=>setWhisper(u)}/>}
-      {profUser&&<ProfileModal user={profUser} myLevel={myLevel} myUserId={me?._id} socket={sockRef.current} roomId={room?._id||roomSlug} onClose={()=>setProf(null)} onGift={u=>setGiftTgt(u)} onWhisper={u=>setWhisper(u)} nav={nav}/>}
+      {showCam&&<WebcamPanel socket={sockRef.current} roomId={roomId} me={me} onClose={()=>setShowCam(false)}/>}
+      {miniCard&&<MiniCard user={miniCard.user} myLevel={myLevel} pos={miniCard.pos} onClose={()=>setMini(null)} onFull={()=>{setProf(miniCard.user);setMini(null)}} onGift={u=>setGiftTgt(u)} socket={sockRef.current} roomId={roomId}/>}
+      {profUser&&<ProfileModal user={profUser} myLevel={myLevel} socket={sockRef.current} roomId={roomId} onClose={()=>setProf(null)} onGift={u=>setGiftTgt(u)}/>}
       {giftTarget&&<GiftPanel targetUser={giftTarget} myGold={me?.gold||0} onClose={()=>setGiftTgt(null)} onSent={()=>{setGiftTgt(null);toast?.show('Gift sent! 🎁','gift',3000)}} socket={sockRef.current} roomId={roomId}/>}
 
       <style>{`
