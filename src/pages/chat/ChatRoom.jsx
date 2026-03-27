@@ -40,22 +40,28 @@ function UIIcon({name, size=18, fallback, style={}}) {
   return <i className={`fi ${fallback||'fi-sr-info'}`} style={{fontSize:size-2,...style}}/>
 }
 
-function RIcon({rank,size=16}) {
+function RIcon({rank,size='md'}) {
   const ri = R(rank)
-  return <img src={`/icons/ranks/${ri.icon}`} alt="" style={{width:size,height:size,objectFit:'contain',background:'transparent',flexShrink:0,display:'inline-block'}} onError={e=>e.target.style.display='none'}/>
+  // CSS class defined in index.html — uniform height, width:auto (handles any viewBox)
+  const cls = size==='xs'?'rank-icon-xs':size==='sm'?'rank-icon-sm':size==='lg'?'rank-icon-lg':size==='xl'?'rank-icon-xl':'rank-icon'
+  return <img src={`/icons/ranks/${ri.icon}`} alt={ri.label||rank} title={ri.label||rank} className={cls} style={{background:'transparent'}} onError={e=>e.target.style.display='none'}/>
 }
 
 // ── System message config (from adultchat pattern) ──
 const SYS_CFG = {
-  join:    { icon:'👋', color:'#22c55e', bg:'#f0fdf4', border:'#86efac' },
-  leave:   { icon:'🚪', color:'#6b7280', bg:'#f9fafb', border:'#e4e6ea' },
-  kick:    { icon:'👢', color:'#f59e0b', bg:'#fffbeb', border:'#fde68a' },
-  mute:    { icon:'🔇', color:'#f59e0b', bg:'#fffbeb', border:'#fde68a' },
-  ban:     { icon:'🚫', color:'#ef4444', bg:'#fef2f2', border:'#fecaca' },
-  mod:     { icon:'🛡️', color:'#6366f1', bg:'#eef2ff', border:'#c7d2fe' },
-  dice:    { icon:'🎲', color:'#7c3aed', bg:'#f5f3ff', border:'#ddd6fe' },
-  gift:    { icon:'🎁', color:'#ec4899', bg:'#fdf4ff', border:'#f0abfc' },
-  system:  { icon:'📢', color:'#1a73e8', bg:'#eff6ff', border:'#bfdbfe' },
+  // img = path to /default_images/system/ SVGs  |  border = pill border color
+  join:    { img:'/default_images/system/success.svg', border:'#86efac', color:'#22c55e' },
+  leave:   { img:'/default_images/icons/innactive.svg', border:'#e4e6ea', color:'#6b7280' },
+  kick:    { img:'/default_images/icons/kicked.svg',    border:'#fde68a', color:'#f59e0b' },
+  ban:     { img:'/default_images/icons/banned.svg',    border:'#fecaca', color:'#ef4444' },
+  mute:    { img:'/default_images/actions/muted.svg',   border:'#fde68a', color:'#f59e0b' },
+  mod:     { img:'/default_images/icons/verify.svg',    border:'#c7d2fe', color:'#6366f1' },
+  dice:    { img:'/default_images/icons/gold.svg',      border:'#ddd6fe', color:'#7c3aed' },
+  gift:    { img:'/default_images/notification/gift.svg',border:'#f0abfc',color:'#ec4899' },
+  system:  { img:'/default_images/system/warning.svg',  border:'#bfdbfe', color:'#1a73e8' },
+  warning: { img:'/default_images/system/warning.svg',  border:'#fde68a', color:'#f59e0b' },
+  error:   { img:'/default_images/system/error.svg',    border:'#fecaca', color:'#ef4444' },
+  success: { img:'/default_images/system/success.svg',  border:'#86efac', color:'#22c55e' },
 }
 
 
@@ -560,11 +566,18 @@ function Msg({msg,onMiniCard,onMention,onHide,myId,myLevel,socket,roomId}) {
     const cfg = SYS_CFG[msg.type] || SYS_CFG.system
     const ts2 = new Date(msg.createdAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
     return (
-      <div style={{textAlign:'center',padding:'3px 12px',margin:'2px 0'}}>
-        <span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f3f4f6',padding:'3px 14px',borderRadius:20,fontSize:'0.72rem',color:cfg.color,fontWeight:600}}>
-          <span style={{fontSize:'0.82rem'}}>{cfg.icon}</span>
-          <span style={{color:'#374151'}}>{msg.content}</span>
-          <span style={{fontSize:'0.62rem',color:'#9ca3af',marginLeft:2}}>{ts2}</span>
+      <div style={{textAlign:'center',padding:'3px 12px',margin:'3px 0',clear:'both'}}>
+        <span style={{
+          display:'inline-flex',alignItems:'center',gap:5,
+          background:'rgba(0,0,0,.045)',border:`1px solid ${cfg.border||'#e4e6ea'}`,
+          padding:'3px 12px 3px 8px',borderRadius:20,
+          fontSize:'0.72rem',color:'#555',fontWeight:500,
+          maxWidth:'88%',overflow:'hidden'
+        }}>
+          <img src={cfg.img||`/default_images/system/success.svg`} alt="" style={{width:13,height:13,objectFit:'contain',flexShrink:0,opacity:.7}}
+            onError={e=>{e.target.style.display='none'}}/>
+          <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{msg.content}</span>
+          <span style={{fontSize:'0.6rem',color:'#bbb',flexShrink:0,marginLeft:2}}>{ts2}</span>
         </span>
       </div>
     )
@@ -990,7 +1003,7 @@ function LeftSidebar({room,nav,socket,roomId,onClose,me,onStyleSaved}) {
     {id:'leaderboard', icon:'fi-sr-medal',           label:'Leaderboards', color:'#d97706'},
     {id:'username',    icon:'fi-sr-user-pen',        label:'Username',     color:'#6366f1'},
     {id:'contact',     icon:'fi-sr-envelope',        label:'Contact',      color:'#14b8a6'},
-    {id:'premium',     icon:'fi-sr-diamond',         label:'Premium',      color:'#f59e0b'},
+    {id:'premium',     icon:'fi-sr-diamond', img:'/icons/ranks/premium.svg', label:'Premium', color:'#aa44ff'},
     {id:'namecolor',   icon:'fi-sr-brush',           label:'Name Style',   color:'#ec4899'},
     {id:'bubblesyle',  icon:'fi-sr-comment-alt',     label:'Bubble Style', color:'#8b5cf6'},
     {id:'theme',       icon:'fi-sr-palette',         label:'Theme',        color:'#14b8a6'},
@@ -1346,17 +1359,6 @@ function GamesPanel({socket,roomId,myGold=0}) {
         </button>
       ))}
       {showDice&&diceVal&&<DiceRoll value={diceVal} onDone={()=>{setShowDice(false);setDiceVal(null)}}/>}
-      {whisperTarget&&<WhisperBox target={whisperTarget} roomId={roomId} socket={sockRef.current} onClose={()=>setWhisper(null)}/>}
-      {showPaint&&<PaintingCanvas onClose={()=>setShowPaint(false)} onSend={async(dataUrl)=>{
-        // Upload to imgbb then send as image message
-        try {
-          const blob=await(await fetch(dataUrl)).blob()
-          const fd=new FormData(); fd.append('image',blob,'drawing.png')
-          const r=await fetch(`${API}/api/upload/image`,{method:'POST',headers:{Authorization:`Bearer ${localStorage.getItem('cgz_token')}`},body:fd})
-          const d=await r.json()
-          if(r.ok&&d.url){ sockRef.current?.emit('sendMessage',{roomId,content:d.url,type:'image'}); setShowPaint(false) }
-        } catch{ setShowPaint(false) }
-      }}/>}
       {showSpin&&<SpinWheelGame socket={socket} myGold={myGold||0} onClose={()=>setShowSpin(false)}/>}
       {showKeno&&<KenoGame socket={socket} roomId={roomId} myGold={myGold||0} onClose={()=>setShowKeno(false)}/>}
     </div>
@@ -1906,12 +1908,100 @@ function FBtn({icon,active,onClick,title,badge}) {
 // ─────────────────────────────────────────────────────────────
 // MAIN CHATROOM
 // ─────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────
+// WEBCAM PANEL — go live, viewer controls
+// ─────────────────────────────────────────────────────────────
+function WebcamPanel({socket,roomId,me,onClose}) {
+  const videoRef=useRef(null), streamRef=useRef(null)
+  const [hosting,setHosting]=useState(false)
+  const [devices,setDevices]=useState([])
+  const [selCam,setSelCam]=useState('')
+  const [micOn,setMicOn]=useState(true)
+  const [camOn,setCamOn]=useState(true)
+
+  useEffect(()=>{
+    navigator.mediaDevices?.enumerateDevices().then(devs=>{
+      const v=devs.filter(d=>d.kind==='videoinput')
+      setDevices(v)
+      if(v[0]) setSelCam(v[0].deviceId)
+    }).catch(()=>{})
+    return()=>stop()
+  },[])
+
+  async function start() {
+    try {
+      const stream=await navigator.mediaDevices.getUserMedia({
+        video:selCam?{deviceId:{exact:selCam}}:true, audio:true
+      })
+      streamRef.current=stream
+      if(videoRef.current){videoRef.current.srcObject=stream;videoRef.current.play().catch(()=>{})}
+      setHosting(true)
+      socket?.emit('camOffer',{roomId,offer:'live'})
+    } catch(e){alert('Camera error: '+e.message)}
+  }
+
+  function stop() {
+    streamRef.current?.getTracks().forEach(t=>t.stop())
+    streamRef.current=null
+    if(videoRef.current) videoRef.current.srcObject=null
+    setHosting(false)
+  }
+
+  function toggleMic(){
+    const t=streamRef.current?.getAudioTracks()[0]
+    if(t){t.enabled=!t.enabled;setMicOn(p=>!p);socket?.emit('callToggleMic',{enabled:!micOn})}
+  }
+  function toggleCam(){
+    const t=streamRef.current?.getVideoTracks()[0]
+    if(t){t.enabled=!t.enabled;setCamOn(p=>!p);socket?.emit('callToggleCam',{enabled:!camOn})}
+  }
+
+  const IBT=(props)=>(
+    <button title={props.t} onClick={props.fn}
+      style={{width:34,height:34,border:'none',borderRadius:8,background:props.active===false?'#ef4444':'#232334',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+      <img src={props.img} alt="" style={{width:16,height:16,filter:'invert(1)',opacity:.9}}
+        onError={e=>{e.target.outerHTML=`<i class="${props.fb}" style="font-size:14px;color:#fff"/>`}}/>
+    </button>
+  )
+
+  return (
+    <div style={{position:'fixed',bottom:56,right:8,zIndex:900,background:'#16162a',borderRadius:14,overflow:'hidden',width:'min(290px,94vw)',boxShadow:'0 6px 32px rgba(0,0,0,.55)',border:'1px solid #2d2d44'}} onClick={e=>e.stopPropagation()}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 12px',background:'#0f0f1e'}}>
+        <div style={{display:'flex',alignItems:'center',gap:7}}>
+          <img src="/default_images/icons/webcam.svg" alt="" style={{width:15,height:15,filter:'invert(1)',opacity:.7}}/>
+          <span style={{color:'#e0e0f0',fontWeight:700,fontSize:'0.82rem'}}>Webcam</span>
+          {hosting&&<span style={{background:'#ef4444',color:'#fff',fontSize:'0.6rem',fontWeight:700,padding:'1px 6px',borderRadius:10}}>LIVE</span>}
+        </div>
+        <button onClick={onClose} style={{background:'none',border:'none',color:'#666',cursor:'pointer',fontSize:16,lineHeight:1}}>✕</button>
+      </div>
+      <video ref={videoRef} autoPlay muted playsInline style={{width:'100%',background:'#000',display:'block',aspectRatio:'4/3',objectFit:'cover'}}/>
+      <div style={{padding:'8px 10px',display:'flex',gap:7,alignItems:'center',background:'#0f0f1e'}}>
+        {devices.length>1&&(
+          <select value={selCam} onChange={e=>setSelCam(e.target.value)}
+            style={{flex:1,padding:'5px 7px',background:'#232334',color:'#e0e0f0',border:'1px solid #3d3d55',borderRadius:7,fontSize:'0.72rem',minWidth:0}}>
+            {devices.map((d,i)=><option key={d.deviceId} value={d.deviceId}>{d.label||`Cam ${i+1}`}</option>)}
+          </select>
+        )}
+        <IBT t={micOn?'Mute mic':'Unmute'} fn={toggleMic} img="/default_images/icons/audio.svg" fb="fi fi-sr-microphone" active={micOn?undefined:false}/>
+        <IBT t={camOn?'Hide cam':'Show cam'} fn={toggleCam} img="/default_images/icons/video.svg" fb="fi fi-sr-video-camera" active={camOn?undefined:false}/>
+        {!hosting
+          ?<button onClick={start} style={{flex:1,padding:'7px',borderRadius:8,border:'none',background:'#22c55e',color:'#fff',fontWeight:700,cursor:'pointer',fontSize:'0.8rem'}}>Go Live</button>
+          :<button onClick={stop}  style={{flex:1,padding:'7px',borderRadius:8,border:'none',background:'#ef4444',color:'#fff',fontWeight:700,cursor:'pointer',fontSize:'0.8rem'}}>Stop</button>
+        }
+      </div>
+    </div>
+  )
+}
+
 export default function ChatRoom() {
   const {roomSlug}=useParams(), nav=useNavigate(), toast=useToast()
   const token=localStorage.getItem('cgz_token')
 
   const [me,        setMe]       =useState(null)
   const [room,      setRoom]     =useState(null)
+  // roomId = resolved _id once room loads, fallback slug for API calls
+  const roomId = room?._id || roomSlug
   const [messages,  setMsgs]     =useState([])
   const [users,     setUsers]    =useState([])
   const [input,     setInput]    =useState('')
@@ -1924,6 +2014,7 @@ export default function ChatRoom() {
   const [showFriends,setShowFriends]=useState(false)
   const [showPlus,  setShowPlus] =useState(false)
   const [showPaint, setShowPaint]=useState(false)
+  const [showCam,   setShowCam]  =useState(false)
   const [whisperTarget,setWhisper]=useState(null)
   const [showGif,   setShowGif]  =useState(false)
   const [showYT,    setShowYT]   =useState(false)
@@ -1966,8 +2057,14 @@ export default function ChatRoom() {
       fetch(`${API}/api/rooms/${roomSlug}/messages?limit=50`,{headers:{Authorization:`Bearer ${token}`}}).then(r=>r.json()).then(d=>{if(d.messages)setMsgs(d.messages)}).catch(()=>{})
     } catch{setErr('Connection failed.')}
     setLoad(false)
-    connectSocket()
   }
+
+  // Connect socket only after room object is available (so roomId = room._id works)
+  useEffect(()=>{
+    if(!room?._id) return
+    connectSocket()
+    return()=>sockRef.current?.disconnect()
+  },[room?._id])
 
   function connectSocket() {
     sockRef.current?.disconnect()
@@ -2079,7 +2176,7 @@ export default function ChatRoom() {
         </button>
 
         {/* Webcam button */}
-        <HBtn img="/default_images/icons/webcam.svg" title="Webcam" active={false} onClick={e=>e.stopPropagation()}/>
+        <HBtn img="/default_images/icons/webcam.svg" title="Webcam" active={showCam} onClick={e=>{e.stopPropagation();setShowCam(p=>!p)}}/>
 
         {/* Room name - center */}
         <div style={{flex:1,textAlign:'center',minWidth:0}}>
@@ -2224,6 +2321,7 @@ export default function ChatRoom() {
       </div>
 
       {/* OVERLAYS */}
+      {showCam&&<WebcamPanel socket={sockRef.current} roomId={roomId} me={me} onClose={()=>setShowCam(false)}/>}
       {miniCard&&<MiniCard user={miniCard.user} myLevel={myLevel} pos={miniCard.pos} onClose={()=>setMini(null)} onFull={()=>{setProf(miniCard.user);setMini(null)}} onGift={u=>setGiftTgt(u)} socket={sockRef.current} roomId={roomId}/>}
       {profUser&&<ProfileModal user={profUser} myLevel={myLevel} socket={sockRef.current} roomId={roomId} onClose={()=>setProf(null)} onGift={u=>setGiftTgt(u)}/>}
       {giftTarget&&<GiftPanel targetUser={giftTarget} myGold={me?.gold||0} onClose={()=>setGiftTgt(null)} onSent={()=>{setGiftTgt(null);toast?.show('Gift sent! 🎁','gift',3000)}} socket={sockRef.current} roomId={roomId}/>}
