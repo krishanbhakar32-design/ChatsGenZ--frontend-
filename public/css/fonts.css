@@ -1,54 +1,77 @@
-/* fonts for text in chat */
+/* ── ChatsGenZ fonts.css — 30 chat fonts + 30 name fonts ── */
 
-.bfont1 { font-size:15px; font-family: 'Kalam', cursive; line-height:1.5em; }
-.bfont2 { font-size:16px; font-family: 'Signika', sans-serif; } 	
-.bfont3 { font-size:15px; font-family: 'Grandstander', cursive; line-height:1.5em; }
-.bfont4 { font-size:16px; font-family: 'Comic Neue', cursive; line-height:1.2em; }
-.bfont5 { font-size:15px; font-family: 'Quicksand', sans-serif; line-height:1.3em; }
-.bfont6 { font-size:13px; font-family: 'Orbitron', sans-serif; }
-.bfont7 { font-size:13px; font-family: 'lemonada', cursive; }
-.bfont8 { font-size:18px; font-family: 'Grenze Gotisch', cursive; }
-.bfont9 { font-size:14px; font-family: 'Merienda', cursive; line-height:1.6em; }
-.bfont10 { font-size:16px; font-family: 'Amita', cursive; line-height:1.5em; }
-.bfont11 { font-size:16px; font-family: 'Averia Libre', cursive; line-height:1.4em; }
-.bfont12 { font-size:16px; font-family: 'Turret Road', cursive; line-height:1.3em; }
-.bfont13 { font-size:16px; font-family: 'Sansita', sans-serif; line-height:1.2em; }
-.bfont14 { font-size:14px; font-family: 'Comfortaa', cursive; line-height:1.3em; }
+/* ── CHAT MESSAGE FONTS (.bfont1 - .bfont30) ── */
+.bfont1  { font-size:15px;font-family:'Kalam',cursive;line-height:1.5em }
+.bfont2  { font-size:16px;font-family:'Signika',sans-serif }
+.bfont3  { font-size:15px;font-family:'Grandstander',cursive;line-height:1.5em }
+.bfont4  { font-size:16px;font-family:'Comic Neue',cursive;line-height:1.2em }
+.bfont5  { font-size:15px;font-family:'Quicksand',sans-serif;line-height:1.3em }
+.bfont6  { font-size:13px;font-family:'Orbitron',sans-serif }
+.bfont7  { font-size:13px;font-family:'Lemonada',cursive }
+.bfont8  { font-size:18px;font-family:'Grenze Gotisch',cursive }
+.bfont9  { font-size:14px;font-family:'Merienda',cursive;line-height:1.6em }
+.bfont10 { font-size:16px;font-family:'Amita',cursive;line-height:1.5em }
+.bfont11 { font-size:16px;font-family:'Averia Libre',cursive;line-height:1.4em }
+.bfont12 { font-size:16px;font-family:'Turret Road',cursive;line-height:1.3em }
+.bfont13 { font-size:16px;font-family:'Sansita',sans-serif;line-height:1.2em }
+.bfont14 { font-size:14px;font-family:'Comfortaa',cursive;line-height:1.3em }
+.bfont15 { font-size:18px;font-family:'Charm',cursive;line-height:1.2em }
+.bfont16 { font-size:16px;font-family:'Lobster Two',cursive;line-height:1.2em }
+.bfont17 { font-size:16px;font-family:'Pacifico',cursive }
+.bfont18 { font-size:16px;font-family:'Dancing Script',cursive }
+.bfont19 { font-size:16px;font-family:'Righteous',cursive }
+.bfont20 { font-size:16px;font-family:'Fredoka One',cursive }
+.bfont21 { font-size:11px;font-family:'Press Start 2P',cursive }
+.bfont22 { font-size:17px;font-family:'Caveat',cursive }
+.bfont23 { font-size:16px;font-family:'Satisfy',cursive }
+.bfont24 { font-size:16px;font-family:'Indie Flower',cursive }
+.bfont25 { font-size:13px;font-family:'Gloria Hallelujah',cursive }
+.bfont26 { font-size:15px;font-family:'Exo 2',sans-serif }
+.bfont27 { font-size:16px;font-family:'Rajdhani',sans-serif }
+.bfont28 { font-size:15px;font-family:'Josefin Sans',sans-serif }
+.bfont29 { font-size:13px;font-family:'Audiowide',sans-serif }
+.bfont30 { font-size:15px;font-family:'Nunito',sans-serif }
 
+/* ── USERNAME FONTS (.bnfont1 - .bnfont30) ── */
+.bnfont1  { font-size:15px;font-family:'Kalam',cursive;line-height:1.5em }
+.bnfont2  { font-size:16px;font-family:'Signika',sans-serif }
+.bnfont3  { font-size:15px;font-family:'Grandstander',cursive;line-height:1.5em }
+.bnfont4  { font-size:16px;font-family:'Comic Neue',cursive;line-height:1.2em }
+.bnfont5  { font-size:15px;font-family:'Quicksand',sans-serif;line-height:1.3em }
+.bnfont6  { font-size:13px;font-family:'Orbitron',sans-serif }
+.bnfont7  { font-size:13px;font-family:'Lemonada',cursive }
+.bnfont8  { font-size:18px;font-family:'Grenze Gotisch',cursive }
+.bnfont9  { font-size:14px;font-family:'Merienda',cursive;line-height:1.6em }
+.bnfont10 { font-size:16px;font-family:'Amita',cursive;line-height:1.5em }
+.bnfont11 { font-size:16px;font-family:'Averia Libre',cursive;line-height:1.4em }
+.bnfont12 { font-size:16px;font-family:'Turret Road',cursive;line-height:1.3em }
+.bnfont13 { font-size:16px;font-family:'Sansita',sans-serif;line-height:1.2em }
+.bnfont14 { font-size:14px;font-family:'Comfortaa',cursive;line-height:1.3em }
+.bnfont15 { font-size:18px;font-family:'Charm',cursive;line-height:1.2em }
+.bnfont16 { font-size:16px;font-family:'Lobster Two',cursive;line-height:1.2em }
+.bnfont17 { font-size:16px;font-family:'Pacifico',cursive }
+.bnfont18 { font-size:16px;font-family:'Dancing Script',cursive }
+.bnfont19 { font-size:16px;font-family:'Righteous',cursive }
+.bnfont20 { font-size:16px;font-family:'Fredoka One',cursive }
+.bnfont21 { font-size:11px;font-family:'Press Start 2P',cursive }
+.bnfont22 { font-size:17px;font-family:'Caveat',cursive }
+.bnfont23 { font-size:16px;font-family:'Satisfy',cursive }
+.bnfont24 { font-size:16px;font-family:'Indie Flower',cursive }
+.bnfont25 { font-size:13px;font-family:'Gloria Hallelujah',cursive }
+.bnfont26 { font-size:15px;font-family:'Exo 2',sans-serif }
+.bnfont27 { font-size:16px;font-family:'Rajdhani',sans-serif }
+.bnfont28 { font-size:15px;font-family:'Josefin Sans',sans-serif }
+.bnfont29 { font-size:13px;font-family:'Audiowide',sans-serif }
+.bnfont30 { font-size:15px;font-family:'Nunito',sans-serif }
 
-/* fonts for username */
-
-.bnfont1 { font-size:15px; font-family: 'Kalam', cursive; line-height:1.5em; }
-.bnfont2 { font-size:16px; font-family: 'Signika', sans-serif; } 	
-.bnfont3 { font-size:15px; font-family: 'Grandstander', cursive; line-height:1.5em; }
-.bnfont4 { font-size:16px; font-family: 'Comic Neue', cursive; line-height:1.2em; }
-.bnfont5 { font-size:15px; font-family: 'Quicksand', sans-serif; line-height:1.3em; }
-.bnfont6 { font-size:13px; font-family: 'Orbitron', sans-serif; }
-.bnfont7 { font-size:13px; font-family: 'lemonada', cursive; }
-.bnfont8 { font-size:18px; font-family: 'Grenze Gotisch', cursive; }
-.bnfont9 { font-size:14px; font-family: 'Merienda', cursive; line-height:1.6em; }
-.bnfont10 { font-size:16px; font-family: 'Amita', cursive; line-height:1.5em; }
-.bnfont11 { font-size:16px; font-family: 'Averia Libre', cursive; line-height:1.4em; }
-.bnfont12 { font-size:16px; font-family: 'Turret Road', cursive; line-height:1.3em; }
-.bnfont13 { font-size:16px; font-family: 'Sansita', sans-serif; line-height:1.2em; }
-.bnfont14 { font-size:14px; font-family: 'Comfortaa', cursive; line-height:1.3em; }
-.bnfont15 { font-size:18px; font-family: 'Charm', cursive; line-height:1.2em; }
-.bnfont16 { font-size:16px; font-family: 'Lobster Two', cursive; line-height:1.2em; }
-
-
-.cname .bnfont1 { font-size:12px; }
-.cname .bnfont2 { font-size:14px; }
-.cname .bnfont3 { font-size:13px; }
-.cname .bnfont4 { font-size:14px; }
-.cname .bnfont5 { font-size:13px; }
-.cname .bnfont6 { font-size:12px; }
-.cname .bnfont7 { font-size:11px; }
-.cname .bnfont8 { font-size:15px; }
-.cname .bnfont9 { font-size:13px; }
-.cname .bnfont10 { font-size:13px; }
-.cname .bnfont11 { font-size:14px; }
-.cname .bnfont12 { font-size:14px; }
-.cname .bnfont13 { font-size:13px; }
-.cname .bnfont14 { font-size:12px; }
-.cname .bnfont15 { font-size:15px; }
-.cname .bnfont16 { font-size:13px; }
+/* ── USERNAME SMALLER INSIDE .cname (chat username area) ── */
+.cname .bnfont1  { font-size:12px } .cname .bnfont2  { font-size:14px } .cname .bnfont3  { font-size:13px }
+.cname .bnfont4  { font-size:14px } .cname .bnfont5  { font-size:13px } .cname .bnfont6  { font-size:12px }
+.cname .bnfont7  { font-size:11px } .cname .bnfont8  { font-size:15px } .cname .bnfont9  { font-size:13px }
+.cname .bnfont10 { font-size:13px } .cname .bnfont11 { font-size:14px } .cname .bnfont12 { font-size:14px }
+.cname .bnfont13 { font-size:13px } .cname .bnfont14 { font-size:12px } .cname .bnfont15 { font-size:15px }
+.cname .bnfont16 { font-size:13px } .cname .bnfont17 { font-size:13px } .cname .bnfont18 { font-size:14px }
+.cname .bnfont19 { font-size:14px } .cname .bnfont20 { font-size:14px } .cname .bnfont21 { font-size:9px  }
+.cname .bnfont22 { font-size:14px } .cname .bnfont23 { font-size:14px } .cname .bnfont24 { font-size:13px }
+.cname .bnfont25 { font-size:10px } .cname .bnfont26 { font-size:13px } .cname .bnfont27 { font-size:13px }
+.cname .bnfont28 { font-size:12px } .cname .bnfont29 { font-size:11px } .cname .bnfont30 { font-size:13px }
