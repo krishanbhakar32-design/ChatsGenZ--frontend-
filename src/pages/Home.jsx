@@ -7,44 +7,30 @@ export default function Home() {
   const { user, loading } = useAuth()
   const navigate = useNavigate()
 
-  // Auto-login: if user has saved session, go straight to chat
   useEffect(() => {
-    if (!loading && user) {
-      navigate('/chat', { replace: true })
-    }
+    if (!loading && user) navigate('/chat', { replace: true })
   }, [user, loading, navigate])
 
   return (
     <PageLayout seo={{
       title: 'ChatsGenZ — Free Live Chat Rooms | Talk to Strangers Online',
-      description: 'ChatsGenZ is a free live chatting site and stranger chatting site with no registration required. Join free public chat rooms, vip chat, premium chatroom, public cam chat, video call, audio call — make friends, adult chat, secured chat. Next generation chatrooms.',
-      keywords: 'ChatsGenZ, live chatting site, stranger chatting site, no registration, vip chat, premium chatroom, free chatting site, public cam chat, video call chat, audio call chat, quiz room, guest chatroom, friendly chatroom, make friends, date, adult chat, secured chat, next generation chatrooms, fastest growing chat, new chatting site',
+      description: 'ChatsGenZ is a free live chatting site with no registration required. Join free public chat rooms, VIP chat, video call, audio call.',
+      keywords: 'ChatsGenZ, live chatting site, stranger chatting site, no registration, vip chat, premium chatroom, free chatting site',
       canonical: '/',
     }}>
-      {/* ── HERO ── */}
       <section style={{ background: '#fff' }}>
-        <div style={{
-          maxWidth: 1100, margin: '0 auto', padding: '28px 18px 0',
-          display: 'flex', gap: 32, alignItems: 'flex-start', flexWrap: 'wrap',
-        }}>
-          {/* Couple photo */}
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 18px 0', display: 'flex', gap: 32, alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <div className="hero-img-wrap" style={{ width: '100%' }}>
-            <img
-              src="/images/hero-couple.jpg"
-              alt="People chatting on ChatsGenZ free live chat"
+            <img src="/images/hero-couple.jpg" alt="People chatting on ChatsGenZ"
               style={{ width: '100%', borderRadius: 12, display: 'block', objectFit: 'cover', maxHeight: 320 }}
-              onError={e => { e.target.style.display = 'none' }}
-            />
+              onError={e => { e.target.style.display = 'none' }} />
           </div>
-
-          {/* Description */}
           <div style={{ flex: 1, minWidth: 260 }}>
-            <p style={{ fontSize: 'clamp(0.9rem, 2vw, 1rem)', color: '#3c4043', lineHeight: 1.9, margin: 0 }}>
-              Welcome to <strong>ChatsGenZ</strong> — the fastest growing <strong>free live chatting site</strong> and <strong>stranger chatting site</strong> where you can connect with people from all around the world without any registration. Whether you're looking for a <strong>friendly chatroom</strong>, a <strong>guest chatroom</strong>, or a <strong>premium chatroom</strong> with <strong>VIP chat</strong> features, ChatsGenZ has it all completely free. Enjoy <strong>public cam chat</strong>, <strong>video call chat</strong>, and <strong>audio call chat</strong> with real people in real time. Our platform offers <strong>quiz rooms</strong>, virtual gifts, and an XP rank system so you can level up as you chat. This is a <strong>secured chat</strong> environment monitored 24/7 by our moderation team. Whether you want to <strong>make friends</strong>, find someone to <strong>date</strong>, or explore our <strong>adult chat</strong> rooms — ChatsGenZ is your home. Join hundreds of <strong>free chat rooms</strong> organised by language, country, interest, and more. No email. No credit card. No registration needed. This is the <strong>next generation chatroom</strong> experience — built for everyone, free forever.
+            <p style={{ fontSize: 'clamp(0.9rem,2vw,1rem)', color: '#3c4043', lineHeight: 1.9, margin: 0 }}>
+              Welcome to <strong>ChatsGenZ</strong> — the fastest growing <strong>free live chatting site</strong> where you can connect with people from all over the world without registration. Join <strong>free chat rooms</strong>, enjoy <strong>video call chat</strong> and <strong>audio call chat</strong>, send virtual gifts, and level up with our XP rank system. This is a <strong>secured chat</strong> environment monitored 24/7.
             </p>
-
             <div style={{ marginTop: 22 }}>
-              <Link to={user ? "/chat" : "/login"} style={{
+              <Link to={user ? '/chat' : '/login'} style={{
                 display: 'inline-flex', alignItems: 'center', gap: 8,
                 padding: '12px 26px', borderRadius: 9,
                 background: 'linear-gradient(135deg,#1a73e8,#1557b0)',
@@ -58,119 +44,36 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ✅ ADS BOX 1 - META TAG ADS INTEGRATED */}
-        <div style={{ maxWidth: 1100, margin: '24px auto 0', padding: '0 18px' }}>
-          <div data-ad="6a97888e-desktop-banner" 
-               data-site="chatsgenz.vercel.app"
-               data-verification="47e11d14b6bf661cdedf7e887857f84e"
-               style={{
-                 width: '100%', height: 300, background: 'linear-gradient(135deg,#f8f9fa,#e8f0fe)',
-                 borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                 color: '#9aa0a6', fontSize: '1rem', fontWeight: 600, letterSpacing: 1,
-                 boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                 position: 'relative', overflow: 'hidden'
-               }}>
-            <div style={{ textAlign: 'center', zIndex: 2 }}>
-              <i className="fas fa-ad" style={{ fontSize: '48px', marginBottom: '12px', color: '#1a73e8' }} />
-              <div style={{ fontSize: '18px', fontWeight: 700, color: '#202124', marginBottom: '4px' }}>Sponsored</div>
-              <div style={{ fontSize: '14px', color: '#5f6368' }}>Premium Ads Loading...</div>
-            </div>
-          </div>
-        </div>
-
-        {/* WHY SECTION */}
         <div style={{ maxWidth: 1100, margin: '32px auto 0', padding: '0 18px 36px' }}>
-          <h2 style={{
-            fontFamily: 'Outfit,sans-serif', fontWeight: 900,
-            fontSize: 'clamp(1.1rem, 3vw, 1.45rem)', color: '#202124', marginBottom: 16,
-          }}>Why Should You Choose ChatsGenZ?</h2>
-          <div style={{ fontSize: 'clamp(0.875rem, 2vw, 0.95rem)', color: '#3c4043', lineHeight: 1.9 }}>
-            <p style={{ marginBottom: 14 }}>
-              ChatsGenZ is not just another <strong>free chatting site</strong> — it is a fully-featured, <strong>next generation chatroom</strong> platform designed to give you the best online social experience possible. In a world flooded with boring and outdated chat platforms, ChatsGenZ stands out as the <strong>fastest growing new chatting site</strong> trusted by users from over 50 countries worldwide. Whether you are a teenager looking for a <strong>friendly chatroom</strong>, an adult searching for <strong>adult chat</strong> spaces, or simply someone who wants to <strong>make friends</strong> online without spending a single rupee — ChatsGenZ is built exactly for you.
-            </p>
-            <p style={{ marginBottom: 14 }}>
-              One of the biggest reasons people choose ChatsGenZ over other <strong>stranger chatting sites</strong> is that we require <strong>no registration</strong> to get started. You can walk in as a guest, join any public room, and start chatting within seconds. No email verification. No phone number. No credit card. Just click and chat. At the same time, if you do register for a free account, you unlock powerful features like a friends list, private messaging, a personal profile, and our full XP and rank system — where you level up from Guest all the way to Legend just by being active on the platform.
-            </p>
-            <p style={{ marginBottom: 14 }}>
-              ChatsGenZ is home to hundreds of <strong>free chat rooms</strong> organised by language, country, interest, and topic. From Hindi chat to USA chat, from music lovers to sports fans — there is a room for everyone. Our platform also features real-time <strong>public cam chat</strong>, <strong>video call chat</strong>, and <strong>audio call chat</strong> powered by modern WebRTC technology, giving you crystal-clear connections with people around the world. You can also enjoy interactive <strong>quiz rooms</strong>, dice games, and spin-the-wheel rooms where you win gold coins and compete on leaderboards.
-            </p>
-            <p style={{ marginBottom: 0 }}>
-              For those looking for premium experiences, ChatsGenZ offers a <strong>VIP chat</strong> and <strong>premium chatroom</strong> system. VIP members enjoy priority cam slots, extended messaging, special name colours, and exclusive rooms. Our platform is completely <strong>secured chat</strong> — every room is monitored 24/7 by a trained moderation team, and all private messages are encrypted. Whether you want to <strong>date</strong>, <strong>make friends</strong>, or simply pass time in a fun and safe environment, ChatsGenZ is the right place. Join us today — free forever, for everyone.
-            </p>
+          <h2 style={{ fontFamily: 'Outfit,sans-serif', fontWeight: 900, fontSize: 'clamp(1.1rem,3vw,1.45rem)', color: '#202124', marginBottom: 16 }}>
+            Why Choose ChatsGenZ?
+          </h2>
+          <div style={{ fontSize: 'clamp(0.875rem,2vw,0.95rem)', color: '#3c4043', lineHeight: 1.9 }}>
+            <p style={{ marginBottom: 14 }}>ChatsGenZ is not just another chat site — it is a fully-featured <strong>next generation chatroom</strong> platform trusted by users from 50+ countries. No registration needed: join as a guest instantly, or register for free to unlock friends, profiles, and the full XP rank system.</p>
+            <p style={{ marginBottom: 0 }}>Enjoy hundreds of rooms by language, country and interest. Real-time cam chat, video and audio calls, quiz games, dice, spin wheel, virtual gifts — all free, all secured, all moderated 24/7.</p>
           </div>
         </div>
 
-        {/* ✅ ADS BOX 2 - META TAG ADS INTEGRATED */}
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 18px 40px' }}>
-          <div data-ad="6a97888e-desktop-rectangle" 
-               data-site="chatsgenz.vercel.app"
-               data-verification="47e11d14b6bf661cdedf7e887857f84e"
-               style={{
-                 width: '100%', height: 280, background: 'linear-gradient(135deg,#f8f9fa,#e8f0fe)',
-                 borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                 color: '#9aa0a6', fontSize: '1rem', fontWeight: 600, letterSpacing: 1,
-                 boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                 position: 'relative', overflow: 'hidden'
-               }}>
-            <div style={{ textAlign: 'center', zIndex: 2 }}>
-              <i className="fas fa-bullhorn" style={{ fontSize: '48px', marginBottom: '12px', color: '#1a73e8' }} />
-              <div style={{ fontSize: '18px', fontWeight: 700, color: '#202124', marginBottom: '4px' }}>Sponsored Content</div>
-              <div style={{ fontSize: '14px', color: '#5f6368' }}>High CPM Ads Loading...</div>
-            </div>
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 18px 48px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 16 }}>
+            {[
+              { icon: 'fi-sr-comment-alt', title: 'Live Chat Rooms', desc: 'Hundreds of rooms by language, country & interest' },
+              { icon: 'fi-sr-video-camera', title: 'Video & Audio Calls', desc: 'Crystal clear WebRTC powered calls' },
+              { icon: 'fi-sr-gift', title: 'Virtual Gifts', desc: 'Send gifts and earn gold coins' },
+              { icon: 'fi-sr-dice', title: 'Games & Quiz', desc: 'Dice, spin wheel, and trivia quizzes' },
+              { icon: 'fi-sr-shield-check', title: 'Secured Chat', desc: 'Monitored 24/7 by trained moderators' },
+              { icon: 'fi-sr-user', title: 'No Registration', desc: 'Join as a guest instantly — no email needed' },
+            ].map((f, i) => (
+              <div key={i} style={{ background: 'linear-gradient(135deg,#f8f9fa,#e8f0fe)', borderRadius: 12, padding: '20px 18px', textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,.06)', border: '1px solid #e8eaed' }}>
+                <i className={`fi ${f.icon}`} style={{ fontSize: 28, color: '#1a73e8', display: 'block', marginBottom: 10 }} />
+                <div style={{ fontWeight: 800, color: '#202124', marginBottom: 6, fontFamily: 'Outfit,sans-serif' }}>{f.title}</div>
+                <div style={{ fontSize: '0.82rem', color: '#5f6368', lineHeight: 1.5 }}>{f.desc}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
-
-      {/* ✅ ADS JAVASCRIPT LOADER */}
-      <script>
-        (function() {
-          // Wait for DOM ready
-          if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initAds);
-          } else {
-            initAds();
-          }
-          
-          function initAds() {
-            const adContainers = document.querySelectorAll('[data-ad]');
-            adContainers.forEach((container, index) => {
-              const adId = container.getAttribute('data-ad');
-              const site = container.getAttribute('data-site');
-              const verification = container.getAttribute('data-verification');
-              
-              // Create responsive iframe
-              const iframe = document.createElement('iframe');
-              iframe.src = `https://ads.6a97888e.com/${adId}?site=${site}&verify=${verification}&ref=home-${index + 1}`;
-              iframe.width = '100%';
-              iframe.height = '100%';
-              iframe.frameBorder = '0';
-              iframe.scrolling = 'no';
-              iframe.allow = 'autoplay; encrypted-media; fullscreen';
-              iframe.style.borderRadius = '12px';
-              iframe.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)';
-              iframe.loading = 'lazy';
-              
-              // Replace content with iframe
-              container.innerHTML = '';
-              container.appendChild(iframe);
-            });
-          }
-        })();
-      </script>
-
-      <style>{`
-        @media (min-width: 700px) {
-          .hero-img-wrap { flex: 0 0 400px !important; width: 400px !important; }
-        }
-        
-        /* Mobile Responsive Ads */
-        @media (max-width: 768px) {
-          [data-ad] {
-            height: 250px !important;
-            margin: 12px 0 !important;
-          }
-        }
-      `}</style>
+      <style>{`@media(min-width:700px){.hero-img-wrap{flex:0 0 400px!important;width:400px!important}}`}</style>
     </PageLayout>
   )
 }
