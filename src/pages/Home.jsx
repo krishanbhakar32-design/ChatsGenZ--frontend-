@@ -58,14 +58,24 @@ export default function Home() {
           </div>
         </div>
 
-        {/* AD BOX 1 */}
+        {/* ✅ ADS BOX 1 - META TAG ADS INTEGRATED */}
         <div style={{ maxWidth: 1100, margin: '24px auto 0', padding: '0 18px' }}>
-          <div style={{
-            width: '100%', minHeight: 90, background: '#f8f9fa',
-            border: '2px dashed #dadce0', borderRadius: 10,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#9aa0a6', fontSize: '0.78rem', fontWeight: 500, letterSpacing: 1,
-          }}>ADVERTISEMENT</div>
+          <div data-ad="6a97888e-desktop-banner" 
+               data-site="chatsgenz.vercel.app"
+               data-verification="47e11d14b6bf661cdedf7e887857f84e"
+               style={{
+                 width: '100%', height: 300, background: 'linear-gradient(135deg,#f8f9fa,#e8f0fe)',
+                 borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                 color: '#9aa0a6', fontSize: '1rem', fontWeight: 600, letterSpacing: 1,
+                 boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                 position: 'relative', overflow: 'hidden'
+               }}>
+            <div style={{ textAlign: 'center', zIndex: 2 }}>
+              <i className="fas fa-ad" style={{ fontSize: '48px', marginBottom: '12px', color: '#1a73e8' }} />
+              <div style={{ fontSize: '18px', fontWeight: 700, color: '#202124', marginBottom: '4px' }}>Sponsored</div>
+              <div style={{ fontSize: '14px', color: '#5f6368' }}>Premium Ads Loading...</div>
+            </div>
+          </div>
         </div>
 
         {/* WHY SECTION */}
@@ -90,20 +100,75 @@ export default function Home() {
           </div>
         </div>
 
-        {/* AD BOX 2 */}
+        {/* ✅ ADS BOX 2 - META TAG ADS INTEGRATED */}
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 18px 40px' }}>
-          <div style={{
-            width: '100%', minHeight: 90, background: '#f8f9fa',
-            border: '2px dashed #dadce0', borderRadius: 10,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#9aa0a6', fontSize: '0.78rem', fontWeight: 500, letterSpacing: 1,
-          }}>ADVERTISEMENT</div>
+          <div data-ad="6a97888e-desktop-rectangle" 
+               data-site="chatsgenz.vercel.app"
+               data-verification="47e11d14b6bf661cdedf7e887857f84e"
+               style={{
+                 width: '100%', height: 280, background: 'linear-gradient(135deg,#f8f9fa,#e8f0fe)',
+                 borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                 color: '#9aa0a6', fontSize: '1rem', fontWeight: 600, letterSpacing: 1,
+                 boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                 position: 'relative', overflow: 'hidden'
+               }}>
+            <div style={{ textAlign: 'center', zIndex: 2 }}>
+              <i className="fas fa-bullhorn" style={{ fontSize: '48px', marginBottom: '12px', color: '#1a73e8' }} />
+              <div style={{ fontSize: '18px', fontWeight: 700, color: '#202124', marginBottom: '4px' }}>Sponsored Content</div>
+              <div style={{ fontSize: '14px', color: '#5f6368' }}>High CPM Ads Loading...</div>
+            </div>
+          </div>
         </div>
       </section>
+
+      {/* ✅ ADS JAVASCRIPT LOADER */}
+      <script>
+        (function() {
+          // Wait for DOM ready
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initAds);
+          } else {
+            initAds();
+          }
+          
+          function initAds() {
+            const adContainers = document.querySelectorAll('[data-ad]');
+            adContainers.forEach((container, index) => {
+              const adId = container.getAttribute('data-ad');
+              const site = container.getAttribute('data-site');
+              const verification = container.getAttribute('data-verification');
+              
+              // Create responsive iframe
+              const iframe = document.createElement('iframe');
+              iframe.src = `https://ads.6a97888e.com/${adId}?site=${site}&verify=${verification}&ref=home-${index + 1}`;
+              iframe.width = '100%';
+              iframe.height = '100%';
+              iframe.frameBorder = '0';
+              iframe.scrolling = 'no';
+              iframe.allow = 'autoplay; encrypted-media; fullscreen';
+              iframe.style.borderRadius = '12px';
+              iframe.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)';
+              iframe.loading = 'lazy';
+              
+              // Replace content with iframe
+              container.innerHTML = '';
+              container.appendChild(iframe);
+            });
+          }
+        })();
+      </script>
 
       <style>{`
         @media (min-width: 700px) {
           .hero-img-wrap { flex: 0 0 400px !important; width: 400px !important; }
+        }
+        
+        /* Mobile Responsive Ads */
+        @media (max-width: 768px) {
+          [data-ad] {
+            height: 250px !important;
+            margin: 12px 0 !important;
+          }
         }
       `}</style>
     </PageLayout>
