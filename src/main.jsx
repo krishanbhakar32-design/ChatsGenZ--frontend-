@@ -1,3 +1,6 @@
+// ============================================================
+// main.jsx — Application entry point
+// ============================================================
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
@@ -11,7 +14,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <HelmetProvider>
       <BrowserRouter>
-        {/* BUG FIX: AuthProvider was defined but never wrapped the app */}
         <AuthProvider>
           <App />
           <NotificationContainer />
