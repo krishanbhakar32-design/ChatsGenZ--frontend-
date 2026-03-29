@@ -60,10 +60,10 @@ function RightSidebar({users,myLevel,onUserClick,onWhisper,onClose,tObj}) {
     })
 
   const TABS=[
-    {id:'users',   icon:'fi-sr-users',        title:'Users'},
-    {id:'friends', icon:'fi-sr-user',          title:'Friends'},
-    {id:'staff',   icon:'fi-sr-shield-check',  title:'Staff'},
-    {id:'search',  icon:'fi-sr-search',        title:'Search'},
+    {id:'users',   icon:'fi-sr-users-alt',      title:'Users'},
+    {id:'friends', icon:'fi-sr-user-trust',      title:'Friends'},
+    {id:'staff',   icon:'fi-sr-user-shield',     title:'Staff'},
+    {id:'search',  icon:'fi-sr-member-search',   title:'Search'},
   ]
 
   return (
