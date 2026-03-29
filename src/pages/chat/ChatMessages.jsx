@@ -4,7 +4,7 @@
 import { useState, useRef } from 'react'
 import { API, R, RL, GBR, SYS_CFG, SYSTEM_SENDER, resolveNameColor } from './chatConstants.js'
 import { RIcon } from './ChatIcons.jsx'
-import { SpotifyEmbed, isSpotifyUrl } from '../../components/SpotigyPlayer.jsx'
+import { SpotifyEmbed, isSpotifyUrl } from '../../components/SpotifyPlayer.jsx'
 
 // re-export these for ChatRoom import convenience
 export { RIcon }
