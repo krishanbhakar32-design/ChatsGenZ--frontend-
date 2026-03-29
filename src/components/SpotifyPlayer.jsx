@@ -1,21 +1,24 @@
 // ============================================================
-// SpotifyPlayer.jsx — Spotify message renderer
-// Renders a Spotify embed card inside the chat when a user
-// shares a Spotify link via the "+" menu → Spotify button.
+// SpotifyPlayer.jsx — Spotify embed renderer for chat messages
 //
 // FRONTEND-READY:
-//   • Parses open.spotify.com links for track/playlist/album/artist
+//   • Parses open.spotify.com URLs and spotify: URIs
 //   • Renders the official Spotify iframe embed widget
-//   • No backend required — works with public Spotify embeds
-//   • Ready to be extended with Spotify Web API (OAuth) later
+//   • No backend required — uses public Spotify embeds
+//   • Extend later with Spotify Web API (OAuth) if needed
+//
+// Exports:
+//   SpotifyEmbed   — iframe embed card, used in ChatMessages
+//   parseSpotifyUrl — parse URL → { type, id } or null
+//   isSpotifyUrl   — boolean quick-check for message renderer
 // ============================================================
 
 /**
  * SpotifyEmbed
- * Renders a Spotify embed inside a chat message bubble.
+ * Renders a Spotify embed card inside a chat message bubble.
  *
- * @param {string}  url     — Full Spotify URL, e.g. https://open.spotify.com/track/ID
- * @param {boolean} compact — If true, renders a compact 80px track bar
+ * @param {string}  url     — e.g. https://open.spotify.com/track/4iV5W9uYEdYUVa79Axb7Rh
+ * @param {boolean} compact — true → 80px track bar, false → 152px player (default)
  */
 export function SpotifyEmbed({ url, compact = false }) {
   const parsed = parseSpotifyUrl(url)
@@ -24,7 +27,8 @@ export function SpotifyEmbed({ url, compact = false }) {
   const { type, id } = parsed
   const embedUrl = `https://open.spotify.com/embed/${type}/${id}?utm_source=generator&theme=0`
 
-  // track → compact: 80px | full: 152px   •   playlist/album/artist → 352px
+  // track  → compact: 80px | full: 152px
+  // others (playlist / album / artist) → 352px
   const height = type === 'track' ? (compact ? 80 : 152) : 352
 
   return (
@@ -53,6 +57,7 @@ export function SpotifyEmbed({ url, compact = false }) {
  * parseSpotifyUrl
  * Accepts open.spotify.com URLs and spotify: URIs.
  * Returns { type, id } or null.
+ * Supported types: track | playlist | album | artist
  */
 export function parseSpotifyUrl(raw) {
   if (!raw || typeof raw !== 'string') return null
@@ -75,12 +80,12 @@ export function parseSpotifyUrl(raw) {
 
 /**
  * isSpotifyUrl
- * Quick boolean check — used by the message renderer (ChatMessages.jsx)
- * to detect whether a message content should render as a Spotify embed.
+ * Quick boolean check used by ChatMessages to decide
+ * whether to render a SpotifyEmbed instead of plain text.
  */
 export function isSpotifyUrl(url) {
   return parseSpotifyUrl(url) !== null
 }
 
-// Legacy default export — superseded by SpotifyEmbedPanel inline in ChatRoom.jsx
-export default function SpotigyPlayer() { return null }
+// Default export kept for any legacy reference
+export default SpotifyEmbed
