@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Header from '../components/Header.jsx'
 import Footer from '../components/Footer.jsx'
 import ScrollToTop from '../components/ScrollToTop.jsx'
@@ -6,6 +6,11 @@ import ScrollToTop from '../components/ScrollToTop.jsx'
 const API = import.meta.env.VITE_API_URL || 'https://chatsgenz-backend-production.up.railway.app'
 
 function Overlay({ onClose, children }) {
+  useEffect(() => {
+    const timer = setTimeout(() => setShowVideoAd(true), 4000)
+    return () => clearTimeout(timer)
+  }, [])
+
   return (
     <div onClick={onClose} style={{ position:'fixed',inset:0,zIndex:1000,background:'rgba(8,14,26,.85)',backdropFilter:'blur(10px)',display:'flex',alignItems:'center',justifyContent:'center',padding:16 }}>
       <div onClick={e=>e.stopPropagation()} style={{ background:'#fff',borderRadius:20,width:'100%',maxWidth:430,maxHeight:'94vh',overflowY:'auto',boxShadow:'0 28px 72px rgba(0,0,0,.5)' }}>
@@ -33,6 +38,7 @@ function FW({ icon, children }) {
 }
 
 function PwdField({ value, onChange, placeholder }) {
+  const [showVideoAd, setShowVideoAd] = useState(false)
   const [show, setShow] = useState(false)
   return (
     <div style={{ position:'relative' }}>
@@ -167,7 +173,22 @@ function LoginModal({ onClose }) {
         </div>}
         {step==='otp'&&<OTPStep {...otpData} onClose={onClose}/>}
       </div>
-    </Overlay>
+    
+        {/* Video Ad — loads after 4 seconds, never blocks buttons */}
+        {showVideoAd && (
+          <div style={{ textAlign: 'center', padding: '16px 0 8px', borderTop: '1px solid #f3f4f6', marginTop: 8 }}>
+            <script async type="application/javascript" src="https://a.magsrv.com/ad-provider.js"></script>
+            <ins className="eas6a97888e31"
+              data-zoneid="5884708"
+              data-keywords="chat,free chat,live chat"
+              data-sub="123450000"
+              data-block-ad-types="0"
+              data-ex_av="name"
+            ></ins>
+            <script dangerouslySetInnerHTML={{__html:`(AdProvider = window.AdProvider || []).push({"serve": {}})`}}></script>
+          </div>
+        )}
+      </Overlay>
   )
 }
 
