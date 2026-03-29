@@ -41,6 +41,13 @@ export default function Home() {
                 <i className="fi fi-sr-comment-alt" /> Start Chatting Free
               </Link>
             </div>
+
+            {/* Ad 2 - Below Start Chatting button */}
+            <div style={{ marginTop: 24 }}>
+              <script async type="application/javascript" src="https://a.magsrv.com/ad-provider.js"></script>
+              <ins className="eas6a97888e17" data-zoneid="5884718" data-keywords="keywords" data-sub="123450000" data-block-ad-types="0" data-ex_av="name"></ins>
+              <script dangerouslySetInnerHTML={{ __html: `(AdProvider = window.AdProvider || []).push({"serve": {}});` }} />
+            </div>
           </div>
         </div>
 
@@ -49,8 +56,25 @@ export default function Home() {
             Why Choose ChatsGenZ?
           </h2>
           <div style={{ fontSize: 'clamp(0.875rem,2vw,0.95rem)', color: '#3c4043', lineHeight: 1.9 }}>
-            <p style={{ marginBottom: 14 }}>ChatsGenZ is not just another chat site — it is a fully-featured <strong>next generation chatroom</strong> platform trusted by users from 50+ countries. No registration needed: join as a guest instantly, or register for free to unlock friends, profiles, and the full XP rank system.</p>
-            <p style={{ marginBottom: 0 }}>Enjoy hundreds of rooms by language, country and interest. Real-time cam chat, video and audio calls, quiz games, dice, spin wheel, virtual gifts — all free, all secured, all moderated 24/7.</p>
+            <p style={{ marginBottom: 14 }}>
+              ChatsGenZ is not just another <strong>chat site</strong> — it is a fully-featured <strong>next generation chatroom platform</strong> trusted by users from <strong>50+ countries worldwide</strong>. Unlike traditional chat platforms, ChatsGenZ offers <strong>instant access with no registration required</strong>. You can join as a <strong>guest user immediately</strong>, or register for free to unlock advanced features including <strong>friend lists</strong>, <strong>personalized profiles</strong>, and our comprehensive <strong>XP rank system</strong>.
+            </p>
+            <p style={{ marginBottom: 14 }}>
+              Our platform features <strong>hundreds of chat rooms</strong> organized by <strong>language</strong>, <strong>country</strong>, and <strong>special interests</strong>, ensuring you find the perfect community for meaningful conversations. Whether you're looking for casual chat, <strong>language practice</strong>, or making new international friends, ChatsGenZ has a room for you. Experience <strong>real-time webcam chat</strong>, <strong>high-quality video calls</strong>, and <strong>crystal-clear audio calls</strong> powered by advanced <strong>WebRTC technology</strong>.
+            </p>
+            <p style={{ marginBottom: 14 }}>
+              Make your conversations more engaging with our <strong>interactive features</strong>: play <strong>quiz games</strong>, roll <strong>dice</strong>, spin the <strong>wheel of fortune</strong>, and send <strong>virtual gifts</strong> to express yourself. Our <strong>gold coin economy</strong> and <strong>XP progression system</strong> reward active participation, allowing you to <strong>level up your rank</strong>, unlock <strong>VIP features</strong>, and earn <strong>exclusive badges</strong>.
+            </p>
+            <p style={{ marginBottom: 0 }}>
+              Safety is our top priority. Every chat room is <strong>monitored 24/7</strong> by our <strong>trained moderation team</strong>, ensuring a <strong>family-friendly</strong> and <strong>harassment-free environment</strong>. Our advanced <strong>security systems</strong> protect your privacy, while <strong>automated filters</strong> block inappropriate content before it reaches your screen. Join thousands of users who trust ChatsGenZ as their go-to platform for <strong>safe</strong>, <strong>fun</strong>, and <strong>meaningful online connections</strong>.
+            </p>
+          </div>
+
+          {/* Ad 1 - Footer */}
+          <div style={{ marginTop: 32, textAlign: 'center' }}>
+            <script async type="application/javascript" src="https://a.magsrv.com/ad-provider.js"></script>
+            <ins className="eas6a97888e17" data-zoneid="5884718" data-keywords="keywords" data-sub="123450000" data-block-ad-types="0" data-ex_av="name"></ins>
+            <script dangerouslySetInnerHTML={{ __html: `(AdProvider = window.AdProvider || []).push({"serve": {}});` }} />
           </div>
         </div>
 
