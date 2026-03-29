@@ -1,21 +1,45 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import PageLayout from '../components/PageLayout.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
+import { VastVideoAd, DesiChatCTA } from '../components/PromoComponents.jsx'
 
-// Ad component — renders MagSrv ad zone safely, never blocks buttons
+/* ─── Anti-bot MagSrv Ad Loader ─────────────────────────────────────────── */
+let magScriptLoaded = false
+function loadMagScript(cb) {
+  if (magScriptLoaded) { cb(); return }
+  const isBotLike = (
+    navigator.webdriver ||
+    !navigator.languages?.length ||
+    window.outerWidth === 0 ||
+    /HeadlessChrome|PhantomJS|Selenium/.test(navigator.userAgent)
+  )
+  if (isBotLike) return
+  const s = document.createElement('script')
+  s.src = 'https://a.magsrv.com/ad-provider.js'
+  s.async = true
+  s.onload = () => { magScriptLoaded = true; cb() }
+  document.head.appendChild(s)
+}
+
 function MagAd({ zoneId, className, style = {} }) {
+  const ref = useRef(null)
+  useEffect(() => {
+    let cancelled = false
+    const delay = 600 + Math.random() * 400
+    const t = setTimeout(() => {
+      if (cancelled || !ref.current) return
+      loadMagScript(() => {
+        if (cancelled) return
+        window.AdProvider = window.AdProvider || []
+        window.AdProvider.push({ serve: {} })
+      })
+    }, delay)
+    return () => { cancelled = true; clearTimeout(t) }
+  }, [zoneId])
   return (
-    <div style={{ textAlign: 'center', margin: '0 auto', ...style }}>
-      <script async type="application/javascript" src="https://a.magsrv.com/ad-provider.js"></script>
-      <ins className={className || 'eas6a97888e17'}
-        data-zoneid={zoneId}
-        data-keywords="chat,free chat,live chat,chatroom"
-        data-sub="123450000"
-        data-block-ad-types="0"
-        data-ex_av="name"
-      ></ins>
-      <script dangerouslySetInnerHTML={{__html:`(AdProvider = window.AdProvider || []).push({"serve": {}})`}}></script>
+    <div ref={ref} style={{ textAlign: 'center', margin: '0 auto', ...style }}>
+      <ins className={className} data-zoneid={zoneId} style={{ display: 'block' }}></ins>
     </div>
   )
 }
@@ -59,11 +83,18 @@ export default function Home() {
                 <i className="fi fi-sr-comment-alt" /> Start Chatting Free
               </Link>
             </div>
-            {/* Ad zone 1 — below Start Chatting button */}
+            {/* Ad zone 5884716 — below Start Chatting Now button */}
             <div style={{ marginTop: 18 }}>
-              <MagAd zoneId="5884718" className="eas6a97888e17" />
+              <MagAd zoneId="5884716" className="eas6a97888e20" />
             </div>
+            {/* Desi Chat CTA */}
+            <DesiChatCTA variant="hero" />
           </div>
+        </div>
+
+        {/* VAST Video Ad — full-width below hero */}
+        <div style={{ maxWidth: 1100, margin: '28px auto 0', padding: '0 18px' }}>
+          <VastVideoAd />
         </div>
 
         {/* Why Choose ChatsGenZ — 450 words with keywords */}
