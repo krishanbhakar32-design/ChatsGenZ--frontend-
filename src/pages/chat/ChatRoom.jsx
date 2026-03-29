@@ -377,7 +377,7 @@ export default function ChatRoom() {
 
         {/* Right icons - using SVGs from public folder */}
         <div style={{position:'relative'}}>
-          <HBtn img="/default_images/icons/comment.svg" title="Messages" badge={notif.dm} active={showDM} onClick={e=>{e.stopPropagation();setShowDM(p=>!p);setShowNotif(false)}}/>
+          <HBtn icon="fi-ss-envelope" title="Messages" badge={notif.dm} active={showDM} onClick={e=>{e.stopPropagation();setShowDM(p=>!p);setShowNotif(false)}}/>
           {showDM&&<DMPanel me={me} socket={sockRef.current} onClose={()=>setShowDM(false)} onCount={n=>setNotif(p=>({...p,dm:n}))}/>}
         </div>
 
@@ -387,7 +387,7 @@ export default function ChatRoom() {
         </div>
 
         <div style={{position:'relative'}}>
-          <HBtn img="/default_images/icons/congratulation.svg" title="Notifications" badge={notif.notif} active={showNotif} onClick={e=>{e.stopPropagation();setShowNotif(p=>!p);setShowDM(false)}}/>
+          <HBtn icon="fi-ss-bell" title="Notifications" badge={notif.notif} active={showNotif} onClick={e=>{e.stopPropagation();setShowNotif(p=>!p);setShowDM(false)}}/>
           {showNotif&&<NotifPanel onClose={()=>setShowNotif(false)} onCount={n=>setNotif(p=>({...p,notif:n}))}/>}
         </div>
 
