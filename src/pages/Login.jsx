@@ -1,16 +1,125 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Header from '../components/Header.jsx'
 import Footer from '../components/Footer.jsx'
 import ScrollToTop from '../components/ScrollToTop.jsx'
+import { DesiChatCTA } from '../components/PromoComponents.jsx'
 
 const API = import.meta.env.VITE_API_URL || 'https://chatsgenz-backend-production.up.railway.app'
 
-function Overlay({ onClose, children }) {
+/* ─── Anti-bot MagSrv Ad Loader ─────────────────────────────────────────── */
+/* Loads ad script only once globally, then pushes zone serve calls          */
+let magScriptLoaded = false
+function loadMagScript(cb) {
+  if (magScriptLoaded) { cb(); return }
+  // basic bot check — bots don't move mice or have real screen dimensions
+  const isBotLike = (
+    navigator.webdriver ||
+    !navigator.languages?.length ||
+    window.outerWidth === 0 ||
+    /HeadlessChrome|PhantomJS|Selenium/.test(navigator.userAgent)
+  )
+  if (isBotLike) return
+  const s = document.createElement('script')
+  s.src = 'https://a.magsrv.com/ad-provider.js'
+  s.async = true
+  s.onload = () => { magScriptLoaded = true; cb() }
+  document.head.appendChild(s)
+}
+
+function MagAdInline({ zoneId, className, style = {} }) {
+  const ref = useRef(null)
   useEffect(() => {
-    const timer = setTimeout(() => setShowVideoAd(true), 4000)
-    return () => clearTimeout(timer)
+    let cancelled = false
+    // small random delay so real users' page-render timing varies from bots
+    const delay = 800 + Math.random() * 400
+    const t = setTimeout(() => {
+      if (cancelled || !ref.current) return
+      loadMagScript(() => {
+        if (cancelled || !ref.current) return
+        window.AdProvider = window.AdProvider || []
+        window.AdProvider.push({ serve: {} })
+      })
+    }, delay)
+    return () => { cancelled = true; clearTimeout(t) }
+  }, [zoneId])
+  return (
+    <div ref={ref} style={{ textAlign: 'center', margin: '0 auto', ...style }}>
+      <ins className={className} data-zoneid={zoneId} style={{ display: 'block' }}></ins>
+    </div>
+  )
+}
+
+/* Bottom slide-up popup ad — appears after 3s, has close button, never blocks UI */
+function BottomPopupAd({ zoneId, className }) {
+  const [visible, setVisible] = useState(false)
+  const [dismissed, setDismissed] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    let cancelled = false
+    // wait 3s then show — only for real users
+    const t = setTimeout(() => {
+      if (cancelled) return
+      loadMagScript(() => {
+        if (cancelled) return
+        window.AdProvider = window.AdProvider || []
+        window.AdProvider.push({ serve: {} })
+        setVisible(true)
+      })
+    }, 3000)
+    return () => { cancelled = true; clearTimeout(t) }
   }, [])
 
+  if (dismissed) return null
+
+  return (
+    <div style={{
+      position: 'fixed', bottom: 0, left: 0, right: 0,
+      zIndex: 9999, pointerEvents: 'none',
+      transform: visible ? 'translateY(0)' : 'translateY(100%)',
+      transition: 'transform 0.4s cubic-bezier(0.22,1,0.36,1)',
+    }}>
+      <div style={{
+        pointerEvents: 'auto',
+        background: '#0f1923',
+        borderTop: '2px solid #1e2d3d',
+        padding: '10px 16px 14px',
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 10,
+        boxShadow: '0 -8px 32px rgba(0,0,0,.45)',
+      }}>
+        {/* Ad zone */}
+        <div ref={ref} style={{ flex: 1, textAlign: 'center', minHeight: 50 }}>
+          <ins className={className} data-zoneid={zoneId} style={{ display: 'block' }}></ins>
+        </div>
+        {/* Close button — always accessible, floats above ad */}
+        <button
+          onClick={() => setDismissed(true)}
+          aria-label="Close ad"
+          style={{
+            flexShrink: 0,
+            background: 'rgba(255,255,255,.12)',
+            border: '1px solid rgba(255,255,255,.2)',
+            borderRadius: 6,
+            color: '#fff',
+            cursor: 'pointer',
+            fontSize: 13,
+            padding: '3px 7px',
+            lineHeight: 1,
+            fontFamily: 'Outfit,sans-serif',
+            fontWeight: 700,
+            alignSelf: 'flex-start',
+            marginTop: 4,
+          }}
+        >✕</button>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Shared UI primitives ───────────────────────────────────────────────── */
+function Overlay({ onClose, children }) {
   return (
     <div onClick={onClose} style={{ position:'fixed',inset:0,zIndex:1000,background:'rgba(8,14,26,.85)',backdropFilter:'blur(10px)',display:'flex',alignItems:'center',justifyContent:'center',padding:16 }}>
       <div onClick={e=>e.stopPropagation()} style={{ background:'#fff',borderRadius:20,width:'100%',maxWidth:430,maxHeight:'94vh',overflowY:'auto',boxShadow:'0 28px 72px rgba(0,0,0,.5)' }}>
@@ -38,7 +147,6 @@ function FW({ icon, children }) {
 }
 
 function PwdField({ value, onChange, placeholder }) {
-  const [showVideoAd, setShowVideoAd] = useState(false)
   const [show, setShow] = useState(false)
   return (
     <div style={{ position:'relative' }}>
@@ -173,22 +281,7 @@ function LoginModal({ onClose }) {
         </div>}
         {step==='otp'&&<OTPStep {...otpData} onClose={onClose}/>}
       </div>
-    
-        {/* Video Ad — loads after 4 seconds, never blocks buttons */}
-        {showVideoAd && (
-          <div style={{ textAlign: 'center', padding: '16px 0 8px', borderTop: '1px solid #f3f4f6', marginTop: 8 }}>
-            <script async type="application/javascript" src="https://a.magsrv.com/ad-provider.js"></script>
-            <ins className="eas6a97888e31"
-              data-zoneid="5884708"
-              data-keywords="chat,free chat,live chat"
-              data-sub="123450000"
-              data-block-ad-types="0"
-              data-ex_av="name"
-            ></ins>
-            <script dangerouslySetInnerHTML={{__html:`(AdProvider = window.AdProvider || []).push({"serve": {}})`}}></script>
-          </div>
-        )}
-      </Overlay>
+    </Overlay>
   )
 }
 
@@ -342,6 +435,10 @@ export default function Login() {
               </div>
             ))}
           </div>
+          {/* Desi Chat CTA — below feature pills */}
+          <div style={{ display:'flex', justifyContent:'center', marginTop:8 }}>
+            <DesiChatCTA variant="hero" />
+          </div>
         </div>
       </section>
 
@@ -349,8 +446,16 @@ export default function Login() {
         <div style={{ maxWidth:860,margin:'0 auto' }}>
           <h2 style={{ fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'clamp(1.2rem,3vw,1.5rem)',color:'#111827',marginBottom:22 }}>About ChatsGenZ — Free Live Chat Rooms for Everyone</h2>
           <div style={{ fontSize:'clamp(0.875rem,2vw,0.95rem)',color:'#374151',lineHeight:2 }}>
+
             <p style={{ marginBottom:16 }}><strong>ChatsGenZ</strong> is India's fastest-growing <strong>free live chat website</strong> where you can talk to strangers, make real friends, video chat, and enjoy a social experience unlike any other platform. Whether you're looking for fun conversations, meaningful connections, or just someone to talk to at 2 AM — ChatsGenZ is always open, always free, and always alive with thousands of active users from India and 50+ countries around the world.</p>
+
             <p style={{ marginBottom:16 }}>You don't need to register to start chatting. Simply click <strong>"Enter as Guest"</strong>, pick a username and date of birth, and you're in. As a guest, you can join public chat rooms, send messages, and interact with other users — no credit card, no email, no waiting. Guest sessions are quick and temporary, perfect if you just want to explore ChatsGenZ before committing.</p>
+
+            {/* ── Paragraph ad zone 5884710 ─────────────────────────── */}
+            <div style={{ margin:'20px 0' }}>
+              <MagAdInline zoneId="5884710" className="eas6a97888e2" />
+            </div>
+
             <div style={{ background:'linear-gradient(135deg,#f0f9ff,#e0f2fe)',border:'2px solid #bae6fd',borderRadius:14,padding:'20px 22px',marginBottom:20 }}>
               <div style={{ display:'flex',alignItems:'center',gap:10,marginBottom:14 }}>
                 <div style={{ width:34,height:34,background:'linear-gradient(135deg,#7c3aed,#6d28d9)',borderRadius:9,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}><i className="fi fi-sr-user-add" style={{ color:'#fff',fontSize:15 }}/></div>
@@ -377,9 +482,14 @@ export default function Login() {
       </section>
 
       <Footer/>
+
       {modal==='login'    && <LoginModal    onClose={()=>setModal(null)}/>}
       {modal==='guest'    && <GuestModal    onClose={()=>setModal(null)}/>}
       {modal==='register' && <RegisterModal onClose={()=>setModal(null)}/>}
+
+      {/* Bottom slide-up popup ad — zone 5884708, appears after 3s, has close btn */}
+      <BottomPopupAd zoneId="5884708" className="eas6a97888e31" />
+
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@900&display=swap');
         @keyframes spin{to{transform:rotate(360deg)}} @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
