@@ -8,7 +8,6 @@ import { API, R, GBR, STATUSES } from './chatConstants.js'
 import { THEMES } from '../../components/StyleModal.jsx'
 import { RIcon, HBtn, FBtn } from './ChatIcons.jsx'
 import { Sounds } from '../../utils/sounds.js'
-import { DesiChatCTA } from '../../components/PromoComponents.jsx'
 
 const SOLID_COLORS = [
   '#ff3333','#ff6633','#ff9933','#ffcc33','#cccc00','#99cc00','#59b300','#829356',
@@ -459,7 +458,7 @@ function AvatarDropdown({me,status,setStatus,onLeave,socket,onOpenSettings,onOpe
           <div>
             {[
               {icon:'fi-sr-user',            label:'My Profile',   color:'#a78bfa',fn:()=>{onOpenProfile?.();setOpen(false)}},
-              {icon:'fi-sr-settings-sliders', label:'Chat Options', color:'#60a5fa',fn:()=>{onOpenSettings?.();setOpen(false)}},
+              {icon:'fi-sr-settings-sliders', label:'Chat Options', chevron:true, color:'#60a5fa',fn:()=>{onOpenSettings?.();setOpen(false)}},
               ...(isStaffRole?[{icon:'fi-sr-dashboard',label:'Admin Panel',color:'#f59e0b',fn:()=>{window.location.href='/admin'}}]:[]),
             ].map(item=>(
               <button key={item.label} onClick={item.fn}
@@ -467,7 +466,8 @@ function AvatarDropdown({me,status,setStatus,onLeave,socket,onOpenSettings,onOpe
                 onMouseEnter={e=>e.currentTarget.style.background='#2d3555'}
                 onMouseLeave={e=>e.currentTarget.style.background='none'}>
                 <i className={`fi ${item.icon}`} style={{fontSize:14,color:item.color,width:18,textAlign:'center',flexShrink:0}}/>
-                <span style={{fontSize:'0.84rem',fontWeight:600,color:'#e2e8f0'}}>{item.label}</span>
+                <span style={{fontSize:'0.84rem',fontWeight:600,color:'#e2e8f0',flex:1}}>{item.label}</span>
+                {item.chevron&&<i className="fi fi-sr-angle-right" style={{fontSize:11,color:'#6b7280',flexShrink:0}}/>}
               </button>
             ))}
           </div>
@@ -511,9 +511,6 @@ function Footer({showRadio,setShowRadio,showRight,setRight,notif}){
   return(
     <div style={{background:'#fff',borderTop:'1px solid #e4e6ea',padding:'4px 10px',display:'flex',alignItems:'center',gap:4,flexShrink:0,position:'relative'}}>
       <FBtn icon="fi-sr-radio" active={showRadio} onClick={()=>setShowRadio(s=>!s)} title="Radio"/>
-      <div style={{flex:1}}/>
-      {/* Desi Chat CTA — compact pill, centered */}
-      <DesiChatCTA variant="compact" />
       <div style={{flex:1}}/>
       <FBtn icon="fi-sr-list" active={showRight} onClick={()=>setRight(s=>!s)} title="User List" badge={notif.friends}/>
     </div>
