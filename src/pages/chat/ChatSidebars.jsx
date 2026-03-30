@@ -11,7 +11,7 @@ function UserItem({u,onClick,onWhisper}) {
   const col = resolveNameColor(u.nameColor, ri.color)
   const [hov,setHov]=useState(false)
   return (
-    <div onClick={e=>{const r=e.currentTarget.getBoundingClientRect();onClick(u,{x:r.left-224,y:r.top})}}
+    <div onClick={e=>{e.stopPropagation();const r=e.currentTarget.getBoundingClientRect();onClick(u,{x:Math.min(r.right,window.innerWidth-230),y:r.top})}}
       onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
       style={{display:'flex',alignItems:'center',gap:7,padding:'6px 10px',cursor:'pointer',transition:'background .12s',position:'relative',background:hov?'rgba(255,255,255,.08)':'transparent'}}>
       <div style={{position:'relative',flexShrink:0}}>
@@ -19,16 +19,10 @@ function UserItem({u,onClick,onWhisper}) {
         <span style={{position:'absolute',bottom:0,right:0,width:6,height:6,background:'#22c55e',borderRadius:'50%',border:'1.5px solid #fff'}}/>
       </div>
       <span style={{flex:1,fontSize:'0.8rem',fontWeight:700,color:col,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{u.username}</span>
-      {/* Rank icon — fixed size, consistent for all ranks */}
+      {/* Camera icon if user is on webcam */}
+      {u.isCamHost&&<i className="fi fi-sr-video-camera" style={{fontSize:11,color:'#ef4444',flexShrink:0}} title="On webcam"/>}
       <RIcon rank={u.rank} size={16}/>
       {u.countryCode&&u.countryCode!=='ZZ'&&<img src={`/icons/flags/${u.countryCode.toUpperCase()}.png`} alt="" style={{width:15,height:10,flexShrink:0,borderRadius:1}} onError={e=>e.target.style.display='none'}/>}
-      {/* Whisper button — only on hover, uses its own row so it doesn't push icons */}
-      {hov&&onWhisper&&(
-        <button onClick={e=>{e.stopPropagation();onWhisper(u)}} title="Whisper"
-          style={{position:'absolute',inset:0,left:'auto',right:0,width:32,height:'100%',background:'linear-gradient(90deg,transparent,rgba(99,102,241,.15) 40%)',border:'none',borderLeft:'1px solid #6366f133',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.75rem',color:'#6366f1'}}>
-          👁️
-        </button>
-      )}
     </div>
   )
 }
@@ -67,7 +61,7 @@ function RightSidebar({users,myLevel,onUserClick,onWhisper,onClose,tObj}) {
   ]
 
   return (
-    <div style={{width:200,borderLeft:`1px solid ${th.default_color}44`,background:th.bg_header,display:'flex',flexDirection:'column',flexShrink:0}}>
+    <div style={{position:'fixed',top:50,right:0,bottom:42,width:'min(220px,80vw)',zIndex:200,borderLeft:`1px solid ${th.default_color}44`,background:th.bg_header,display:'flex',flexDirection:'column',flexShrink:0,boxShadow:'-4px 0 20px rgba(0,0,0,.25)'}}>
       <div style={{display:'flex',alignItems:'center',borderBottom:`1px solid ${th.default_color}44`,flexShrink:0}}>
         {TABS.map(t=>(
           <button key={t.id} onClick={()=>setTab(t.id)} title={t.title}
@@ -325,13 +319,10 @@ function LeftSidebar({room,nav,socket,roomId,onClose,me,onStyleSaved}) {
     {id:'username',    icon:'fi-sr-user-pen',        label:'Username',     color:'#6366f1'},
     {id:'contact',     icon:'fi-sr-envelope',        label:'Contact',      color:'#14b8a6'},
     {id:'premium',     icon:'fi-sr-diamond', img:'/icons/ranks/premium.svg', label:'Premium', color:'#aa44ff'},
-    {id:'namecolor',   icon:'fi-sr-brush',           label:'Name Style',   color:'#ec4899'},
-    {id:'bubblesyle',  icon:'fi-sr-comment-alt',     label:'Bubble Style', color:'#8b5cf6'},
-    {id:'theme',       icon:'fi-sr-palette',         label:'Theme',        color:'#14b8a6'},
   ]
 
   return (
-    <div style={{display:'flex',height:'100%',flexShrink:0}}>
+    <div style={{display:'flex',position:'fixed',top:50,left:0,bottom:42,zIndex:200,height:'calc(100dvh - 92px)'}}>
       {/* Icon strip with labels - like adultchat left menu */}
       <div style={{width:56,background:'#f8f9fa',borderRight:'1px solid #e4e6ea',display:'flex',flexDirection:'column',alignItems:'center',padding:'6px 0',gap:1,overflowY:'auto'}}>
         {/* Room icon at top */}
@@ -366,7 +357,7 @@ function LeftSidebar({room,nav,socket,roomId,onClose,me,onStyleSaved}) {
           {panel==='forum'      &&<SimplePanel icon="💬" msg="Forum coming soon!"/>}
           {panel==='contact'    &&<ContactPanel/>}
           {panel==='premium'    &&<PremiumPanel/>}
-          {(panel==='namecolor'||panel==='bubblesyle'||panel==='theme')&&<StylePanelInline type={panel==='namecolor'?'nameColor':panel==='bubblesyle'?'bubbleColor':'theme'} onSaved={onStyleSaved}/>}
+          {false&&null /* style options moved to Chat Options */}
         </div>
       )}
     </div>
