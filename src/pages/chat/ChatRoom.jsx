@@ -31,7 +31,7 @@ import { HBtn }                                                          from '.
 // ── Feature components ────────────────────────────────────────
 import { PaintingCanvas, GifPicker, YTPanel, EmoticonPicker }            from './ChatMedia.jsx'
 import { DiceRoll }                                                             from './ChatGames.jsx'
-import { MiniCard, SelfProfileOverlay, ProfileModal }                    from './ChatProfiles.jsx'
+import { SelfProfileOverlay, ProfileModal }                              from './ChatProfiles.jsx'
 import { Msg }                                                           from './ChatMessages.jsx'
 import { RightSidebar, LeftSidebar }                                     from './ChatSidebars.jsx'
 import { RadioPanel }                                                    from './ChatRadio.jsx'
@@ -190,6 +190,7 @@ export default function ChatRoom() {
   const [showChatSettings,setShowChatSettings]=useState(false)
   const [showPlus,  setShowPlus] =useState(false)
   const [showPaint, setShowPaint]=useState(false)
+  const [miniYT, setMiniYT]=useState(null)  // {id,url} minimized YouTube
   const [showCam,   setShowCam]  =useState(false)
   const [showDiceAnim,setShowDiceAnim]=useState(false)
   const [diceRollVal, setDiceRollVal] =useState(null)
@@ -199,7 +200,6 @@ export default function ChatRoom() {
   const [showSpotify, setShowSpotify] =useState(false)
   const [showEmoji,   setShowEmoji]   =useState(false)
   const [profUser,  setProf]     =useState(null)
-  const [miniCard,  setMini]     =useState(null)
   const [giftTarget,setGiftTgt]  =useState(null)
   const [loading,   setLoad]     =useState(true)
   const [roomErr,   setErr]      =useState('')
@@ -325,7 +325,7 @@ export default function ChatRoom() {
 
   const handleMention=useCallback((text)=>{setInput(p=>text+(p?' '+p:''));inputRef.current?.focus()},[])
   const handleHide=useCallback((id)=>{setHidden(p=>new Set([...p,id]))},[])
-  const handleMiniCard=useCallback((user,pos)=>{setMini({user,pos});setProf(null)},[])
+  const handleMiniCard=useCallback((user,pos)=>{setProf(user)},[])
   const myLevel=RANKS[me?.rank]?.level||1
   const isStaffRole=myLevel>=11
 
@@ -340,7 +340,7 @@ export default function ChatRoom() {
   const thBgImg   = tObj.bg_image   // background image URL (may be empty)
   const thBorder  = tObj.default_color // border / divider color
   const thIsDark  = !['Dolphin','Lite'].includes(tObj.id) // use white/dark text logic
-  const closeAll=useCallback(()=>{setMini(null);setShowNotif(false);setShowDM(false);setShowFriends(false);setShowPlus(false);setShowEmoji(false);setShowGif(false);setShowYT(false);setShowPaint(false);setShowSpotify(false)},[])
+  const closeAll=useCallback(()=>{setShowNotif(false);setShowDM(false);setShowFriends(false);setShowPlus(false);setShowEmoji(false);setShowGif(false);setShowYT(false);setShowPaint(false);setShowSpotify(false)},[])
 
   if(!loading&&roomErr) return (
     <div style={{minHeight:'100dvh',background:'#f8f9fa',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12,padding:16}}>
@@ -424,6 +424,8 @@ export default function ChatRoom() {
             {messages.map((m,i)=>(
               !hiddenMsgs.has(m._id)&&<Msg key={m._id||i} msg={m} myId={me?._id} myLevel={myLevel}
                 onMiniCard={handleMiniCard} onMention={handleMention} onHide={handleHide}
+                onWhisper={u=>setWhisper(u)}
+                onYTMinimize={v=>setMiniYT(v)}
                 socket={sockRef.current} roomId={roomId}/>
             ))}
             {typers.filter(t=>t!==me?.username).length>0&&(
@@ -516,18 +518,27 @@ export default function ChatRoom() {
           </div>
         </div>
 
-        {showRight&&<RightSidebar users={users} myLevel={myLevel} onUserClick={(u,pos)=>{if(pos){handleMiniCard(u,pos)}else{setProf(u);setMini(null)}}} onWhisper={u=>setWhisper(u)} onClose={()=>setRight(false)} tObj={tObj}/>}
+        {showRight&&<RightSidebar users={users} myLevel={myLevel} onUserClick={(u,pos)=>{setProf(u)}} onWhisper={u=>setWhisper(u)} onClose={()=>setRight(false)} tObj={tObj}/>}
       </div>
 
       {/* ── FOOTER ── */}
       <div style={{position:'relative'}}>
         {showRadio&&<RadioPanel onClose={()=>setRadio(false)}/>}
+        {/* Mini YouTube player in footer */}
+        {miniYT&&(
+          <div style={{position:'absolute',bottom:'100%',right:8,background:'#111',border:'1px solid #333',borderRadius:10,overflow:'hidden',boxShadow:'0 -4px 16px rgba(0,0,0,.4)',display:'flex',alignItems:'center',gap:8,padding:'6px 10px',maxWidth:280}}>
+            <div style={{width:36,height:24,background:'#000',borderRadius:4,overflow:'hidden',flexShrink:0,cursor:'pointer'}} onClick={()=>setMiniYT(null)}>
+              <img src={`https://img.youtube.com/vi/${miniYT.id}/default.jpg`} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+            </div>
+            <span style={{fontSize:'0.68rem',color:'#ef4444',fontWeight:700,flex:1}}>▶ Playing</span>
+            <button onClick={()=>setMiniYT(null)} style={{background:'none',border:'none',color:'#9ca3af',cursor:'pointer',fontSize:14,padding:0}}>✕</button>
+          </div>
+        )}
         <Footer showRadio={showRadio} setShowRadio={setRadio} showRight={showRight} setRight={setRight} notif={notif}/>
       </div>
 
       {/* OVERLAYS */}
       {showDiceAnim&&diceRollVal&&<DiceRoll value={diceRollVal} onDone={()=>{setShowDiceAnim(false);setDiceRollVal(null)}}/>}
-      {miniCard&&<MiniCard user={miniCard.user} myLevel={myLevel} pos={miniCard.pos} onClose={()=>setMini(null)} onFull={()=>{setProf(miniCard.user);setMini(null)}} onGift={u=>setGiftTgt(u)} socket={sockRef.current} roomId={roomId}/>}
       {profUser&&(profUser._id===me?._id
         ? <SelfProfileOverlay user={me} onClose={()=>setProf(null)} onUpdated={u=>{if(u)setMe(p=>({...p,...u}))}}/>
         : <ProfileModal user={profUser} myLevel={myLevel} socket={sockRef.current} roomId={roomId} onClose={()=>setProf(null)} onGift={u=>setGiftTgt(u)}/>
