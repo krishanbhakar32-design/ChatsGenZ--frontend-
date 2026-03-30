@@ -1,13 +1,14 @@
-// ============================================================
-// ChatMedia.jsx — Media input components: Paint, GIF, YouTube, Emotes
-// ============================================================
+// ChatMedia.jsx — Paint, GifPicker (YouTube-style), YTPanel, Spotify, Emoticons, YTMessage
 import { useState, useRef, useEffect } from 'react'
 import { API } from './chatConstants.js'
 
+// ─────────────────────────────────────────────────────────────
+// PAINTING CANVAS
+// ─────────────────────────────────────────────────────────────
 function PaintingCanvas({onSend,onClose}) {
   const canvasRef=useRef(null)
   const [drawing,setDrawing]=useState(false)
-  const [tool,setTool]=useState('pen')   // pen | eraser
+  const [tool,setTool]=useState('pen')
   const [color,setColor]=useState('#000000')
   const [size,setSize]=useState(3)
   const [history,setHistory]=useState([])
@@ -15,141 +16,88 @@ function PaintingCanvas({onSend,onClose}) {
   const lastPt=useRef(null)
 
   function getCtx(){return canvasRef.current?.getContext('2d')}
-
   function saveHistory(){
-    const ctx=getCtx(); if(!ctx||!canvasRef.current) return
+    const ctx=getCtx();if(!ctx||!canvasRef.current) return
     const snap=ctx.getImageData(0,0,canvasRef.current.width,canvasRef.current.height)
     setHistory(p=>{const n=[...p.slice(0,histIdx+1),snap];setHistIdx(n.length-1);return n})
   }
-
   function undo(){
     if(histIdx<=0){clearCanvas();return}
-    const ctx=getCtx(); if(!ctx) return
-    ctx.putImageData(history[histIdx-1],0,0)
-    setHistIdx(p=>p-1)
-  }
-  function redo(){
-    if(histIdx>=history.length-1) return
-    const ctx=getCtx(); if(!ctx) return
-    ctx.putImageData(history[histIdx+1],0,0)
-    setHistIdx(p=>p+1)
+    const ctx=getCtx();if(!ctx) return
+    ctx.putImageData(history[histIdx-1],0,0);setHistIdx(p=>p-1)
   }
   function clearCanvas(){
-    const ctx=getCtx(); if(!ctx||!canvasRef.current) return
+    const ctx=getCtx();if(!ctx||!canvasRef.current) return
     ctx.clearRect(0,0,canvasRef.current.width,canvasRef.current.height)
-    ctx.fillStyle='#fff'
-    ctx.fillRect(0,0,canvasRef.current.width,canvasRef.current.height)
-    setHistory([]); setHistIdx(-1)
+    setHistory([]);setHistIdx(-1)
   }
-
-  useEffect(()=>{clearCanvas()},[])
-
-  function getPt(e){
+  function getPos(e){
     const r=canvasRef.current.getBoundingClientRect()
-    const touch=e.touches?.[0]||e
-    return{x:(touch.clientX-r.left)*(canvasRef.current.width/r.width),y:(touch.clientY-r.top)*(canvasRef.current.height/r.height)}
+    const t=e.touches?.[0]||e
+    return{x:(t.clientX-r.left)*(canvasRef.current.width/r.width),y:(t.clientY-r.top)*(canvasRef.current.height/r.height)}
   }
-
   function startDraw(e){
-    e.preventDefault()
-    setDrawing(true)
-    const pt=getPt(e)
-    lastPt.current=pt
-    const ctx=getCtx(); if(!ctx) return
-    ctx.beginPath(); ctx.arc(pt.x,pt.y,size/2,0,Math.PI*2)
-    ctx.fillStyle=tool==='eraser'?'#fff':color
-    ctx.fill()
+    e.preventDefault();setDrawing(true);lastPt.current=getPos(e)
+    saveHistory()
+    const ctx=getCtx();if(!ctx) return
+    ctx.beginPath();ctx.arc(lastPt.current.x,lastPt.current.y,size/2,0,Math.PI*2)
+    ctx.fillStyle=tool==='eraser'?'rgba(0,0,0,0)':color;ctx.fill()
   }
   function draw(e){
-    e.preventDefault()
-    if(!drawing) return
-    const ctx=getCtx(); if(!ctx) return
-    const pt=getPt(e)
-    ctx.beginPath()
-    ctx.moveTo(lastPt.current.x,lastPt.current.y)
-    ctx.lineTo(pt.x,pt.y)
-    ctx.strokeStyle=tool==='eraser'?'#fff':color
-    ctx.lineWidth=size*(tool==='eraser'?4:1)
-    ctx.lineCap='round'
-    ctx.lineJoin='round'
-    ctx.stroke()
-    lastPt.current=pt
+    e.preventDefault();if(!drawing||!lastPt.current) return
+    const ctx=getCtx();if(!ctx) return
+    const p=getPos(e)
+    ctx.beginPath();ctx.moveTo(lastPt.current.x,lastPt.current.y);ctx.lineTo(p.x,p.y)
+    ctx.lineWidth=size;ctx.lineCap='round';ctx.lineJoin='round'
+    if(tool==='eraser'){ctx.globalCompositeOperation='destination-out';ctx.strokeStyle='rgba(0,0,0,1)'}
+    else{ctx.globalCompositeOperation='source-over';ctx.strokeStyle=color}
+    ctx.stroke();lastPt.current=p
   }
-  function endDraw(e){
-    e.preventDefault()
-    if(drawing) saveHistory()
-    setDrawing(false)
-  }
-
+  function endDraw(){setDrawing(false);lastPt.current=null}
   function sendDrawing(){
-    const c=canvasRef.current; if(!c) return
-    const dataUrl=c.toDataURL('image/png')
-    onSend(dataUrl)
+    const c=canvasRef.current;if(!c) return
+    const tmp=document.createElement('canvas');tmp.width=c.width;tmp.height=c.height
+    const tctx=tmp.getContext('2d');tctx.fillStyle='#fff';tctx.fillRect(0,0,c.width,c.height);tctx.drawImage(c,0,0)
+    const dataUrl=tmp.toDataURL('image/png')
+    const token=localStorage.getItem('cgz_token')
+    fetch(dataUrl).then(r=>r.blob()).then(blob=>{
+      const fd=new FormData();fd.append('image',blob,'drawing.png')
+      fetch(`${API}/api/upload/image`,{method:'POST',headers:{Authorization:`Bearer ${token}`},body:fd})
+        .then(r=>r.json()).then(d=>{if(d.url) onSend(d.url)}).catch(()=>onClose())
+    })
   }
-
-  const COLORS=['#000000','#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#ffffff']
-  const TOOLS=[
-    {id:'pick',  icon:'✛',  title:'Add color',  onClick:()=>{}},
-    {id:'pen',   icon:'✏️', title:'Pen',         onClick:()=>setTool('pen')},
-    {id:'black', icon:'⬛', title:'Black',        onClick:()=>{setColor('#000');setTool('pen')}},
-    {id:'undo',  icon:'↩️', title:'Undo',         onClick:undo},
-    {id:'redo',  icon:'↪️', title:'Redo',         onClick:redo},
-    {id:'erase', icon:'🧹', title:'Eraser',       onClick:()=>setTool('eraser')},
-    {id:'trash', icon:'🗑️', title:'Clear',        onClick:clearCanvas},
-  ]
-
+  const COLORS=['#000','#fff','#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#06b6d4','#84cc16','#a16207']
   return(
-    <div onClick={e=>e.stopPropagation()} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.7)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1005,padding:8}}>
-      <div style={{background:'#1a1a2e',borderRadius:12,width:'min(520px,97vw)',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.5)'}}>
-        {/* Title bar */}
-        <div style={{background:'#111827',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 12px'}}>
-          <span style={{color:'#e2e8f0',fontWeight:700,fontSize:'0.85rem'}}>Draw & Send</span>
-          <button onClick={onClose} style={{background:'none',border:'none',color:'#9ca3af',cursor:'pointer',fontSize:18}}>✕</button>
+    <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'calc(100% + 6px)',left:0,right:0,background:'#fff',border:'1px solid #e4e6ea',borderRadius:12,overflow:'hidden',boxShadow:'0 4px 20px rgba(0,0,0,.15)',zIndex:50}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 10px',borderBottom:'1px solid #f3f4f6'}}>
+        <span style={{fontWeight:700,fontSize:'0.82rem',color:'#374151'}}>🎨 Paint</span>
+        <div style={{display:'flex',gap:4}}>
+          <button onClick={undo} style={{background:'none',border:'1px solid #e4e6ea',borderRadius:5,padding:'2px 7px',cursor:'pointer',fontSize:'0.72rem',color:'#6b7280'}}>↩</button>
+          <button onClick={clearCanvas} style={{background:'none',border:'1px solid #e4e6ea',borderRadius:5,padding:'2px 7px',cursor:'pointer',fontSize:'0.72rem',color:'#6b7280'}}>Clear</button>
+          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:14,padding:0}}><i className="fi fi-sr-cross-small"/></button>
         </div>
-        {/* Toolbar */}
-        <div style={{display:'flex',gap:4,padding:'7px 10px',background:'#f8f9fa',borderBottom:'1px solid #e4e6ea',alignItems:'center',flexWrap:'wrap'}}>
-          {/* Color picker */}
-          <label title="Pick color" style={{width:30,height:30,borderRadius:6,border:'2px solid #e4e6ea',overflow:'hidden',cursor:'pointer',flexShrink:0}}>
-            <input type="color" value={color} onChange={e=>{setColor(e.target.value);setTool('pen')}} style={{width:'150%',height:'150%',border:'none',cursor:'pointer',transform:'translate(-15%,-15%)'}}/>
-          </label>
-          {/* Pen */}
-          <button onClick={()=>setTool('pen')} title="Pen" style={{width:30,height:30,borderRadius:6,border:`2px solid ${tool==='pen'?'#1a73e8':'#e4e6ea'}`,background:tool==='pen'?'#e8f0fe':'#fff',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:15}}>✏️</button>
-          {/* Black */}
-          <button onClick={()=>{setColor('#000');setTool('pen')}} title="Black" style={{width:30,height:30,borderRadius:6,border:'2px solid #e4e6ea',background:'#000',cursor:'pointer',flexShrink:0}}/>
-          {/* Undo */}
-          <button onClick={undo} title="Undo" style={{width:30,height:30,borderRadius:6,border:'2px solid #e4e6ea',background:'#fff',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>↩</button>
-          {/* Redo */}
-          <button onClick={redo} title="Redo" style={{width:30,height:30,borderRadius:6,border:'2px solid #e4e6ea',background:'#fff',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>↪</button>
-          {/* Eraser */}
-          <button onClick={()=>setTool('eraser')} title="Eraser" style={{width:30,height:30,borderRadius:6,border:`2px solid ${tool==='eraser'?'#1a73e8':'#e4e6ea'}`,background:tool==='eraser'?'#e8f0fe':'#fff',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:15}}>🧹</button>
-          {/* Trash */}
-          <button onClick={clearCanvas} title="Clear all" style={{width:30,height:30,borderRadius:6,border:'2px solid #ef4444',background:'#fef2f2',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:15}}>🗑️</button>
-          {/* Size */}
-          <div style={{display:'flex',alignItems:'center',gap:4,marginLeft:'auto'}}>
-            <span style={{fontSize:'0.7rem',color:'#6b7280'}}>Size</span>
-            <input type="range" min={1} max={20} value={size} onChange={e=>setSize(+e.target.value)} style={{width:60,accentColor:'#1a73e8'}}/>
-          </div>
-        </div>
-        {/* Canvas */}
-        <div style={{background:'#fff',margin:0}}>
-          <canvas ref={canvasRef} width={520} height={340}
-            style={{display:'block',width:'100%',height:'auto',cursor:tool==='eraser'?'cell':'crosshair',touchAction:'none'}}
-            onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw}
-            onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={endDraw}/>
-        </div>
-        {/* Send button */}
-        <div style={{background:'#1a1a2e',padding:'10px 12px',display:'flex',alignItems:'center',gap:10}}>
-          <button onClick={onClose} style={{flex:1,padding:'9px',borderRadius:8,border:'1px solid #374151',background:'none',color:'#9ca3af',cursor:'pointer',fontSize:'0.84rem',fontWeight:600}}>Cancel</button>
-          <button onClick={sendDrawing} style={{flex:2,padding:'9px',borderRadius:8,border:'none',background:'linear-gradient(135deg,#3b82f6,#1d4ed8)',color:'#fff',cursor:'pointer',fontSize:'0.84rem',fontWeight:700,fontFamily:'Outfit,sans-serif',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
-            <i className="fi fi-sr-paper-plane"/>Send
-          </button>
-        </div>
+      </div>
+      <div style={{padding:'6px 8px',borderBottom:'1px solid #f3f4f6',display:'flex',gap:5,alignItems:'center',flexWrap:'wrap'}}>
+        {COLORS.map(c=>(<div key={c} onClick={()=>{setColor(c);setTool('pen')}} style={{width:18,height:18,background:c,borderRadius:4,cursor:'pointer',border:`2px solid ${color===c&&tool==='pen'?'#1a73e8':'#e4e6ea'}`,flexShrink:0,boxShadow:c==='#fff'?'inset 0 0 0 1px #e4e6ea':'none'}}/>))}
+        <input type="color" value={color} onChange={e=>{setColor(e.target.value);setTool('pen')}} style={{width:22,height:22,padding:0,border:'none',borderRadius:4,cursor:'pointer',flexShrink:0}}/>
+        <div style={{height:20,width:1,background:'#e4e6ea',margin:'0 2px'}}/>
+        <button onClick={()=>setTool(t=>t==='eraser'?'pen':'eraser')} style={{padding:'2px 8px',border:`1px solid ${tool==='eraser'?'#f97316':'#e4e6ea'}`,borderRadius:5,background:tool==='eraser'?'#fff7ed':'none',cursor:'pointer',fontSize:'0.7rem',color:tool==='eraser'?'#f97316':'#6b7280'}}>✏ Eraser</button>
+        <input type="range" min={1} max={20} value={size} onChange={e=>setSize(+e.target.value)} style={{width:60,accentColor:'#1a73e8'}}/>
+      </div>
+      <canvas ref={canvasRef} width={600} height={300}
+        style={{display:'block',width:'100%',height:'min(220px,45vw)',cursor:tool==='eraser'?'cell':'crosshair',touchAction:'none',background:'#fff'}}
+        onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw}
+        onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={endDraw}/>
+      <div style={{padding:'6px 8px',borderTop:'1px solid #f3f4f6',display:'flex',justifyContent:'flex-end'}}>
+        <button onClick={sendDrawing} style={{padding:'7px 18px',background:'linear-gradient(135deg,#1a73e8,#1557b0)',border:'none',borderRadius:8,color:'#fff',fontWeight:700,cursor:'pointer',fontSize:'0.82rem'}}>Send Drawing</button>
       </div>
     </div>
   )
 }
 
-// ── GIF PICKER ──
+// ─────────────────────────────────────────────────────────────
+// GIF PICKER — YouTube-style layout
+// ─────────────────────────────────────────────────────────────
 function GifPicker({onSelect,onClose}) {
   const [q,setQ]=useState('')
   const [gifs,setGifs]=useState([])
@@ -158,54 +106,69 @@ function GifPicker({onSelect,onClose}) {
   const token=localStorage.getItem('cgz_token')
 
   useEffect(()=>{
-    // Load trending on open
     setLoading(true)
-    fetch(`${API}/api/giphy?limit=12`,{headers:{Authorization:`Bearer ${token}`}})
+    fetch(`${API}/api/giphy?limit=16`,{headers:{Authorization:`Bearer ${token}`}})
       .then(r=>r.json()).then(d=>setGifs(d.gifs||[])).catch(()=>{}).finally(()=>setLoading(false))
   },[])
 
   useEffect(()=>{
     clearTimeout(timer.current)
-    if(!q.trim()) return
+    if(!q.trim()){
+      setLoading(true)
+      fetch(`${API}/api/giphy?limit=16`,{headers:{Authorization:`Bearer ${token}`}})
+        .then(r=>r.json()).then(d=>setGifs(d.gifs||[])).catch(()=>{}).finally(()=>setLoading(false))
+      return
+    }
     setLoading(true)
     timer.current=setTimeout(()=>{
-      fetch(`${API}/api/giphy?q=${encodeURIComponent(q)}&limit=12`,{headers:{Authorization:`Bearer ${token}`}})
+      fetch(`${API}/api/giphy?q=${encodeURIComponent(q)}&limit=16`,{headers:{Authorization:`Bearer ${token}`}})
         .then(r=>r.json()).then(d=>setGifs(d.gifs||[])).catch(()=>{}).finally(()=>setLoading(false))
     },400)
     return()=>clearTimeout(timer.current)
   },[q])
 
   return(
-    <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'calc(100% + 6px)',left:0,right:0,background:'#fff',border:'1px solid #e4e6ea',borderRadius:12,overflow:'hidden',boxShadow:'0 4px 20px rgba(0,0,0,.15)',zIndex:50,maxHeight:'min(250px,55vw)',minHeight:180,display:'flex',flexDirection:'column'}}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 10px',borderBottom:'1px solid #f3f4f6',flexShrink:0}}>
-        <span style={{fontWeight:700,fontSize:'0.82rem',color:'#374151'}}>🎞 GIF</span>
-        <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:14,padding:0}}><i className="fi fi-sr-cross-small"/></button>
+    <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'calc(100% + 6px)',left:0,right:0,background:'#fff',border:'1px solid #e4e6ea',borderRadius:12,overflow:'hidden',boxShadow:'0 8px 28px rgba(0,0,0,.18)',zIndex:50,display:'flex',flexDirection:'column',maxHeight:'min(340px,70vh)'}}>
+      {/* Header */}
+      <div style={{display:'flex',alignItems:'center',gap:8,padding:'10px 12px',borderBottom:'1px solid #f3f4f6',flexShrink:0,background:'#fafafa'}}>
+        <svg width="18" height="18" viewBox="0 0 24 24"><text y="18" fontSize="18">🎞</text></svg>
+        <span style={{fontWeight:800,fontSize:'0.9rem',color:'#111827',fontFamily:'Outfit,sans-serif',flex:1}}>GIF</span>
+        <span style={{fontSize:'0.65rem',color:'#9ca3af',fontWeight:600}}>Powered by GIPHY</span>
+        <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:16,padding:0,lineHeight:1}}><i className="fi fi-sr-cross-small"/></button>
       </div>
-      <div style={{padding:'6px 8px',borderBottom:'1px solid #f3f4f6',flexShrink:0}}>
-        <input autoFocus value={q} onChange={e=>setQ(e.target.value)} placeholder="Search GIFs..."
-          style={{width:'100%',padding:'6px 10px',border:'1.5px solid #e4e6ea',borderRadius:20,fontSize:'0.8rem',outline:'none',boxSizing:'border-box'}}
-          onFocus={e=>e.target.style.borderColor='#1a73e8'} onBlur={e=>e.target.style.borderColor='#e4e6ea'}/>
+      {/* Search bar */}
+      <div style={{padding:'8px 10px',borderBottom:'1px solid #f3f4f6',flexShrink:0}}>
+        <div style={{position:'relative'}}>
+          <i className="fi fi-sr-search" style={{position:'absolute',left:9,top:'50%',transform:'translateY(-50%)',fontSize:12,color:'#9ca3af',pointerEvents:'none'}}/>
+          <input autoFocus value={q} onChange={e=>setQ(e.target.value)} placeholder="Search GIFs..."
+            style={{width:'100%',padding:'7px 10px 7px 28px',border:'1.5px solid #e4e6ea',borderRadius:20,fontSize:'0.83rem',outline:'none',boxSizing:'border-box',background:'#f9fafb'}}
+            onFocus={e=>e.target.style.borderColor='#1a73e8'} onBlur={e=>e.target.style.borderColor='#e4e6ea'}/>
+        </div>
       </div>
-      <div style={{flex:1,overflowY:'auto',padding:5,display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:3}}>
-        {loading&&<div style={{gridColumn:'1/-1',textAlign:'center',padding:12,color:'#9ca3af',fontSize:'0.78rem'}}>Loading...</div>}
-        {!loading&&gifs.length===0&&<div style={{gridColumn:'1/-1',textAlign:'center',padding:12,color:'#9ca3af',fontSize:'0.78rem'}}>No GIFs found</div>}
+      {/* GIF grid */}
+      <div style={{flex:1,overflowY:'auto',padding:6,display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:4}}>
+        {loading&&<div style={{gridColumn:'1/-1',textAlign:'center',padding:16,color:'#9ca3af',fontSize:'0.78rem'}}>Loading GIFs...</div>}
+        {!loading&&gifs.length===0&&<div style={{gridColumn:'1/-1',textAlign:'center',padding:16,color:'#9ca3af',fontSize:'0.78rem'}}>No GIFs found 😕</div>}
         {gifs.map((g,i)=>(
-          <img key={i} src={g.preview||g.url} alt="" onClick={()=>onSelect(g.url)}
-            style={{width:'100%',aspectRatio:'1',objectFit:'cover',borderRadius:6,cursor:'pointer',border:'2px solid transparent'}}
-            onMouseEnter={e=>e.target.style.borderColor='#1a73e8'} onMouseLeave={e=>e.target.style.borderColor='transparent'}/>
+          <div key={i} onClick={()=>onSelect(g.url)} style={{borderRadius:7,overflow:'hidden',cursor:'pointer',aspectRatio:'1',background:'#f3f4f6',border:'2px solid transparent',transition:'all .12s'}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor='#1a73e8';e.currentTarget.style.transform='scale(1.04)'}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor='transparent';e.currentTarget.style.transform='scale(1)'}}>
+            <img src={g.preview||g.url} alt="" style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+          </div>
         ))}
       </div>
     </div>
   )
 }
 
-// ── YOUTUBE PANEL ──
+// ─────────────────────────────────────────────────────────────
+// YOUTUBE PANEL — link paste + preview
+// ─────────────────────────────────────────────────────────────
 function YTPanel({onClose,onSend}) {
-  const [tab,setTab]=useState('link')
   const [link,setLink]=useState('')
   const [preview,setPreview]=useState(null)
 
-  function getVideoId(url) {
+  function getVideoId(url){
     const m=(url||'').match(/(?:youtu\.be\/|v=|embed\/|\?v=)([\w-]{11})/)
     return m?m[1]:null
   }
@@ -215,36 +178,49 @@ function YTPanel({onClose,onSend}) {
   },[link])
 
   return(
-    <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'calc(100% + 6px)',left:0,right:0,maxWidth:'min(100%,320px)',background:'#fff',border:'1px solid #e4e6ea',borderRadius:12,overflow:'hidden',boxShadow:'0 4px 20px rgba(0,0,0,.15)',zIndex:50}}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 10px',borderBottom:'1px solid #f3f4f6'}}>
-        <span style={{fontWeight:700,fontSize:'0.82rem',color:'#ef4444'}}>▶ YouTube</span>
-        <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:14,padding:0}}><i className="fi fi-sr-cross-small"/></button>
+    <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'calc(100% + 6px)',left:0,right:0,background:'#fff',border:'1px solid #e4e6ea',borderRadius:12,overflow:'hidden',boxShadow:'0 8px 28px rgba(0,0,0,.18)',zIndex:50}}>
+      {/* Header */}
+      <div style={{display:'flex',alignItems:'center',gap:8,padding:'10px 12px',borderBottom:'1px solid #f3f4f6',background:'#fafafa'}}>
+        <span style={{fontSize:16}}>▶</span>
+        <span style={{fontWeight:800,fontSize:'0.9rem',color:'#ef4444',fontFamily:'Outfit,sans-serif',flex:1}}>YouTube</span>
+        <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:16,padding:0,lineHeight:1}}><i className="fi fi-sr-cross-small"/></button>
       </div>
-      <div style={{padding:10,display:'flex',flexDirection:'column',gap:8}}>
-        <input autoFocus value={link} onChange={e=>setLink(e.target.value)} placeholder="Paste YouTube link..."
-          style={{width:'100%',padding:'8px 12px',border:'1.5px solid #e4e6ea',borderRadius:9,fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}}
-          onFocus={e=>e.target.style.borderColor='#ef4444'} onBlur={e=>e.target.style.borderColor='#e4e6ea'}/>
+      {/* Input */}
+      <div style={{padding:'10px 12px',display:'flex',flexDirection:'column',gap:8}}>
+        <div style={{position:'relative'}}>
+          <i className="fi fi-sr-link" style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',fontSize:13,color:'#9ca3af',pointerEvents:'none'}}/>
+          <input autoFocus value={link} onChange={e=>setLink(e.target.value)} placeholder="Paste YouTube link..."
+            style={{width:'100%',padding:'9px 12px 9px 30px',border:'1.5px solid #e4e6ea',borderRadius:9,fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}}
+            onFocus={e=>e.target.style.borderColor='#ef4444'} onBlur={e=>e.target.style.borderColor='#e4e6ea'}/>
+        </div>
+        {link&&!preview&&<p style={{textAlign:'center',color:'#9ca3af',fontSize:'0.78rem',margin:0}}>Paste a valid YouTube link</p>}
         {preview&&(
-          <div style={{borderRadius:9,overflow:'hidden',border:'1px solid #e4e6ea'}}>
+          <div style={{borderRadius:10,overflow:'hidden',border:'1px solid #e4e6ea',position:'relative'}}>
             <img src={preview.thumb} alt="" style={{width:'100%',display:'block'}}/>
+            {/* Play button overlay */}
+            <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,.25)'}}>
+              <div style={{width:48,height:48,borderRadius:'50%',background:'rgba(239,68,68,.9)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                <span style={{color:'#fff',fontSize:22,marginLeft:4}}>▶</span>
+              </div>
+            </div>
             <button onClick={()=>onSend(`https://www.youtube.com/watch?v=${preview.id}`)}
-              style={{width:'100%',padding:'9px',background:'linear-gradient(135deg,#ef4444,#dc2626)',border:'none',color:'#fff',fontWeight:700,cursor:'pointer',fontSize:'0.84rem'}}>
-              ▶ Share in Chat
+              style={{position:'absolute',bottom:8,right:8,padding:'6px 14px',background:'rgba(239,68,68,.92)',border:'none',borderRadius:7,color:'#fff',fontWeight:700,cursor:'pointer',fontSize:'0.8rem',backdropFilter:'blur(4px)'}}>
+              Share in Chat
             </button>
           </div>
         )}
-        {link&&!preview&&<p style={{textAlign:'center',color:'#9ca3af',fontSize:'0.78rem',margin:0}}>Invalid YouTube link</p>}
       </div>
     </div>
   )
 }
 
-// ── EMOTICON PICKER — uses actual PNG files from /icons/emoticon/ ──
-const EMOT_FILES = ['amazing','angel','angry','anxious','bad','bigsmile','blink','cool','crisped','cry','cry2','dead','desperate','devil','doubt','feelgood','funny','good','happy','happy3']
-const EMOJI_FALLBACK = ['😀','😂','🥰','😍','😎','🥳','😭','😡','🤔','😴','👋','👍','👎','❤️','🔥','✨','🎉','💯','🙏','💪']
+// ─────────────────────────────────────────────────────────────
+// EMOTICON PICKER
+// ─────────────────────────────────────────────────────────────
+const EMOT_FILES=['amazing','angel','angry','anxious','bad','bigsmile','blink','cool','crisped','cry','cry2','dead','desperate','devil','doubt','feelgood','funny','good','happy','happy3']
+const EMOJI_FALLBACK=['😀','😂','🥰','😍','😎','🥳','😭','😡','🤔','😴','👋','👍','👎','❤️','🔥','✨','🎉','💯','🙏','💪']
 
 function EmoticonPicker({onSelect,onClose}) {
-  const [useImg,setUseImg]=useState(true)
   return(
     <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'calc(100% + 6px)',left:0,background:'#fff',border:'1px solid #e4e6ea',borderRadius:12,padding:8,boxShadow:'0 4px 20px rgba(0,0,0,.15)',zIndex:50,width:260}}>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:6}}>
@@ -255,9 +231,8 @@ function EmoticonPicker({onSelect,onClose}) {
         {EMOT_FILES.map((name,i)=>(
           <button key={i} onClick={()=>onSelect(`:${name}:`)}
             style={{background:'none',border:'none',cursor:'pointer',padding:'3px',borderRadius:6,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center'}}
-            onMouseEnter={e=>e.currentTarget.style.background='#374151'} onMouseLeave={e=>e.currentTarget.style.background='none'}>
-            <img src={`/icons/emoticon/${name}.png`} alt={name} style={{width:24,height:24,objectFit:'contain'}}
-              onError={e=>{e.target.style.display='none';e.target.nextSibling.style.display='block'}}/>
+            onMouseEnter={e=>e.currentTarget.style.background='#f3f4f6'} onMouseLeave={e=>e.currentTarget.style.background='none'}>
+            <img src={`/icons/emoticon/${name}.png`} alt={name} style={{width:24,height:24,objectFit:'contain'}} onError={e=>{e.target.style.display='none';e.target.nextSibling.style.display='block'}}/>
             <span style={{display:'none',fontSize:18}}>{EMOJI_FALLBACK[i]||'😊'}</span>
           </button>
         ))}
@@ -266,37 +241,66 @@ function EmoticonPicker({onSelect,onClose}) {
   )
 }
 
-// ── INLINE YOUTUBE MESSAGE ──
-function YTMessage({url}) {
+// ─────────────────────────────────────────────────────────────
+// YOUTUBE MESSAGE — in chat, play button only (no X), minimize to footer
+// ─────────────────────────────────────────────────────────────
+function YTMessage({url,onMinimize}) {
   const [expanded,setExpanded]=useState(false)
-  const [closed,setClosed]=useState(false)
+  const [quality,setQuality]=useState('hd720')
   const id=(url||'').match(/(?:v=|youtu\.be\/|embed\/|\?v=)([\w-]{11})/)?.[1]
-  if(closed||!id) return null
+  if(!id) return null
+
+  const embedUrl=`https://www.youtube.com/embed/${id}?autoplay=1&rel=0&vq=${quality}`
+
   if(!expanded) return(
-    <div style={{display:'flex',alignItems:'center',gap:8,background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'5px 8px',maxWidth:220}}>
-      <img src={`https://img.youtube.com/vi/${id}/default.jpg`} alt="" style={{width:48,height:32,objectFit:'cover',borderRadius:5,flexShrink:0}}/>
-      <div style={{flex:1,minWidth:0}}>
-        <div style={{fontSize:'0.68rem',color:'#ef4444',fontWeight:700}}>▶ YouTube</div>
+    <div onClick={()=>setExpanded(true)}
+      style={{display:'inline-flex',alignItems:'center',gap:8,background:'#111',border:'1px solid #333',borderRadius:9,padding:'6px 10px',maxWidth:240,cursor:'pointer',transition:'all .15s'}}
+      onMouseEnter={e=>e.currentTarget.style.background='#1a1a1a'}
+      onMouseLeave={e=>e.currentTarget.style.background='#111'}>
+      {/* Thumbnail */}
+      <div style={{position:'relative',flexShrink:0}}>
+        <img src={`https://img.youtube.com/vi/${id}/default.jpg`} alt="" style={{width:52,height:36,objectFit:'cover',borderRadius:5,display:'block'}}/>
+        {/* Red play button */}
+        <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{width:22,height:22,borderRadius:'50%',background:'rgba(239,68,68,.9)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <span style={{color:'#fff',fontSize:9,marginLeft:2}}>▶</span>
+          </div>
+        </div>
       </div>
-      <div style={{display:'flex',gap:3,flexShrink:0}}>
-        <button onClick={()=>setExpanded(true)} style={{background:'#ef4444',border:'none',color:'#fff',borderRadius:6,padding:'2px 7px',cursor:'pointer',fontSize:'0.68rem',fontWeight:700}}>Play</button>
-        <button onClick={()=>setClosed(true)} style={{background:'#f3f4f6',border:'none',color:'#9ca3af',borderRadius:6,padding:'2px 5px',cursor:'pointer',fontSize:10}}>✕</button>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontSize:'0.68rem',color:'#ef4444',fontWeight:700,marginBottom:1}}>YouTube</div>
+        <div style={{fontSize:'0.65rem',color:'#9ca3af',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>Click to play</div>
       </div>
     </div>
   )
+
   return(
-    <div style={{position:'relative',maxWidth:'min(100%,260px)',width:'min(260px,55vw)',borderRadius:9,overflow:'hidden',border:'1px solid #e4e6ea'}}>
-      <div style={{position:'absolute',top:4,right:4,zIndex:5,display:'flex',gap:3}}>
-        <button onClick={()=>setExpanded(false)} style={{background:'rgba(0,0,0,.7)',border:'none',color:'#fff',borderRadius:'50%',width:20,height:20,cursor:'pointer',fontSize:9,display:'flex',alignItems:'center',justifyContent:'center'}}>−</button>
-        <button onClick={()=>setClosed(true)} style={{background:'rgba(0,0,0,.7)',border:'none',color:'#fff',borderRadius:'50%',width:20,height:20,cursor:'pointer',fontSize:9,display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+    <div style={{position:'relative',maxWidth:'min(100%,280px)',width:'min(280px,60vw)',borderRadius:10,overflow:'hidden',border:'1px solid #222',background:'#000'}}>
+      {/* Controls bar */}
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'4px 7px',background:'rgba(0,0,0,.7)',position:'absolute',top:0,left:0,right:0,zIndex:5}}>
+        <span style={{fontSize:'0.6rem',color:'#ef4444',fontWeight:700}}>▶ YouTube</span>
+        <div style={{display:'flex',gap:4}}>
+          {/* Quality selector */}
+          <select value={quality} onChange={e=>setQuality(e.target.value)}
+            style={{fontSize:'0.6rem',background:'rgba(0,0,0,.7)',border:'1px solid #444',borderRadius:4,color:'#fff',padding:'1px 3px',cursor:'pointer'}}>
+            <option value="hd1080">1080p</option>
+            <option value="hd720">720p</option>
+            <option value="large">480p</option>
+            <option value="medium">360p</option>
+            <option value="small">240p</option>
+          </select>
+          {/* Minimize button */}
+          <button onClick={()=>{setExpanded(false);onMinimize?.({id,url})}}
+            style={{background:'rgba(0,0,0,.7)',border:'none',color:'#fff',borderRadius:'50%',width:17,height:17,cursor:'pointer',fontSize:9,display:'flex',alignItems:'center',justifyContent:'center'}}>
+            —
+          </button>
+        </div>
       </div>
-      <iframe width="100%" height="158" src={`https://www.youtube.com/embed/${id}?autoplay=1`}
-        title="YouTube" frameBorder="0" allow="autoplay;encrypted-media" allowFullScreen style={{display:'block',height:'min(158px,35vw)'}}/>
+      <iframe width="100%" height="160" src={embedUrl}
+        title="YouTube" frameBorder="0" allow="autoplay;encrypted-media;fullscreen" allowFullScreen
+        style={{display:'block',height:'min(160px,36vw)',marginTop:0}}/>
     </div>
   )
 }
 
-// ── SPIN WHEEL ──
-
-// Export all components
 export { PaintingCanvas, GifPicker, YTPanel, EmoticonPicker, YTMessage }
