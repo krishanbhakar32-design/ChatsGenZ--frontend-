@@ -209,7 +209,7 @@ function WebcamPanel({socket,roomId,me,onClose}) {
   const otherCams=liveCams.filter(c=>c.userId!==me?._id)
 
   return(
-    <div style={{background:'#0f0f1e',borderBottom:'2px solid #2d2d44',flexShrink:0,overflow:'hidden'}} onClick={e=>e.stopPropagation()}>
+    <div style={{position:'fixed',bottom:50,right:8,zIndex:300,background:'#0f0f1e',border:'1px solid #2d2d44',borderRadius:12,overflow:'hidden',boxShadow:'0 4px 24px rgba(0,0,0,.6)',width:'min(300px,95vw)',maxHeight:'70vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
       {/* Header row */}
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 10px',borderBottom:'1px solid #1e1e38'}}>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
