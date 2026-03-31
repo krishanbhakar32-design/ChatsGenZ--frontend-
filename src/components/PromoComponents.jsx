@@ -16,9 +16,10 @@ import { useEffect, useRef, useState } from 'react'
  * - User can unmute / skip after 5 s
  * - Never blocks page interaction (positioned inside normal flow)
  */
-const VAST_URL = 'https://s.magsrv.com/v1/vast.php?idzone=5885250'
+const VAST_URL_1 = 'https://s.magsrv.com/v1/vast.php?idzone=5885566'  // Login page video
+const VAST_URL_2 = 'https://s.magsrv.com/v1/vast.php?idzone=5885250'  // Home page video
 
-export function VastVideoAd() {
+export function VastVideoAd({ zone = 2 }) {
   const videoRef   = useRef(null)
   const [src,  setSrc]    = useState(null)
   const [err,  setErr]    = useState(false)
@@ -32,9 +33,10 @@ export function VastVideoAd() {
     if (navigator.webdriver || window.outerWidth === 0) return
 
     let cancelled = false
+    const vastUrl = zone === 1 ? VAST_URL_1 : VAST_URL_2
     const load = async () => {
       try {
-        const res  = await fetch(VAST_URL)
+        const res  = await fetch(vastUrl)
         const text = await res.text()
         const parser = new DOMParser()
         const doc    = parser.parseFromString(text, 'application/xml')
