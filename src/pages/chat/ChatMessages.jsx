@@ -1,3 +1,4 @@
+import { Sounds } from '../../utils/sounds.js'
 // ChatMessages.jsx — Message rendering with:
 // - Single click context menu (not double/long-press)
 // - Full quote content
@@ -75,18 +76,23 @@ function getBubStyle(bubbleColor) {
 function formatTs(createdAt) {
   if(!createdAt) return ''
   const d = new Date(createdAt)
+  if(isNaN(d.getTime())) return ''
   const now = new Date()
   const isToday = d.toDateString() === now.toDateString()
   const isYesterday = d.toDateString() === new Date(now - 86400000).toDateString()
-  const time = d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
+  const hh = d.getHours().toString().padStart(2,'0')
+  const mm = d.getMinutes().toString().padStart(2,'0')
+  const time = `${hh}:${mm}`
   if(isToday) return time
-  if(isYesterday) return `Yesterday ${time}`
-  // Show real date
-  const date = d.toLocaleDateString([],{day:'2-digit',month:'2-digit',year:'2-digit'})
-  return `${date} ${time}`
+  // Format as DD/MM/YY
+  const dd = d.getDate().toString().padStart(2,'0')
+  const mo = (d.getMonth()+1).toString().padStart(2,'0')
+  const yy = d.getFullYear().toString().slice(-2)
+  if(isYesterday) return `${dd}/${mo}/${yy} ${time}`
+  return `${dd}/${mo}/${yy} ${time}`
 }
 
-function Msg({msg,onMiniCard,onMention,onHide,onWhisper,myId,myLevel,socket,roomId,onYTMinimize}) {
+function Msg({msg,onMiniCard,onMention,onHide,onWhisper,onQuote,myId,myLevel,socket,roomId,onYTMinimize}) {
   const isSystem = ['system','join','leave','kick','mute','ban','mod','dice','gift','warning','success','error'].includes(msg.type)
 
   // ── SYSTEM MESSAGE ──
@@ -129,7 +135,7 @@ function Msg({msg,onMiniCard,onMention,onHide,onWhisper,myId,myLevel,socket,room
     if(!text) return null
     return text.split(/(@\w+)/g).map((p,i) =>
       p.startsWith('@')
-        ? <span key={i} style={{color:'#1a73e8',fontWeight:700,background:'rgba(26,115,232,.1)',padding:'0 3px',borderRadius:4,cursor:'pointer'}} onClick={()=>onMention?.(p)}>{p}</span>
+        ? <span key={i} style={{color:'#1a73e8',fontWeight:700,background:'rgba(26,115,232,.1)',padding:'0 3px',borderRadius:4,cursor:'pointer'}} onClick={e=>{e.stopPropagation();onMention?.(p)}}>{p}</span>
         : p
     )
   }
@@ -152,8 +158,7 @@ function Msg({msg,onMiniCard,onMention,onHide,onWhisper,myId,myLevel,socket,room
       <div style={{position:'fixed',top:menuPos.y,left:menuPos.x,background:'#1e293b',border:'1px solid #334155',borderRadius:10,zIndex:8889,minWidth:175,overflow:'hidden',boxShadow:'0 8px 24px rgba(0,0,0,.4)'}}>
         {[
           {icon:'fi-sr-reply-all',  label:'Quote',   color:'#60a5fa', fn:()=>{
-            const q = (msg.content||'').length > 80 ? (msg.content||'').slice(0,80)+'…' : (msg.content||'')
-            onMention?.(`@${msg.sender?.username} "${q}" `)
+            onQuote?.(msg)
             setMenuPos(null)
           }},
           {icon:'fi-sr-comment-user', label:'Whisper', color:'#a78bfa', fn:()=>{
@@ -221,10 +226,19 @@ function Msg({msg,onMiniCard,onMention,onHide,onWhisper,myId,myLevel,socket,room
           fontStyle: msg.sender?.bubbleStyle?.includes('italic') ? 'italic' : 'normal',
           ...bubStyle,
         }}>
-          {/* Quote / reply indicator */}
+          {/* Quote / reply bubble — like screenshot: mini bubble inside */}
           {msg.replyTo&&(
-            <div style={{background:'rgba(0,0,0,.06)',borderLeft:'2.5px solid #1a73e8',borderRadius:'0 6px 6px 0',padding:'3px 8px',marginBottom:4,fontSize:'0.75rem',color:'#6b7280',maxWidth:300,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-              ↩ {msg.replyTo.sender?.username}: {msg.replyTo.content}
+            <div style={{background:'rgba(0,0,0,.12)',border:'1px solid rgba(255,255,255,.08)',borderRadius:8,padding:'5px 9px',marginBottom:5,display:'flex',alignItems:'flex-start',gap:6,cursor:'pointer'}}
+              onClick={e=>e.stopPropagation()}>
+              <img src={msg.replyTo.sender?.avatar||'/default_images/avatar/default_guest.png'} alt=""
+                style={{width:18,height:18,borderRadius:'50%',objectFit:'cover',flexShrink:0,marginTop:1}}
+                onError={e=>e.target.src='/default_images/avatar/default_guest.png'}/>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:'0.65rem',fontWeight:700,color:'#a78bfa',marginBottom:1}}>{msg.replyTo.sender?.username}</div>
+                <div style={{fontSize:'0.72rem',color:'#9ca3af',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:220}}>
+                  {msg.replyTo.type==='image'?'📷 Image':msg.replyTo.type==='gif'?'🎞 GIF':msg.replyTo.type==='youtube'?'▶ YouTube':(msg.replyTo.content||'').slice(0,80)}
+                </div>
+              </div>
             </div>
           )}
           {msg.type==='gift'    ? <span>🎁 {msg.content}</span>
