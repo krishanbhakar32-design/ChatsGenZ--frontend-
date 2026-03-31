@@ -29,7 +29,7 @@ import { API, RANKS, R, RL, GBR, isStaff, resolveNameColor } from './chatConstan
 import { HBtn }                                                          from './ChatIcons.jsx'
 
 // ── Feature components ────────────────────────────────────────
-import { PaintingCanvas, GifPicker, YTPanel, EmoticonPicker }            from './ChatMedia.jsx'
+import { PaintingCanvas, GifPicker, YTPanel, SpotifyPanel, EmoticonPicker } from './ChatMedia.jsx'
 import { DiceRoll }                                                             from './ChatGames.jsx'
 import { SelfProfileOverlay, ProfileModal }                              from './ChatProfiles.jsx'
 import { Msg }                                                           from './ChatMessages.jsx'
@@ -40,130 +40,67 @@ import { GiftPanel }                                                     from '.
 import { ChatSettingsOverlay, AvatarDropdown, Footer }                   from './ChatSettings.jsx'
 import { WebcamPanel }                                                   from './ChatWebcam.jsx'
 
-// ── SpotifyEmbedPanel — frontend-ready Spotify embed picker ───
-function SpotifyEmbedPanel({ onClose, onSend }) {
-  const [input, setInput] = useState('')
-  const [embedId, setEmbedId] = useState(null)
-  const [embedType, setEmbedType] = useState(null) // 'track' | 'playlist' | 'album' | 'artist'
-  const [error, setError] = useState('')
-
-  function parseSpotifyUrl(raw) {
-    try {
-      const url = raw.trim()
-      // Match: open.spotify.com/track/ID or spotify:track:ID
-      const webMatch = url.match(/open\.spotify\.com\/(track|playlist|album|artist)\/([A-Za-z0-9]+)/)
-      if (webMatch) return { type: webMatch[1], id: webMatch[2] }
-      const uriMatch = url.match(/spotify:(track|playlist|album|artist):([A-Za-z0-9]+)/)
-      if (uriMatch) return { type: uriMatch[1], id: uriMatch[2] }
-    } catch {}
-    return null
-  }
-
-  function handlePreview() {
-    setError('')
-    const parsed = parseSpotifyUrl(input)
-    if (!parsed) { setError('Paste a valid Spotify link (song, playlist, album or artist)'); return }
-    setEmbedId(parsed.id)
-    setEmbedType(parsed.type)
-  }
-
-  function handleSend() {
-    if (!embedId) return
-    onSend(`https://open.spotify.com/${embedType}/${embedId}`)
-  }
-
-  const embedUrl = embedId ? `https://open.spotify.com/embed/${embedType}/${embedId}?utm_source=generator&theme=0` : null
-  const embedH   = embedType === 'track' ? 152 : 352
-
-  return (
-    <div onClick={e=>e.stopPropagation()} style={{position:'fixed',bottom:0,left:0,right:0,background:'#121212',border:'1px solid #1DB95455',borderRadius:'14px 14px 0 0',padding:14,boxShadow:'0 -8px 32px rgba(0,0,0,.45)',zIndex:500}}>
-      {/* Header */}
-      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="#1DB954"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424a.623.623 0 0 1-.857.207c-2.348-1.435-5.304-1.76-8.785-.964a.623.623 0 1 1-.277-1.215c3.809-.87 7.076-.496 9.712 1.115a.623.623 0 0 1 .207.857zm1.223-2.722a.78.78 0 0 1-1.072.257c-2.687-1.652-6.785-2.131-9.965-1.166a.78.78 0 0 1-.973-.52.779.779 0 0 1 .52-.972c3.633-1.102 8.147-.568 11.234 1.329a.78.78 0 0 1 .256 1.072zm.105-2.835C14.69 8.95 9.375 8.775 6.297 9.71a.937.937 0 1 1-.543-1.795c3.528-1.068 9.393-.861 13.098 1.332a.937.937 0 0 1-.938 1.62z"/></svg>
-        <span style={{fontWeight:700,fontSize:'0.88rem',color:'#fff',fontFamily:'Nunito,sans-serif'}}>Share Spotify</span>
-        <span style={{marginLeft:'auto',fontSize:'0.7rem',color:'#1DB954',fontWeight:600}}>song · playlist · album · artist</span>
-        <button onClick={onClose} style={{background:'none',border:'none',color:'#6b7280',cursor:'pointer',fontSize:16,lineHeight:1,padding:'0 2px'}}>✕</button>
-      </div>
-
-      {/* URL input */}
-      <div style={{display:'flex',gap:7,marginBottom:10}}>
-        <input
-          value={input}
-          onChange={e=>{setInput(e.target.value);setError('');setEmbedId(null)}}
-          onKeyDown={e=>e.key==='Enter'&&handlePreview()}
-          placeholder="Paste Spotify link..."
-          style={{flex:1,padding:'8px 12px',borderRadius:9,border:`1.5px solid ${error?'#ef4444':'#1DB95455'}`,background:'#1e1e1e',color:'#fff',fontSize:'0.83rem',outline:'none',fontFamily:'Nunito,sans-serif'}}
-          onFocus={e=>e.target.style.borderColor='#1DB954'}
-          onBlur={e=>e.target.style.borderColor=error?'#ef4444':'#1DB95455'}
-          autoFocus
-        />
-        <button onClick={handlePreview}
-          style={{padding:'8px 14px',borderRadius:9,border:'none',background:'#1DB954',color:'#000',fontWeight:700,fontSize:'0.8rem',cursor:'pointer',fontFamily:'Nunito,sans-serif',whiteSpace:'nowrap'}}>
-          Preview
-        </button>
-      </div>
-
-      {error&&<div style={{fontSize:'0.75rem',color:'#f87171',marginBottom:8,paddingLeft:2}}>{error}</div>}
-
-      {/* Embed preview */}
-      {embedUrl && (
-        <div style={{borderRadius:10,overflow:'hidden',marginBottom:10}}>
-          <iframe
-            src={embedUrl}
-            width="100%"
-            height={embedH}
-            frameBorder="0"
-            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-            loading="lazy"
-            style={{display:'block',borderRadius:10}}
-          />
-        </div>
-      )}
-
-      {/* Send button */}
-      {embedId && (
-        <button onClick={handleSend}
-          style={{width:'100%',padding:'9px',borderRadius:9,border:'none',background:'linear-gradient(135deg,#1DB954,#17a349)',color:'#000',fontWeight:800,fontSize:'0.85rem',cursor:'pointer',fontFamily:'Nunito,sans-serif',display:'flex',alignItems:'center',justifyContent:'center',gap:7}}>
-          <i className="fi fi-sr-paper-plane-top" style={{fontSize:14}}/>
-          Share in chat
-        </button>
-      )}
-    </div>
-  )
-}
-
-// ── WhisperBox (kept inline — small and tightly coupled) ───────
+// ── WhisperBox (fixed: robust userId, error display, enter-to-send) ───────
 function WhisperBox({target,roomId,socket,onClose}) {
   const [text,setText]=useState('')
   const [sent,setSent]=useState(false)
+  const [err,setErr]=useState('')
+
+  // Resolve the correct user ID — backend onlineUsers map uses userId string.
+  // Message sender objects expose _id (ObjectId) or userId (string). Convert to string.
+  const toUserId = String(target.userId || target._id || '')
+
   function send(e){
     e.preventDefault()
     if(!text.trim()||!socket) return
-    socket.emit('sendEcho',{toUserId:target.userId||target._id,content:text.trim(),roomId})
+    if(!toUserId){ setErr('Could not resolve user ID.'); return }
+    setErr('')
+    socket.emit('sendEcho',{toUserId, content:text.trim(), roomId})
     setSent(true)
     setTimeout(()=>{setSent(false);setText('');onClose()},2000)
   }
+
   return(
-    <div style={{position:'fixed',inset:0,zIndex:1010,background:'rgba(0,0,0,.6)',backdropFilter:'blur(4px)',display:'flex',alignItems:'flex-end',justifyContent:'center',padding:'0 0 90px'}} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{background:'#1e1b4b',border:'1px solid #4338ca',borderRadius:14,padding:'14px',width:'min(420px,95vw)',boxShadow:'0 8px 32px rgba(79,70,229,.4)'}}>
-        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
-          <span style={{fontSize:'1.1rem'}}>👁️</span>
+    <div style={{position:'fixed',inset:0,zIndex:1010,background:'rgba(0,0,0,.65)',backdropFilter:'blur(4px)',display:'flex',alignItems:'flex-end',justifyContent:'center',padding:'0 0 90px'}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:'#1e1b4b',border:'1px solid #4338ca',borderRadius:14,padding:'14px 16px',width:'min(430px,95vw)',boxShadow:'0 8px 32px rgba(79,70,229,.4)'}}>
+        {/* Header */}
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
+          <div style={{width:34,height:34,borderRadius:'50%',background:'#312e81',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1rem',flexShrink:0}}>👁️</div>
           <div style={{flex:1}}>
-            <div style={{fontSize:'0.82rem',fontWeight:800,color:'#e0e7ff'}}>Whisper to <span style={{color:'#a78bfa'}}>{target.username}</span></div>
-            <div style={{fontSize:'0.68rem',color:'#6366f1'}}>Only they can see this · staff cannot read</div>
+            <div style={{fontSize:'0.84rem',fontWeight:800,color:'#e0e7ff',fontFamily:'Nunito,sans-serif'}}>
+              Whisper to <span style={{color:'#a78bfa'}}>{target.username}</span>
+            </div>
+            <div style={{fontSize:'0.67rem',color:'#818cf8',fontFamily:'Nunito,sans-serif'}}>
+              Private · only {target.username} can see this message
+            </div>
           </div>
-          <button onClick={onClose} style={{background:'none',border:'none',color:'#6366f1',cursor:'pointer',fontSize:16}}>✕</button>
+          <button onClick={onClose} style={{background:'none',border:'none',color:'#6366f1',cursor:'pointer',fontSize:18,lineHeight:1,padding:'0 2px'}}>✕</button>
         </div>
-        {sent?(<div style={{textAlign:'center',padding:'10px',color:'#a78bfa',fontWeight:700,fontSize:'0.9rem'}}>👁️ Whisper sent!</div>):(
+        {/* Error */}
+        {err&&<div style={{fontSize:'0.75rem',color:'#f87171',marginBottom:8,padding:'4px 8px',background:'rgba(239,68,68,.1)',borderRadius:6,fontFamily:'Nunito,sans-serif'}}>⚠️ {err}</div>}
+        {sent
+          ? <div style={{textAlign:'center',padding:'12px',color:'#a78bfa',fontWeight:700,fontSize:'0.9rem',fontFamily:'Nunito,sans-serif'}}>👁️ Whisper sent!</div>
+          : (
           <form onSubmit={send} style={{display:'flex',gap:8}}>
-            <input autoFocus value={text} onChange={e=>setText(e.target.value)} placeholder={`Whisper to ${target.username}...`} maxLength={500}
-              style={{flex:1,padding:'9px 12px',background:'#312e81',border:'1.5px solid #4338ca',borderRadius:9,color:'#e0e7ff',fontSize:'0.875rem',outline:'none',fontFamily:'Nunito,sans-serif'}}
-              onFocus={e=>e.target.style.borderColor='#818cf8'} onBlur={e=>e.target.style.borderColor='#4338ca'}/>
-            <button type="submit" disabled={!text.trim()} style={{padding:'9px 14px',borderRadius:9,border:'none',background:text.trim()?'linear-gradient(135deg,#6366f1,#4338ca)':'#374151',color:'#fff',fontWeight:700,cursor:text.trim()?'pointer':'not-allowed'}}>
+            <input
+              autoFocus
+              value={text}
+              onChange={e=>{setText(e.target.value);setErr('')}}
+              onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send(e)}}}
+              placeholder={`Whisper to ${target.username}...`}
+              maxLength={500}
+              style={{flex:1,padding:'9px 12px',background:'#312e81',border:`1.5px solid ${err?'#ef4444':'#4338ca'}`,borderRadius:9,color:'#e0e7ff',fontSize:'0.875rem',outline:'none',fontFamily:'Nunito,sans-serif'}}
+              onFocus={e=>e.target.style.borderColor='#818cf8'}
+              onBlur={e=>e.target.style.borderColor=err?'#ef4444':'#4338ca'}
+            />
+            <button type="submit" disabled={!text.trim()} style={{padding:'9px 14px',borderRadius:9,border:'none',background:text.trim()?'linear-gradient(135deg,#6366f1,#4338ca)':'#374151',color:'#fff',fontWeight:700,cursor:text.trim()?'pointer':'not-allowed',transition:'background .15s'}}>
               👁️
             </button>
           </form>
         )}
+        <div style={{fontSize:'0.62rem',color:'#4338ca',marginTop:8,textAlign:'center',fontFamily:'Nunito,sans-serif'}}>
+          Press Enter or click 👁️ to send
+        </div>
       </div>
     </div>
   )
@@ -195,7 +132,7 @@ export default function ChatRoom() {
   const [showDiceAnim,setShowDiceAnim]=useState(false)
   const [diceRollVal, setDiceRollVal] =useState(null)
   const [whisperTarget,setWhisper]=useState(null)
-  const [quoteMsg,setQuoteMsg]=useState(null)  // message to quote
+  const [quotedMsg,   setQuotedMsg]=useState(null)  // message being quoted/replied to
   const [showGif,   setShowGif]  =useState(false)
   const [showYT,      setShowYT]      =useState(false)
   const [showSpotify, setShowSpotify] =useState(false)
@@ -259,7 +196,6 @@ export default function ChatRoom() {
     s.on('systemMessage',  m=>{
       setMsgs(p=>[...p,{_id:Date.now()+'s'+Math.random(),type:m.type||'system',content:m.text,createdAt:new Date()}])
       if(m.type==='join') Sounds.join()
-      if(m.type==='leave') Sounds.leave()
     })
     s.on('messageDeleted', ({messageId})=>setMsgs(p=>p.filter(m=>m._id!==messageId)))
     s.on('typing',         ({username,isTyping:t})=>setTypers(p=>t?[...new Set([...p,username])]:p.filter(n=>n!==username)))
@@ -278,7 +214,7 @@ export default function ChatRoom() {
     s.on('roomUpdated',    d=>setRoom(p=>p?{...p,...d}:p))
     s.on('roomClosed',     ({message})=>{toast?.show(message||'Room closed','error',4000);setTimeout(()=>nav('/chat'),2000)})
     s.on('badgeEarned',    ({badge})=>{Sounds.badge()})
-    s.on('mentioned',      ({by,content,myUsername})=>{ Sounds.mention(); })
+    s.on('mentioned',      ({by,content})=>{ /* mention notifications disabled */ })
     s.on('messageReaction',({messageId,reactions})=>{setMsgs(p=>p.map(m=>m._id===messageId?{...m,reactions}:m))})
     s.on('messagePinned',  ({messageId})=>{setMsgs(p=>p.map(m=>m._id===messageId?{...m,isPinned:true}:m))})
     s.on('userMuted',      ({userId:uid,minutes,by})=>{setMsgs(p=>[...p,{_id:Date.now()+'mu',type:'mute',content:`${by} muted a user for ${minutes} minutes`,createdAt:new Date()}])})
@@ -292,10 +228,23 @@ export default function ChatRoom() {
     s.on('privateMessage', m=>{setNotif(p=>({...p,dm:p.dm+1}));Sounds.privateMsg()})
     s.on('giftSent',       ({gift,to})=>{})
     s.on('pmError',        ({error})=>toast?.show(error,'error',4000))
-    s.on('echoMessage',    ({from,content,isEcho,to})=>{
-      // Both sender (echo back) and recipient get this event
-      // Always show if 'from' is present — creates whisper bubble in chat
-      if(from) setMsgs(p=>[...p,{_id:Date.now()+'e',type:'whisper',content,sender:from,createdAt:new Date(),isEcho:true}])
+    s.on('echoMessage', (payload)=>{
+      // Both sender (echo back) and recipient get this event.
+      // payload has shape: { _id, roomId, content, isEcho, createdAt, from:{...}, to:{...} }
+      const { from, to, content, _id, createdAt } = payload
+      if(from) {
+        setMsgs(p=>[...p,{
+          _id: _id || (Date.now()+'e'+Math.random()),
+          type:'whisper',
+          isEcho:true,
+          content,
+          from,          // full from-user object
+          to,            // full to-user object
+          sender: from,  // keep sender alias so avatar/name render works
+          createdAt: createdAt || new Date(),
+        }])
+        Sounds.whisper?.()
+      }
     })
     s.on('echoError',      ({error})=>toast?.show(`👁️ ${error}`,'error',3000))
     s.on('roomPasswordRequired', ({roomId:rid,roomName})=>{
@@ -317,17 +266,21 @@ export default function ChatRoom() {
     e.preventDefault()
     const t=input.trim()
     if(!t||!sockRef.current||!connected) return
-    sockRef.current.emit('sendMessage',{roomId,content:t,type:'text',replyTo:quoteMsg?._id||null})
+    sockRef.current.emit('sendMessage',{
+      roomId,
+      content: t,
+      type: 'text',
+      replyTo: quotedMsg?._id || null,
+    })
     setInput('')
-    setQuoteMsg(null)
+    setQuotedMsg(null)
     isTypingRef.current=false; sockRef.current?.emit('typing',{roomId,isTyping:false})
     inputRef.current?.focus()
   }
 
   function leave(){sockRef.current?.disconnect();nav('/chat')}
 
-  const handleMention=useCallback((text)=>{setInput(p=>text+(p?' '+p:''));inputRef.current?.focus();},[])
-  const handleQuote=useCallback((msg)=>{setQuoteMsg(msg);inputRef.current?.focus();},[])
+  const handleMention=useCallback((text)=>{setInput(p=>text+(p?' '+p:''));inputRef.current?.focus()},[])
   const handleHide=useCallback((id)=>{setHidden(p=>new Set([...p,id]))},[])
   const handleMiniCard=useCallback((user,pos)=>{setProf(user)},[])
   const myLevel=RANKS[me?.rank]?.level||1
@@ -429,7 +382,7 @@ export default function ChatRoom() {
               !hiddenMsgs.has(m._id)&&<Msg key={m._id||i} msg={m} myId={me?._id} myLevel={myLevel}
                 onMiniCard={handleMiniCard} onMention={handleMention} onHide={handleHide}
                 onWhisper={u=>setWhisper(u)}
-                onQuote={handleQuote}
+                onQuote={msg=>{setQuotedMsg(msg);inputRef.current?.focus()}}
                 onYTMinimize={v=>setMiniYT(v)}
                 socket={sockRef.current} roomId={roomId}/>
             ))}
@@ -446,6 +399,30 @@ export default function ChatRoom() {
 
           {/* ── INPUT BAR ── */}
           <div style={{borderTop:`1px solid ${thBorder}44`,padding:'5px 8px',background:thHeader,flexShrink:0,position:'relative'}}>
+            {/* ── QUOTE PREVIEW BAR — shown when user clicked Quote on a message ── */}
+            {quotedMsg&&(
+              <div style={{display:'flex',alignItems:'center',gap:8,background:'rgba(99,102,241,0.10)',border:'1px solid #6366f133',borderRadius:8,padding:'5px 10px',marginBottom:5,borderLeft:'3px solid #6366f1'}}>
+                <i className="fi fi-sr-reply-all" style={{fontSize:12,color:'#6366f1',flexShrink:0}}/>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:'0.68rem',fontWeight:800,color:'#6366f1',fontFamily:'Nunito,sans-serif'}}>
+                    Replying to {quotedMsg.sender?.username || 'Unknown'}
+                  </div>
+                  <div style={{fontSize:'0.72rem',color:'#6b7280',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontFamily:'Nunito,sans-serif'}}>
+                    {quotedMsg.type==='image'?'📷 Image'
+                    :quotedMsg.type==='gif'?'🖼️ GIF'
+                    :quotedMsg.type==='voice'?'🎤 Voice message'
+                    :quotedMsg.type==='youtube'?'▶️ YouTube video'
+                    :(quotedMsg.content||'').slice(0,80)+((quotedMsg.content||'').length>80?'…':'')}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={()=>setQuotedMsg(null)}
+                  style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:14,padding:'0 2px',flexShrink:0,lineHeight:1}}
+                  title="Cancel quote"
+                >✕</button>
+              </div>
+            )}
             {/* + popup */}
             {showPlus&&(
               <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'calc(100% + 5px)',left:6,background:'#fff',border:'1px solid #e4e6ea',borderRadius:12,padding:8,display:'flex',gap:7,boxShadow:'0 4px 20px rgba(0,0,0,.14)',zIndex:50}}>
@@ -473,27 +450,15 @@ export default function ChatRoom() {
               </div>
             )}
             {/* GIF picker */}
-            {showGif&&<>
-              <div onClick={()=>setShowGif(false)} style={{position:'fixed',inset:0,zIndex:499,background:'rgba(0,0,0,.35)'}}/>
-              <GifPicker onSelect={url=>{sockRef.current?.emit('sendMessage',{roomId,content:url,type:'gif'});setShowGif(false)}} onClose={()=>setShowGif(false)}/>
-            </>}
+            {showGif&&<GifPicker onSelect={url=>{sockRef.current?.emit('sendMessage',{roomId,content:url,type:'gif'});setShowGif(false)}} onClose={()=>setShowGif(false)}/>}
             {/* YouTube panel */}
-            {showYT&&<>
-              <div onClick={()=>setShowYT(false)} style={{position:'fixed',inset:0,zIndex:499,background:'rgba(0,0,0,.35)'}}/>
-              <YTPanel onClose={()=>setShowYT(false)} onSend={url=>{sockRef.current?.emit('sendMessage',{roomId,content:url,type:'youtube'});setShowYT(false)}}/>
-            </>}
+            {showYT&&<YTPanel onClose={()=>setShowYT(false)} onSend={url=>{sockRef.current?.emit('sendMessage',{roomId,content:url,type:'youtube'});setShowYT(false)}}/>}
             {/* Spotify panel */}
-            {showSpotify&&<SpotifyEmbedPanel onClose={()=>setShowSpotify(false)} onSend={url=>{sockRef.current?.emit('sendMessage',{roomId,content:url,type:'spotify'});setShowSpotify(false)}}/>}
+            {showSpotify&&<SpotifyPanel onClose={()=>setShowSpotify(false)} onSend={url=>{sockRef.current?.emit('sendMessage',{roomId,content:url,type:'spotify'});setShowSpotify(false)}}/>}
             {/* Paint canvas */}
-            {showPaint&&<>
-              <div onClick={()=>setShowPaint(false)} style={{position:'fixed',inset:0,zIndex:499,background:'rgba(0,0,0,.35)'}}/>
-              <PaintingCanvas onSend={url=>{sockRef.current?.emit('sendMessage',{roomId,content:url,type:'image'});setShowPaint(false)}} onClose={()=>setShowPaint(false)}/>
-            </>}
+            {showPaint&&<PaintingCanvas onSend={url=>{sockRef.current?.emit('sendMessage',{roomId,content:url,type:'image'});setShowPaint(false)}} onClose={()=>setShowPaint(false)}/>}
             {/* Emoticon picker */}
-            {showEmoji&&<>
-              <div onClick={()=>setShowEmoji(false)} style={{position:'fixed',inset:0,zIndex:499,background:'rgba(0,0,0,.35)'}}/>
-              <EmoticonPicker onSelect={em=>{setInput(p=>p+em);setShowEmoji(false);inputRef.current?.focus()}} onClose={()=>setShowEmoji(false)}/>
-            </>}
+            {showEmoji&&<EmoticonPicker onSelect={em=>{setInput(p=>p+em);setShowEmoji(false);inputRef.current?.focus()}} onClose={()=>setShowEmoji(false)}/>}
 
             <input id="cgz-img-input" type="file" accept="image/*" style={{display:'none'}}
               onChange={async e=>{
@@ -508,17 +473,6 @@ export default function ChatRoom() {
                 } catch{toast?.show('Image upload failed','error',3000)}
               }}/>
 
-            {/* Quote preview bar */}
-            {quoteMsg&&(
-              <div style={{display:'flex',alignItems:'center',gap:8,padding:'5px 10px',background:'rgba(26,115,232,.08)',borderBottom:`1px solid ${thBorder}33`,borderRadius:8,marginBottom:4}}>
-                <i className="fi fi-sr-reply-all" style={{fontSize:12,color:'#1a73e8',flexShrink:0}}/>
-                <div style={{flex:1,minWidth:0}}>
-                  <span style={{fontSize:'0.68rem',fontWeight:700,color:'#1a73e8'}}>{quoteMsg.sender?.username}</span>
-                  <span style={{fontSize:'0.68rem',color:'#6b7280',marginLeft:6,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',display:'inline-block',maxWidth:200}}>{(quoteMsg.content||'').slice(0,60)}</span>
-                </div>
-                <button onClick={()=>setQuoteMsg(null)} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:14,padding:0,flexShrink:0}}>✕</button>
-              </div>
-            )}
             <form onSubmit={send} style={{display:'flex',alignItems:'center',gap:4}}>
               {/* + button — plain, no color */}
               <button type="button" onClick={e=>{e.stopPropagation();setShowPlus(p=>!p);setShowEmoji(false);setShowGif(false);setShowYT(false)}}
@@ -566,13 +520,14 @@ export default function ChatRoom() {
       </div>
 
       {/* OVERLAYS */}
-      {whisperTarget&&<WhisperBox target={whisperTarget} roomId={roomId} socket={sockRef.current} onClose={()=>setWhisper(null)}/>}
       {showDiceAnim&&diceRollVal&&<DiceRoll value={diceRollVal} onDone={()=>{setShowDiceAnim(false);setDiceRollVal(null)}}/>}
       {profUser&&(profUser._id===me?._id
         ? <SelfProfileOverlay user={me} onClose={()=>setProf(null)} onUpdated={u=>{if(u)setMe(p=>({...p,...u}))}}/>
         : <ProfileModal user={profUser} myLevel={myLevel} socket={sockRef.current} roomId={roomId} onClose={()=>setProf(null)} onGift={u=>setGiftTgt(u)}/>
       )}
       {giftTarget&&<GiftPanel targetUser={giftTarget} myGold={me?.gold||0} onClose={()=>setGiftTgt(null)} onSent={()=>{setGiftTgt(null)}} socket={sockRef.current} roomId={roomId}/>}
+      {/* ── WHISPER BOX — renders when user clicks Whisper on a message or user list ── */}
+      {whisperTarget&&<WhisperBox target={whisperTarget} roomId={roomId} socket={sockRef.current} onClose={()=>setWhisper(null)}/>}
 
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
