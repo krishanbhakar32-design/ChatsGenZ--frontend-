@@ -2,9 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 import Header from '../components/Header.jsx'
 import Footer from '../components/Footer.jsx'
 import ScrollToTop from '../components/ScrollToTop.jsx'
-import { DesiChatCTA } from '../components/PromoComponents.jsx'
+import { DesiChatCTA, VastVideoAd } from '../components/PromoComponents.jsx'
 
-const API = import.meta.env.VITE_API_URL  'https://chatsgenz-backend-production.up.railway.app'
+const API = import.meta.env.VITE_API_URL || 'https://chatsgenz-backend-production.up.railway.app'
 
 /* ─── Anti-bot MagSrv Ad Loader ─────────────────────────────────────────── */
 /* Loads ad script only once globally, then pushes zone serve calls          */
@@ -13,9 +13,9 @@ function loadMagScript(cb) {
   if (magScriptLoaded) { cb(); return }
   // basic bot check — bots don't move mice or have real screen dimensions
   const isBotLike = (
-    navigator.webdriver 
-    !navigator.languages?.length 
-    window.outerWidth === 0 
+    navigator.webdriver ||
+    !navigator.languages?.length ||
+    window.outerWidth === 0 ||
     /HeadlessChrome|PhantomJS|Selenium/.test(navigator.userAgent)
   )
   if (isBotLike) return
@@ -33,10 +33,10 @@ function MagAdInline({ zoneId, className, style = {} }) {
     // small random delay so real users' page-render timing varies from bots
     const delay = 800 + Math.random() * 400
     const t = setTimeout(() => {
-      if (cancelled  !ref.current) return
+      if (cancelled || !ref.current) return
       loadMagScript(() => {
-        if (cancelled  !ref.current) return
-        window.AdProvider = window.AdProvider  []
+        if (cancelled || !ref.current) return
+        window.AdProvider = window.AdProvider || []
         window.AdProvider.push({ serve: {} })
       })
     }, delay)
@@ -62,7 +62,7 @@ function BottomPopupAd({ zoneId, className }) {
       if (cancelled) return
       loadMagScript(() => {
         if (cancelled) return
-        window.AdProvider = window.AdProvider  []
+        window.AdProvider = window.AdProvider || []
         window.AdProvider.push({ serve: {} })
         setVisible(true)
       })
@@ -118,9 +118,7 @@ function BottomPopupAd({ zoneId, className }) {
   )
 }
 
-/* ─── Shared UI primitives ─────────────────────────
-
-──────────────────────── */
+/* ─── Shared UI primitives ───────────────────────────────────────────────── */
 function Overlay({ onClose, children }) {
   return (
     <div onClick={onClose} style={{ position:'fixed',inset:0,zIndex:1000,background:'rgba(8,14,26,.85)',backdropFilter:'blur(10px)',display:'flex',alignItems:'center',justifyContent:'center',padding:16 }}>
@@ -142,7 +140,7 @@ const Spin = () => <span style={{ width:14,height:14,border:'2px solid rgba(255,
 function FW({ icon, children }) {
   return (
     <div style={{ position:'relative' }}>
-      <i className={fi ${icon}} style={{ position:'absolute',left:13,top:'50%',transform:'translateY(-50%)',color:'#9ca3af',fontSize:14,pointerEvents:'none',zIndex:1 }} />
+      <i className={`fi ${icon}`} style={{ position:'absolute',left:13,top:'50%',transform:'translateY(-50%)',color:'#9ca3af',fontSize:14,pointerEvents:'none',zIndex:1 }} />
       {children}
     </div>
   )
@@ -157,7 +155,7 @@ function PwdField({ value, onChange, placeholder }) {
         style={{ ...IS, paddingRight:44 }} onFocus={onF} onBlur={onB} required />
       <button type="button" onClick={()=>setShow(s=>!s)}
         style={{ position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:15,display:'flex',alignItems:'center',padding:2 }}>
-        <i className={fi ${show?'fi-sr-eye-crossed':'fi-sr-eye'}} />
+        <i className={`fi ${show?'fi-sr-eye-crossed':'fi-sr-eye'}`} />
       </button>
     </div>
   )
@@ -169,17 +167,14 @@ function Head({ bg, icon, title, sub, onClose, onBack }) {
       <div style={{ display:'flex',alignItems:'center',gap:11 }}>
         {onBack && <button onClick={onBack} style={{ background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:15,padding:'0 6px 0 0',display:'flex',alignItems:'center' }}><i className="fi fi-sr-angle-left" /></button>}
         <div style={{ width:40,height:40,background:bg,borderRadius:11,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
-          <i className={fi fi-sr-${icon}} style={{ color:'#fff',fontSize:17 }} />
+          <i className={`fi fi-sr-${icon}`} style={{ color:'#fff',fontSize:17 }} />
         </div>
         <div>
           <div style={{ fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1.05rem',color:'#111827' }}>{title}</div>
           <div style={{ fontSize:'0.72rem',color:'#9ca3af',marginTop:1 }}>{sub}</div>
         </div>
       </div>
-      <button onClick={onClose} style={{ background:'none',border:'none',cursor:'
-
-Ayushman, [31-03-2026 07:15]
-pointer',color:'#9ca3af',fontSize:20,padding:4,lineHeight:1,display:'flex',alignItems:'center' }}>
+      <button onClick={onClose} style={{ background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:20,padding:4,lineHeight:1,display:'flex',alignItems:'center' }}>
         <i className="fi fi-sr-cross-small" />
       </button>
     </div>
@@ -188,8 +183,8 @@ pointer',color:'#9ca3af',fontSize:20,padding:4,lineHeight:1,display:'flex',align
 
 function Btn({ loading, text, loadText, bg, color, shadow, onClick, type='submit', disabled }) {
   return (
-    <button type={type} onClick={onClick} disabled={loadingdisabled}
-      style={{ display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'13px',borderRadius:10,border:'none',width:'100%',background:(loadingdisabled)?'#d1d5db':bg,color:color'#fff',fontWeight:800,fontSize:'0.9rem',fontFamily:'Outfit,sans-serif',cursor:(loadingdisabled)?'not-allowed':'pointer',boxShadow:(loadingdisabled)?'none':shadow'0 3px 14px rgba(26,115,232,.28)',transition:'all .15s',marginTop:6 }}>
+    <button type={type} onClick={onClick} disabled={loading||disabled}
+      style={{ display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'13px',borderRadius:10,border:'none',width:'100%',background:(loading||disabled)?'#d1d5db':bg,color:color||'#fff',fontWeight:800,fontSize:'0.9rem',fontFamily:'Outfit,sans-serif',cursor:(loading||disabled)?'not-allowed':'pointer',boxShadow:(loading||disabled)?'none':shadow||'0 3px 14px rgba(26,115,232,.28)',transition:'all .15s',marginTop:6 }}>
       {loading ? <><Spin />{loadText||'Please wait...'}</> : text}
     </button>
   )
@@ -202,7 +197,7 @@ function OTPStep({ userId, email, username, onClose }) {
     if(otp.length!==6){setErr('Enter the 6-digit code.');return}
     setLoad(true);setErr('');setOk('')
     try {
-      const res=await fetch(${API}/api/auth/verify-otp,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId,otp})})
+      const res=await fetch(`${API}/api/auth/verify-otp`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId,otp})})
       const d=await res.json()
       if(res.ok&&d.token){localStorage.setItem('cgz_token',d.token);window.location.href='/chat'}
       else setErr(d.error||'Incorrect code.')
@@ -211,11 +206,11 @@ function OTPStep({ userId, email, username, onClose }) {
   }
   async function resend() {
     setRl(true);setErr('');setOk('')
-    try{const res=await fetch(${API}/api/auth/resend-otp,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId})});const d=await res.json();if(res.ok)setOk('New code sent! Check spam too.');else setErr(d.error||'Could not resend.')}catch{setErr('Network error.')}finally{setRl(false)}
+    try{const res=await fetch(`${API}/api/auth/resend-otp`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId})});const d=await res.json();if(res.ok)setOk('New code sent! Check spam too.');else setErr(d.error||'Could not resend.')}catch{setErr('Network error.')}finally{setRl(false)}
   }
   return (
     <>
-      <Head bg="linear-gradient(135deg,#1a73e8,#1464cc)" icon="shield-check" title="Verify Email" sub={Code sent to ${email}} onClose={onClose} />
+      <Head bg="linear-gradient(135deg,#1a73e8,#1464cc)" icon="shield-check" title="Verify Email" sub={`Code sent to ${email}`} onClose={onClose} />
       <div style={{ textAlign:'center',marginBottom:20 }}>
         <div style={{ fontSize:44,marginBottom:10 }}>📧</div>
         <p style={{ fontSize:'0.9rem',color:'#6b7280',lineHeight:1.75 }}>Hi <strong style={{ color:'#111827' }}>{username}</strong>! Enter the <strong style={{ color:'#1a73e8' }}>6-digit code</strong> sent to <strong>{email}</strong>.</p>
@@ -239,11 +234,9 @@ function LoginModal({ onClose }) {
   const [step,setStep]=useState('login'); const [form,setForm]=useState({login:'',password:''}); const [fpEmail,setFpEmail]=useState(''); const [err,setErr]=useState(''); const [ok,setOk]=useState(''); const [load,setLoad]=useState(false); const [otpData,setOtpData]=useState({})
   const reset=()=>{setErr('');setOk('')}
   async function doLogin(e) {
-    e.preventDefault();setLoa
-
-d(true);reset()
+    e.preventDefault();setLoad(true);reset()
     try {
-      const res=await fetch(${API}/api/auth/login,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login:form.login.trim(),password:form.password})})
+      const res=await fetch(`${API}/api/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login:form.login.trim(),password:form.password})})
       const d=await res.json()
       if(res.ok&&d.token){localStorage.setItem('cgz_token',d.token);window.location.href='/chat'}
       else if(res.ok&&d.needsVerification){setOtpData({userId:d.userId,email:form.login.trim(),username:d.username});setStep('otp')}
@@ -252,7 +245,7 @@ d(true);reset()
   }
   async function doForgot(e) {
     e.preventDefault();setLoad(true);reset()
-    try{const res=await fetch(${API}/api/auth/forgot-password,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:fpEmail.trim()})});if((await res.json()),res.ok)setStep('forgot_sent');else setErr('Could not send.')}catch{setErr('Network error.')}finally{setLoad(false)}
+    try{const res=await fetch(`${API}/api/auth/forgot-password`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:fpEmail.trim()})});if((await res.json()),res.ok)setStep('forgot_sent');else setErr('Could not send.')}catch{setErr('Network error.')}finally{setLoad(false)}
   }
   return (
     <Overlay onClose={onClose}>
@@ -292,9 +285,7 @@ d(true);reset()
   )
 }
 
-function
-
-GuestModal({ onClose }) {
+function GuestModal({ onClose }) {
   const months=['January','February','March','April','May','June','July','August','September','October','November','December']
   const curYear=new Date().getFullYear(); const years=Array.from({length:82},(_,i)=>curYear-18-i); const days=Array.from({length:31},(_,i)=>i+1)
   const [form,setForm]=useState({username:'',gender:'',day:'',month:'',year:''}); const [err,setErr]=useState(''); const [load,setLoad]=useState(false)
@@ -302,14 +293,14 @@ GuestModal({ onClose }) {
   async function submit(e) {
     e.preventDefault()
     if(!form.gender){setErr('Please select your gender.');return}
-    if(!form.day!form.month!form.year){setErr('Please enter your date of birth.');return}
+    if(!form.day||!form.month||!form.year){setErr('Please enter your date of birth.');return}
     setLoad(true);setErr('')
     try{
-      const dob=${form.year}-${String(months.indexOf(form.month)+1).padStart(2,'0')}-${String(form.day).padStart(2,'0')}
-      const res=await fetch(${API}/api/auth/guest,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:form.username,gender:form.gender,dob})})
+      const dob=`${form.year}-${String(months.indexOf(form.month)+1).padStart(2,'0')}-${String(form.day).padStart(2,'0')}`
+      const res=await fetch(`${API}/api/auth/guest`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:form.username,gender:form.gender,dob})})
       const d=await res.json()
       if(res.ok&&d.token){localStorage.setItem('cgz_token',d.token);window.location.href='/chat'}
-      else setErr(d.error'Failed. Please try again.')
+      else setErr(d.error||'Failed. Please try again.')
     }catch{setErr('Network error.')}finally{setLoad(false)}
   }
   return (
@@ -339,8 +330,7 @@ GuestModal({ onClose }) {
           </div>
           <Btn loading={load} text={<><i className="fi fi-sr-bolt"/> Enter ChatsGenZ as Guest</>} loadText="Entering..." bg="linear-gradient(135deg,#16a34a,#15803d)" shadow="0 3px 12px rgba(22,163,74,.28)"/>
         </form>
-        <p style={{ textAlign:'center',fontSize:'0.78rem',color:'#9ca3af',marginTop:14,lineHeight:1.6 }}>Guest sessions are temporary. <strong style={{ color:'#7c3aed' }}>Register free</strong> to save profil
-e, earn ranks &amp; unlock all features.</p>
+        <p style={{ textAlign:'center',fontSize:'0.78rem',color:'#9ca3af',marginTop:14,lineHeight:1.6 }}>Guest sessions are temporary. <strong style={{ color:'#7c3aed' }}>Register free</strong> to save profile, earn ranks &amp; unlock all features.</p>
       </div>
     </Overlay>
   )
@@ -354,13 +344,13 @@ function RegisterModal({ onClose }) {
   async function submit(e) {
     e.preventDefault()
     if(!form.gender){setErr('Please select your gender.');return}
-    if(!form.day!form.month||!form.year){setErr('Please enter your full date of birth.');return}
+    if(!form.day||!form.month||!form.year){setErr('Please enter your full date of birth.');return}
     if(form.password!==form.confirm){setErr('Passwords do not match.');return}
     if(form.password.length<6){setErr('Password must be at least 6 characters.');return}
     setLoad(true);setErr('')
     try{
-      const dob=${form.year}-${String(months.indexOf(form.month)+1).padStart(2,'0')}-${String(form.day).padStart(2,'0')}
-      const res=await fetch(${API}/api/auth/register,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:form.username.trim(),email:form.email.trim().toLowerCase(),password:form.password,gender:form.gender,dob})})
+      const dob=`${form.year}-${String(months.indexOf(form.month)+1).padStart(2,'0')}-${String(form.day).padStart(2,'0')}`
+      const res=await fetch(`${API}/api/auth/register`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:form.username.trim(),email:form.email.trim().toLowerCase(),password:form.password,gender:form.gender,dob})})
       const d=await res.json()
       if(res.ok&&d.success){if(d.needsOTP){setOtpData({userId:d.userId,email:form.email.trim().toLowerCase(),username:d.username});setStep('otp')}else{localStorage.setItem('cgz_token',d.token);window.location.href='/chat'}}
       else setErr(d.error||'Registration failed.')
@@ -441,7 +431,7 @@ export default function Login() {
           <div style={{ display:'flex',gap:20,justifyContent:'center',marginTop:32,flexWrap:'wrap' }}>
             {[['fi-sr-gift','Free Gifts'],['fi-sr-shield-check','Safe & Secure'],['fi-sr-video-camera','Video Calls'],['fi-sr-medal','Earn Ranks']].map(([ic,lb])=>(
               <div key={lb} style={{ display:'flex',alignItems:'center',gap:6,color:'rgba(255,255,255,.65)',fontSize:'0.78rem',fontWeight:600 }}>
-                <i className={fi ${ic}} style={{ fontSize:13 }}/>{lb}
+                <i className={`fi ${ic}`} style={{ fontSize:13 }}/>{lb}
               </div>
             ))}
           </div>
@@ -473,4 +463,40 @@ export default function Login() {
               </div>
               <p style={{ color:'#1e3a5f',fontSize:'0.875rem',lineHeight:1.9,margin:0 }}>Creating a free account unlocks your <strong>full profile</strong>, <strong>friends list</strong>, <strong>private messaging</strong>, <strong>gold coins</strong>, <strong>XP levels</strong>, <strong>rank eligibility</strong>, <strong>badges</strong>, <strong>32 virtual gifts</strong>, <strong>video &amp; audio calls</strong>, <strong>webcam chat</strong>, <strong>daily login bonuses</strong>, access to <strong>VIP rooms</strong>, ability to <strong>create your own rooms</strong>, <strong>24 themes</strong>, <strong>30 custom fonts</strong>, <strong>neon &amp; gradient bubble colors</strong>, <strong>daily spin wheel</strong>, <strong>dice &amp; keno games</strong>, <strong>quiz rooms</strong>, and an <strong>AI chat bot</strong>. Registration takes under 30 seconds. No credit card. No subscription. No catch — ever.</p>
             </div>
-            <div style={{ background:'linear-gradient(
+            <div style={{ background:'linear-gradient(135deg,#fffbeb,#fef3c7)',border:'2px solid #f59e0b',borderRadius:14,padding:'18px 20px',marginBottom:20 }}>
+              <div style={{ display:'flex',alignItems:'center',gap:10,marginBottom:12 }}>
+                <div style={{ width:32,height:32,background:'#f59e0b',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}><span style={{ fontSize:15 }}>⚠️</span></div>
+                <strong style={{ color:'#78350f',fontSize:'0.95rem',fontFamily:'Outfit,sans-serif',fontWeight:900 }}>Important — Please Read Before Joining</strong>
+              </div>
+              <ul style={{ margin:0,paddingLeft:18,color:'#92400e',fontSize:'0.875rem',lineHeight:2.1 }}>
+                <li><strong>You must be 18 years or older</strong> to register and access ChatsGenZ.</li>
+                <li><strong>Gender cannot be changed after registration</strong> — it permanently affects rank eligibility, avatar border color, and room access.</li>
+                <li><strong>Email verification is required</strong> — a 6-digit OTP is sent after registration. Check your spam folder.</li>
+                <li><strong>One account per person.</strong> Multiple accounts to bypass bans results in permanent IP ban.</li>
+                <li><strong>Username must be appropriate.</strong> Offensive or impersonating usernames are removed without warning.</li>
+              </ul>
+            </div>
+            <p>ChatsGenZ features <strong>24 stunning themes</strong>, <strong>30 custom fonts</strong>, <strong>neon and gradient chat bubble colors</strong>, a <strong>gift system</strong> with 32 unique gifts, <strong>XP-based leveling</strong>, <strong>rank badges</strong>, <strong>daily spin wheels</strong>, <strong>dice games</strong>, <strong>quiz rooms</strong>, and an <strong>AI-powered bot</strong>. Join thousands chatting right now — it's free, it's fun, and it's always live.</p>
+          </div>
+        </div>
+      </section>
+
+      <Footer/>
+
+      {modal==='login'    && <LoginModal    onClose={()=>setModal(null)}/>}
+      {modal==='guest'    && <GuestModal    onClose={()=>setModal(null)}/>}
+      {modal==='register' && <RegisterModal onClose={()=>setModal(null)}/>}
+
+      {/* Bottom slide-up popup ad — zone 5884708, appears after 3s, has close btn */}
+      <BottomPopupAd zoneId="5884708" className="eas6a97888e31" />
+      {/* VAST video ad — zone 5885566 (login page) */}
+      <VastVideoAd zone={1} />
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@900&display=swap');
+        @keyframes spin{to{transform:rotate(360deg)}} @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+        select option{background:#fff;color:#111827;} button:active{transform:scale(.98)!important;}
+      `}</style>
+    </>
+  )
+}
