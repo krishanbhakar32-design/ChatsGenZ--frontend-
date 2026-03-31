@@ -1,4 +1,3 @@
-Ayushman, [31-03-2026 07:15]
 import { useState, useEffect, useRef } from 'react'
 import Header from '../components/Header.jsx'
 import Footer from '../components/Footer.jsx'
@@ -121,7 +120,6 @@ function BottomPopupAd({ zoneId, className }) {
 
 /* ─── Shared UI primitives ─────────────────────────
 
-Ayushman, [31-03-2026 07:15]
 ──────────────────────── */
 function Overlay({ onClose, children }) {
   return (
@@ -243,7 +241,6 @@ function LoginModal({ onClose }) {
   async function doLogin(e) {
     e.preventDefault();setLoa
 
-Ayushman, [31-03-2026 07:15]
 d(true);reset()
     try {
       const res=await fetch(${API}/api/auth/login,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login:form.login.trim(),password:form.password})})
@@ -297,7 +294,6 @@ d(true);reset()
 
 function
 
-Ayushman, [31-03-2026 07:15]
 GuestModal({ onClose }) {
   const months=['January','February','March','April','May','June','July','August','September','October','November','December']
   const curYear=new Date().getFullYear(); const years=Array.from({length:82},(_,i)=>curYear-18-i); const days=Array.from({length:31},(_,i)=>i+1)
@@ -344,8 +340,6 @@ GuestModal({ onClose }) {
           <Btn loading={load} text={<><i className="fi fi-sr-bolt"/> Enter ChatsGenZ as Guest</>} loadText="Entering..." bg="linear-gradient(135deg,#16a34a,#15803d)" shadow="0 3px 12px rgba(22,163,74,.28)"/>
         </form>
         <p style={{ textAlign:'center',fontSize:'0.78rem',color:'#9ca3af',marginTop:14,lineHeight:1.6 }}>Guest sessions are temporary. <strong style={{ color:'#7c3aed' }}>Register free</strong> to save profil
-
-Ayushman, [31-03-2026 07:15]
 e, earn ranks &amp; unlock all features.</p>
       </div>
     </Overlay>
@@ -388,10 +382,7 @@ function RegisterModal({ onClose }) {
             <div style={{ display:'grid',gridTemplateColumns:'1fr 2fr 1.5fr',gap:7 }}>
               <select style={ss} value={form.day}   onChange={e=>setForm(f=>({...f,day:e.target.value}))}   onFocus={onF} onBlur={onB} required><option value="">Day</option>{days.map(d=><option key={d}>{d}</option>)}</select>
               <select style={ss} value={form.month} onChange={e=>setForm(f=>({...f,month:e.target.value}))} onFocus={onF} onBlur={onB} required><option value="">Month</option>{months.map(m=><option key={m}>{m}</option>)}</select>
-              <select style={ss} value={form.year}  onChange={e=>setForm(f=>({...f,year:e.target.value
-
-Ayushman, [31-03-2026 07:15]
-}))}  onFocus={onF} onBlur={onB} required><option value="">Year</option>{years.map(y=><option key={y}>{y}</option>)}</select>
+              <select style={ss} value={form.year}  onChange={e=>setForm(f=>({...f,year:e.target.value}))}  onFocus={onF} onBlur={onB} required><option value="">Year</option>{years.map(y=><option key={y}>{y}</option>)}</select>
             </div>
           </div>
           <div>
@@ -437,10 +428,7 @@ export default function Login() {
             India's most vibrant free live chat — connect, laugh, flirt, and make friends with real people, right now. No boring feeds, just real conversations. 🇮🇳
           </p>
           <div style={{ display:'flex',flexDirection:'column',gap:12,maxWidth:300,margin:'0 auto' }}>
-            <button onClick={()=>setModal('login')} style={{ display:'f
-
-Ayushman, [31-03-2026 07:15]
-lex',alignItems:'center',justifyContent:'center',gap:10,padding:'15px 20px',borderRadius:13,border:'none',cursor:'pointer',background:'linear-gradient(135deg,#1a73e8,#1464cc)',color:'#fff',fontWeight:800,fontSize:'1rem',fontFamily:'Outfit,sans-serif',boxShadow:'0 8px 24px rgba(26,115,232,.5)',transition:'all .15s' }} onMouseEnter={e=>e.currentTarget.style.transform='translateY(-2px)'} onMouseLeave={e=>e.currentTarget.style.transform='translateY(0)'}>
+            <button onClick={()=>setModal('login')} style={{ display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'15px 20px',borderRadius:13,border:'none',cursor:'pointer',background:'linear-gradient(135deg,#1a73e8,#1464cc)',color:'#fff',fontWeight:800,fontSize:'1rem',fontFamily:'Outfit,sans-serif',boxShadow:'0 8px 24px rgba(26,115,232,.5)',transition:'all .15s' }} onMouseEnter={e=>e.currentTarget.style.transform='translateY(-2px)'} onMouseLeave={e=>e.currentTarget.style.transform='translateY(0)'}>
               <i className="fi fi-sr-sign-in" style={{ fontSize:17 }}/> Login to ChatsGenZ
             </button>
             <button onClick={()=>setModal('guest')} style={{ display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'15px 20px',borderRadius:13,border:'1.5px solid rgba(255,255,255,.3)',cursor:'pointer',background:'rgba(255,255,255,.1)',color:'#fff',fontWeight:700,fontSize:'0.95rem',fontFamily:'Outfit,sans-serif',backdropFilter:'blur(6px)',transition:'all .15s' }} onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,.2)'} onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,.1)'}>
@@ -474,10 +462,7 @@ lex',alignItems:'center',justifyContent:'center',gap:10,padding:'15px 20px',bord
             <p style={{ marginBottom:16 }}>You don't need to register to start chatting. Simply click <strong>"Enter as Guest"</strong>, pick a username and date of birth, and you're in. As a guest, you can join public chat rooms, send messages, and interact with other users — no credit card, no email, no waiting. Guest sessions are quick and temporary, perfect if you just want to explore ChatsGenZ before committing.</p>
 
             {/* ── Paragraph ad zone 5884710 ─────────────────────────── */}
-            <div sty
-
-Ayushman, [31-03-2026 07:15]
-le={{ margin:'20px 0' }}>
+            <div style={{ margin:'20px 0' }}>
               <MagAdInline zoneId="5884710" className="eas6a97888e2" />
             </div>
 
