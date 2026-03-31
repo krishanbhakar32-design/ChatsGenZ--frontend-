@@ -68,7 +68,7 @@ function PaintingCanvas({onSend,onClose}) {
   }
   const COLORS=['#000','#fff','#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#06b6d4','#84cc16','#a16207']
   return(
-    <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'calc(100% + 6px)',left:0,right:0,background:'#fff',border:'1px solid #e4e6ea',borderRadius:12,overflow:'hidden',boxShadow:'0 4px 20px rgba(0,0,0,.15)',zIndex:50}}>
+    <div onClick={e=>e.stopPropagation()} style={{position:'fixed',bottom:0,left:0,right:0,background:'#fff',border:'1px solid #e4e6ea',borderRadius:'14px 14px 0 0',overflow:'hidden',boxShadow:'0 -8px 32px rgba(0,0,0,.22)',zIndex:500}}>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 10px',borderBottom:'1px solid #f3f4f6'}}>
         <span style={{fontWeight:700,fontSize:'0.82rem',color:'#374151'}}>🎨 Paint</span>
         <div style={{display:'flex',gap:4}}>
@@ -128,7 +128,7 @@ function GifPicker({onSelect,onClose}) {
   },[q])
 
   return(
-    <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'calc(100% + 6px)',left:0,right:0,background:'#fff',border:'1px solid #e4e6ea',borderRadius:12,overflow:'hidden',boxShadow:'0 8px 28px rgba(0,0,0,.18)',zIndex:50,display:'flex',flexDirection:'column',maxHeight:'min(340px,70vh)'}}>
+    <div onClick={e=>e.stopPropagation()} style={{position:'fixed',bottom:0,left:0,right:0,background:'#fff',border:'1px solid #e4e6ea',borderRadius:'14px 14px 0 0',overflow:'hidden',boxShadow:'0 -8px 32px rgba(0,0,0,.22)',zIndex:500,display:'flex',flexDirection:'column',maxHeight:'70vh'}}>
       {/* Header */}
       <div style={{display:'flex',alignItems:'center',gap:8,padding:'10px 12px',borderBottom:'1px solid #f3f4f6',flexShrink:0,background:'#fafafa'}}>
         <svg width="18" height="18" viewBox="0 0 24 24"><text y="18" fontSize="18">🎞</text></svg>
@@ -178,7 +178,7 @@ function YTPanel({onClose,onSend}) {
   },[link])
 
   return(
-    <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'calc(100% + 6px)',left:0,right:0,background:'#fff',border:'1px solid #e4e6ea',borderRadius:12,overflow:'hidden',boxShadow:'0 8px 28px rgba(0,0,0,.18)',zIndex:50}}>
+    <div onClick={e=>e.stopPropagation()} style={{position:'fixed',bottom:0,left:0,right:0,background:'#fff',border:'1px solid #e4e6ea',borderRadius:'14px 14px 0 0',overflow:'hidden',boxShadow:'0 -8px 32px rgba(0,0,0,.22)',zIndex:500}}>
       {/* Header */}
       <div style={{display:'flex',alignItems:'center',gap:8,padding:'10px 12px',borderBottom:'1px solid #f3f4f6',background:'#fafafa'}}>
         <span style={{fontSize:16}}>▶</span>
@@ -222,7 +222,7 @@ const EMOJI_FALLBACK=['😀','😂','🥰','😍','😎','🥳','😭','😡','�
 
 function EmoticonPicker({onSelect,onClose}) {
   return(
-    <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'calc(100% + 6px)',left:0,background:'#fff',border:'1px solid #e4e6ea',borderRadius:12,padding:8,boxShadow:'0 4px 20px rgba(0,0,0,.15)',zIndex:50,width:260}}>
+    <div onClick={e=>e.stopPropagation()} style={{position:'fixed',bottom:0,left:0,right:0,background:'#fff',border:'1px solid #e4e6ea',borderRadius:'14px 14px 0 0',padding:'10px 10px 16px',boxShadow:'0 -8px 32px rgba(0,0,0,.22)',zIndex:500}}>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:6}}>
         <span style={{fontWeight:700,fontSize:'0.8rem',color:'#374151'}}>Emoticons</span>
         <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:14,padding:0}}><i className="fi fi-sr-cross-small"/></button>
