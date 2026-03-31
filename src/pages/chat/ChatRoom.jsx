@@ -76,7 +76,7 @@ function SpotifyEmbedPanel({ onClose, onSend }) {
   const embedH   = embedType === 'track' ? 152 : 352
 
   return (
-    <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'calc(100% + 6px)',left:0,right:0,margin:'0 0',background:'#121212',border:'1px solid #1DB95455',borderRadius:14,padding:14,boxShadow:'0 8px 32px rgba(0,0,0,.45)',zIndex:60}}>
+    <div onClick={e=>e.stopPropagation()} style={{position:'fixed',bottom:0,left:0,right:0,background:'#121212',border:'1px solid #1DB95455',borderRadius:'14px 14px 0 0',padding:14,boxShadow:'0 -8px 32px rgba(0,0,0,.45)',zIndex:500}}>
       {/* Header */}
       <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="#1DB954"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424a.623.623 0 0 1-.857.207c-2.348-1.435-5.304-1.76-8.785-.964a.623.623 0 1 1-.277-1.215c3.809-.87 7.076-.496 9.712 1.115a.623.623 0 0 1 .207.857zm1.223-2.722a.78.78 0 0 1-1.072.257c-2.687-1.652-6.785-2.131-9.965-1.166a.78.78 0 0 1-.973-.52.779.779 0 0 1 .52-.972c3.633-1.102 8.147-.568 11.234 1.329a.78.78 0 0 1 .256 1.072zm.105-2.835C14.69 8.95 9.375 8.775 6.297 9.71a.937.937 0 1 1-.543-1.795c3.528-1.068 9.393-.861 13.098 1.332a.937.937 0 0 1-.938 1.62z"/></svg>
@@ -195,6 +195,7 @@ export default function ChatRoom() {
   const [showDiceAnim,setShowDiceAnim]=useState(false)
   const [diceRollVal, setDiceRollVal] =useState(null)
   const [whisperTarget,setWhisper]=useState(null)
+  const [quoteMsg,setQuoteMsg]=useState(null)  // message to quote
   const [showGif,   setShowGif]  =useState(false)
   const [showYT,      setShowYT]      =useState(false)
   const [showSpotify, setShowSpotify] =useState(false)
@@ -258,6 +259,7 @@ export default function ChatRoom() {
     s.on('systemMessage',  m=>{
       setMsgs(p=>[...p,{_id:Date.now()+'s'+Math.random(),type:m.type||'system',content:m.text,createdAt:new Date()}])
       if(m.type==='join') Sounds.join()
+      if(m.type==='leave') Sounds.leave()
     })
     s.on('messageDeleted', ({messageId})=>setMsgs(p=>p.filter(m=>m._id!==messageId)))
     s.on('typing',         ({username,isTyping:t})=>setTypers(p=>t?[...new Set([...p,username])]:p.filter(n=>n!==username)))
@@ -276,7 +278,7 @@ export default function ChatRoom() {
     s.on('roomUpdated',    d=>setRoom(p=>p?{...p,...d}:p))
     s.on('roomClosed',     ({message})=>{toast?.show(message||'Room closed','error',4000);setTimeout(()=>nav('/chat'),2000)})
     s.on('badgeEarned',    ({badge})=>{Sounds.badge()})
-    s.on('mentioned',      ({by,content})=>{ /* mention notifications disabled */ })
+    s.on('mentioned',      ({by,content,myUsername})=>{ Sounds.mention(); })
     s.on('messageReaction',({messageId,reactions})=>{setMsgs(p=>p.map(m=>m._id===messageId?{...m,reactions}:m))})
     s.on('messagePinned',  ({messageId})=>{setMsgs(p=>p.map(m=>m._id===messageId?{...m,isPinned:true}:m))})
     s.on('userMuted',      ({userId:uid,minutes,by})=>{setMsgs(p=>[...p,{_id:Date.now()+'mu',type:'mute',content:`${by} muted a user for ${minutes} minutes`,createdAt:new Date()}])})
@@ -315,15 +317,17 @@ export default function ChatRoom() {
     e.preventDefault()
     const t=input.trim()
     if(!t||!sockRef.current||!connected) return
-    sockRef.current.emit('sendMessage',{roomId,content:t,type:'text'})
+    sockRef.current.emit('sendMessage',{roomId,content:t,type:'text',replyTo:quoteMsg?._id||null})
     setInput('')
+    setQuoteMsg(null)
     isTypingRef.current=false; sockRef.current?.emit('typing',{roomId,isTyping:false})
     inputRef.current?.focus()
   }
 
   function leave(){sockRef.current?.disconnect();nav('/chat')}
 
-  const handleMention=useCallback((text)=>{setInput(p=>text+(p?' '+p:''));inputRef.current?.focus()},[])
+  const handleMention=useCallback((text)=>{setInput(p=>text+(p?' '+p:''));inputRef.current?.focus();},[])
+  const handleQuote=useCallback((msg)=>{setQuoteMsg(msg);inputRef.current?.focus();},[])
   const handleHide=useCallback((id)=>{setHidden(p=>new Set([...p,id]))},[])
   const handleMiniCard=useCallback((user,pos)=>{setProf(user)},[])
   const myLevel=RANKS[me?.rank]?.level||1
@@ -425,6 +429,7 @@ export default function ChatRoom() {
               !hiddenMsgs.has(m._id)&&<Msg key={m._id||i} msg={m} myId={me?._id} myLevel={myLevel}
                 onMiniCard={handleMiniCard} onMention={handleMention} onHide={handleHide}
                 onWhisper={u=>setWhisper(u)}
+                onQuote={handleQuote}
                 onYTMinimize={v=>setMiniYT(v)}
                 socket={sockRef.current} roomId={roomId}/>
             ))}
@@ -468,15 +473,27 @@ export default function ChatRoom() {
               </div>
             )}
             {/* GIF picker */}
-            {showGif&&<GifPicker onSelect={url=>{sockRef.current?.emit('sendMessage',{roomId,content:url,type:'gif'});setShowGif(false)}} onClose={()=>setShowGif(false)}/>}
+            {showGif&&<>
+              <div onClick={()=>setShowGif(false)} style={{position:'fixed',inset:0,zIndex:499,background:'rgba(0,0,0,.35)'}}/>
+              <GifPicker onSelect={url=>{sockRef.current?.emit('sendMessage',{roomId,content:url,type:'gif'});setShowGif(false)}} onClose={()=>setShowGif(false)}/>
+            </>}
             {/* YouTube panel */}
-            {showYT&&<YTPanel onClose={()=>setShowYT(false)} onSend={url=>{sockRef.current?.emit('sendMessage',{roomId,content:url,type:'youtube'});setShowYT(false)}}/>}
+            {showYT&&<>
+              <div onClick={()=>setShowYT(false)} style={{position:'fixed',inset:0,zIndex:499,background:'rgba(0,0,0,.35)'}}/>
+              <YTPanel onClose={()=>setShowYT(false)} onSend={url=>{sockRef.current?.emit('sendMessage',{roomId,content:url,type:'youtube'});setShowYT(false)}}/>
+            </>}
             {/* Spotify panel */}
             {showSpotify&&<SpotifyEmbedPanel onClose={()=>setShowSpotify(false)} onSend={url=>{sockRef.current?.emit('sendMessage',{roomId,content:url,type:'spotify'});setShowSpotify(false)}}/>}
             {/* Paint canvas */}
-            {showPaint&&<PaintingCanvas onSend={url=>{sockRef.current?.emit('sendMessage',{roomId,content:url,type:'image'});setShowPaint(false)}} onClose={()=>setShowPaint(false)}/>}
+            {showPaint&&<>
+              <div onClick={()=>setShowPaint(false)} style={{position:'fixed',inset:0,zIndex:499,background:'rgba(0,0,0,.35)'}}/>
+              <PaintingCanvas onSend={url=>{sockRef.current?.emit('sendMessage',{roomId,content:url,type:'image'});setShowPaint(false)}} onClose={()=>setShowPaint(false)}/>
+            </>}
             {/* Emoticon picker */}
-            {showEmoji&&<EmoticonPicker onSelect={em=>{setInput(p=>p+em);setShowEmoji(false);inputRef.current?.focus()}} onClose={()=>setShowEmoji(false)}/>}
+            {showEmoji&&<>
+              <div onClick={()=>setShowEmoji(false)} style={{position:'fixed',inset:0,zIndex:499,background:'rgba(0,0,0,.35)'}}/>
+              <EmoticonPicker onSelect={em=>{setInput(p=>p+em);setShowEmoji(false);inputRef.current?.focus()}} onClose={()=>setShowEmoji(false)}/>
+            </>}
 
             <input id="cgz-img-input" type="file" accept="image/*" style={{display:'none'}}
               onChange={async e=>{
@@ -491,6 +508,17 @@ export default function ChatRoom() {
                 } catch{toast?.show('Image upload failed','error',3000)}
               }}/>
 
+            {/* Quote preview bar */}
+            {quoteMsg&&(
+              <div style={{display:'flex',alignItems:'center',gap:8,padding:'5px 10px',background:'rgba(26,115,232,.08)',borderBottom:`1px solid ${thBorder}33`,borderRadius:8,marginBottom:4}}>
+                <i className="fi fi-sr-reply-all" style={{fontSize:12,color:'#1a73e8',flexShrink:0}}/>
+                <div style={{flex:1,minWidth:0}}>
+                  <span style={{fontSize:'0.68rem',fontWeight:700,color:'#1a73e8'}}>{quoteMsg.sender?.username}</span>
+                  <span style={{fontSize:'0.68rem',color:'#6b7280',marginLeft:6,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',display:'inline-block',maxWidth:200}}>{(quoteMsg.content||'').slice(0,60)}</span>
+                </div>
+                <button onClick={()=>setQuoteMsg(null)} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:14,padding:0,flexShrink:0}}>✕</button>
+              </div>
+            )}
             <form onSubmit={send} style={{display:'flex',alignItems:'center',gap:4}}>
               {/* + button — plain, no color */}
               <button type="button" onClick={e=>{e.stopPropagation();setShowPlus(p=>!p);setShowEmoji(false);setShowGif(false);setShowYT(false)}}
@@ -538,6 +566,7 @@ export default function ChatRoom() {
       </div>
 
       {/* OVERLAYS */}
+      {whisperTarget&&<WhisperBox target={whisperTarget} roomId={roomId} socket={sockRef.current} onClose={()=>setWhisper(null)}/>}
       {showDiceAnim&&diceRollVal&&<DiceRoll value={diceRollVal} onDone={()=>{setShowDiceAnim(false);setDiceRollVal(null)}}/>}
       {profUser&&(profUser._id===me?._id
         ? <SelfProfileOverlay user={me} onClose={()=>setProf(null)} onUpdated={u=>{if(u)setMe(p=>({...p,...u}))}}/>
