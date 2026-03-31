@@ -60,8 +60,15 @@ function RightSidebar({users,myLevel,onUserClick,onWhisper,onClose,tObj}) {
     {id:'search',  icon:'fi-sr-member-search',   title:'Search'},
   ]
 
+  const [isMobileR, setIsMobileR] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : true)
+  useEffect(()=>{
+    function onResizeR(){setIsMobileR(window.innerWidth < 768)}
+    window.addEventListener('resize',onResizeR)
+    return()=>window.removeEventListener('resize',onResizeR)
+  },[])
   return (
-    <div style={{position:'fixed',top:50,right:0,bottom:42,width:'min(220px,80vw)',zIndex:200,borderLeft:`1px solid ${th.default_color}44`,background:th.bg_header,display:'flex',flexDirection:'column',flexShrink:0,boxShadow:'-4px 0 20px rgba(0,0,0,.25)'}}>
+    <div style={{position:isMobileR?'fixed':'relative',top:isMobileR?50:0,right:0,bottom:isMobileR?42:'auto',width:isMobileR?'min(220px,80vw)':'200px',zIndex:isMobileR?200:1,borderLeft:`1px solid ${th.default_color}44`,background:th.bg_header,display:'flex',flexDirection:'column',flexShrink:0,boxShadow:'-4px 0 20px rgba(0,0,0,.25)'}}>
+      {isMobileR&&<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.4)',zIndex:-1}} onClick={onClose}/>}
       <div style={{display:'flex',alignItems:'center',borderBottom:`1px solid ${th.default_color}44`,flexShrink:0}}>
         {TABS.map(t=>(
           <button key={t.id} onClick={()=>setTab(t.id)} title={t.title}
@@ -321,8 +328,16 @@ function LeftSidebar({room,nav,socket,roomId,onClose,me,onStyleSaved}) {
     {id:'premium',     icon:'fi-sr-diamond', img:'/icons/ranks/premium.svg', label:'Premium', color:'#aa44ff'},
   ]
 
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : true)
+  useEffect(()=>{
+    function onResize(){setIsMobile(window.innerWidth < 768)}
+    window.addEventListener('resize',onResize)
+    return()=>window.removeEventListener('resize',onResize)
+  },[])
   return (
-    <div style={{display:'flex',position:'fixed',top:50,left:0,bottom:42,zIndex:200,height:'calc(100dvh - 92px)'}}>
+    <div style={{display:'flex',position:isMobile?'fixed':'relative',top:isMobile?50:0,left:0,bottom:isMobile?42:'auto',zIndex:isMobile?200:1,height:isMobile?'calc(100dvh - 92px)':'100%'}}>
+      {/* Mobile backdrop */}
+      {isMobile&&<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.4)',zIndex:-1}} onClick={onClose}/>}
       {/* Icon strip with labels - like adultchat left menu */}
       <div style={{width:56,background:'#f8f9fa',borderRight:'1px solid #e4e6ea',display:'flex',flexDirection:'column',alignItems:'center',padding:'6px 0',gap:1,overflowY:'auto'}}>
         {/* Room icon at top */}
@@ -335,7 +350,9 @@ function LeftSidebar({room,nav,socket,roomId,onClose,me,onStyleSaved}) {
             style={{width:'100%',padding:'7px 2px 5px',border:'none',background:panel===item.id?`${item.color}15`:'none',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:2,color:panel===item.id?item.color:'#6b7280',transition:'all .12s',borderLeft:panel===item.id?`2px solid ${item.color}`:'2px solid transparent'}}
             onMouseEnter={e=>{if(panel!==item.id){e.currentTarget.style.background=`${item.color}10`;e.currentTarget.style.color=item.color}}}
             onMouseLeave={e=>{if(panel!==item.id){e.currentTarget.style.background='none';e.currentTarget.style.color='#8892b0'}}}>
-            <i className={`fi ${item.icon}`} style={{fontSize:16}}/>
+            {item.img
+              ? <img src={item.img} alt="" style={{width:18,height:18,objectFit:'contain'}} onError={e=>{e.target.style.display='none'}}/>
+              : <i className={`fi ${item.icon}`} style={{fontSize:16}}/>}
             <span style={{fontSize:'0.48rem',fontWeight:700,letterSpacing:'0.2px',textAlign:'center',lineHeight:1.2,maxWidth:48,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.label}</span>
           </button>
         ))}
