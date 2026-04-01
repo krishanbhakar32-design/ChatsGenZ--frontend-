@@ -293,12 +293,15 @@ function KenoGame({socket,roomId,myGold,onClose}) {
   )
 }
 
-function GamesPanel({socket,roomId,myGold=0}) {
-  const [showSpin,setShowSpin]=useState(false)
+function GamesPanel({socket, roomId, myGold=0, tObj}) {
   const [showKeno,setShowKeno]=useState(false)
   const [showDice,setShowDice]=useState(false)
   const [diceVal,setDiceVal]=useState(null)
   const DICE_BET=100
+
+  const th = tObj || { text:'#e2e8f0', accent:'#1a73e8', bg_log:'rgba(255,255,255,0.06)', default_color:'#2d3555' }
+  const C = th.text || '#e2e8f0'
+  const BG_ITEM = `${th.default_color||'#2d3555'}33`
 
   // Listen for server result to drive animation
   useEffect(()=>{
@@ -313,31 +316,36 @@ function GamesPanel({socket,roomId,myGold=0}) {
     socket?.emit('rollDice',{roomId})
   }
 
+  // No Spin Wheel in the list
   const GAMES=[
-    {id:'dice', icon:'fi-sr-dice',  label:'🎲 Dice',       desc:'Roll to win gold',  color:'#7c3aed', action:rollDice},
-    {id:'spin', icon:'fi-sr-wheel', label:'🎡 Spin Wheel', desc:'Spin to multiply!', color:'#f59e0b', action:()=>setShowSpin(true)},
-    {id:'keno', icon:'fi-sr-grid',  label:'🎯 Keno',       desc:'Pick 2-10 numbers', color:'#1a73e8', action:()=>setShowKeno(true)},
+    {id:'dice', icon:'fi-sr-dice',  label:'Dice',  desc:'Roll to win gold',  color:'#7c3aed', action:rollDice},
+    {id:'keno', icon:'fi-sr-grid',  label:'Keno',  desc:'Pick 2-10 numbers', color:'#1a73e8', action:()=>setShowKeno(true)},
   ]
+
   return (
-    <div style={{padding:10,flex:1,overflowY:'auto'}}>
-      {GAMES.map(g=>(
-        <button key={g.id} onClick={g.action}
-          style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'11px 12px',background:'#f9fafb',border:'1.5px solid #e4e6ea',borderRadius:10,cursor:'pointer',marginBottom:8,textAlign:'left',transition:'all .15s'}}
-          onMouseEnter={e=>{e.currentTarget.style.background=`${g.color}12`;e.currentTarget.style.borderColor=g.color}}
-          onMouseLeave={e=>{e.currentTarget.style.background='#f9fafb';e.currentTarget.style.borderColor='#e4e6ea'}}>
-          <div style={{width:36,height:36,borderRadius:9,background:`${g.color}20`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>
-            <i className={`fi ${g.icon}`} style={{color:g.color}}/>
-          </div>
-          <div>
-            <div style={{fontSize:'0.86rem',fontWeight:700,color:'#111827'}}>{g.label}</div>
-            <div style={{fontSize:'0.72rem',color:'#9ca3af'}}>{g.desc}</div>
-          </div>
-        </button>
-      ))}
+    <>
+      <div style={{display:'flex',flexDirection:'column',gap:7}}>
+        {GAMES.map(g=>(
+          <button key={g.id} onClick={g.action}
+            style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'11px 13px',
+              background:BG_ITEM,border:`1px solid ${th.default_color||'#2d3555'}55`,
+              borderRadius:10,cursor:'pointer',textAlign:'left',transition:'all .15s'}}
+            onMouseEnter={e=>{e.currentTarget.style.background=`${g.color}20`;e.currentTarget.style.borderColor=g.color}}
+            onMouseLeave={e=>{e.currentTarget.style.background=BG_ITEM;e.currentTarget.style.borderColor=`${th.default_color||'#2d3555'}55`}}>
+            <div style={{width:34,height:34,borderRadius:9,background:`${g.color}25`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              <i className={`fi ${g.icon}`} style={{color:g.color,fontSize:16}}/>
+            </div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:'0.85rem',fontWeight:700,color:C}}>{g.label}</div>
+              <div style={{fontSize:'0.7rem',color:C+'77'}}>{g.desc}</div>
+            </div>
+            <i className="fi fi-sr-angle-right" style={{fontSize:10,color:C+'44',flexShrink:0}}/>
+          </button>
+        ))}
+      </div>
       {showDice&&diceVal&&<DiceRoll value={diceVal} onDone={()=>{setShowDice(false);setDiceVal(null)}}/>}
-      {showSpin&&<SpinWheelGame socket={socket} myGold={myGold||0} onClose={()=>setShowSpin(false)}/>}
       {showKeno&&<KenoGame socket={socket} roomId={roomId} myGold={myGold||0} onClose={()=>setShowKeno(false)}/>}
-    </div>
+    </>
   )
 }
 
