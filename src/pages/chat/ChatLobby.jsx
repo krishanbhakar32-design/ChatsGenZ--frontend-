@@ -14,6 +14,9 @@ const ROOM_TYPES = {
   admin:   { label:'Admin',    color:'#7c3aed', bg:'#f5f3ff', icon:'fi-sr-dashboard'   },
 }
 
+// Ordered rank list for room access selector (guest → owner)
+const RANK_LIST = Object.entries(RANKS).sort((a,b)=>a[1].level-b[1].level)
+
 // ── TOAST ──────────────────────────────────────────────────────
 function TopToast({ toasts }) {
   return (
@@ -91,29 +94,13 @@ function RoomModal({editRoom,onClose,onSave,showToast}){
   const[prev,setPrev]=useState(editRoom?.icon||'')
   const[file,setFile]=useState(null)
   const[customIcon,setCustomIcon]=useState(!!(editRoom?.icon&&editRoom.icon!=='/default_images/rooms/default_room.png'))
-  const[activeTab,setActiveTab]=useState('basic')
   const[form,setForm]=useState({
     name:        editRoom?.name        || '',
     description: editRoom?.description || '',
-    type:        editRoom?.type        || 'public',
     minRank:     editRoom?.minRank     || 'guest',
     password:    editRoom?.password    || '',
-    topic:       editRoom?.topic       || '',
-    isPinned:    editRoom?.isPinned    || false,
-    maxUsers:    editRoom?.maxUsers    || 500,
-    permissions: {
-      allowGuests:   editRoom?.permissions?.allowGuests   ?? true,
-      sendMessages:  editRoom?.permissions?.sendMessages  || 'guest',
-      sendImages:    editRoom?.permissions?.sendImages    || 'user',
-      sendGifs:      editRoom?.permissions?.sendGifs      || 'user',
-      sendGifts:     editRoom?.permissions?.sendGifts     || 'user',
-      useCam:        editRoom?.permissions?.useCam        || 'user',
-      makeCalls:     editRoom?.permissions?.makeCalls     || 'user',
-      slowMode:      editRoom?.permissions?.slowMode      || 0,
-    }
   })
   const set=(k,v)=>setForm(p=>({...p,[k]:v}))
-  const setPerm=(k,v)=>setForm(p=>({...p,permissions:{...p.permissions,[k]:v}}))
 
   async function submit(e){
     e.preventDefault()
@@ -127,10 +114,19 @@ function RoomModal({editRoom,onClose,onSave,showToast}){
         const ud=await ur.json()
         if(ur.ok&&ud.url) iconUrl=ud.url
       }
+      const payload={...form,icon:iconUrl}
+      if(editRoom){
+        // preserve existing fields not shown in simplified modal
+        payload.type=editRoom.type||'public'
+        payload.topic=editRoom.topic||''
+        payload.isPinned=editRoom.isPinned||false
+        payload.maxUsers=editRoom.maxUsers||500
+        payload.permissions=editRoom.permissions||{}
+      }
       const r=await fetch(editRoom?`${API}/api/rooms/${editRoom._id}`:`${API}/api/rooms`,{
         method:editRoom?'PUT':'POST',
         headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},
-        body:JSON.stringify({...form,icon:iconUrl})
+        body:JSON.stringify(payload)
       })
       const d=await r.json()
       if(!r.ok){showToast(d.error||'Failed to save room','error');setSaving(false);return}
@@ -145,15 +141,9 @@ function RoomModal({editRoom,onClose,onSave,showToast}){
   const onB=e=>e.target.style.borderColor='#e4e6ea'
   const lab={display:'block',fontSize:'0.78rem',fontWeight:700,color:'#374151',marginBottom:5}
 
-  const TABS=[
-    {id:'basic',  label:'Basic',       icon:'fi-sr-info'},
-    {id:'access', label:'Access',      icon:'fi-sr-shield-check'},
-    {id:'perms',  label:'Permissions', icon:'fi-sr-settings'},
-  ]
-
   return(
     <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:2000,background:'rgba(0,0,0,.55)',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',justifyContent:'center',padding:12}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:'#fff',borderRadius:18,maxWidth:480,width:'100%',maxHeight:'95dvh',overflowY:'auto',boxShadow:'0 24px 64px rgba(0,0,0,.22)'}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:'#fff',borderRadius:18,maxWidth:420,width:'100%',maxHeight:'95dvh',overflowY:'auto',boxShadow:'0 24px 64px rgba(0,0,0,.22)'}}>
         {/* Header */}
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'16px 18px 12px',borderBottom:'1px solid #f0f2f5',position:'sticky',top:0,background:'#fff',zIndex:5}}>
           <h2 style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1rem',color:'#111827',margin:0,display:'flex',alignItems:'center',gap:8}}>
@@ -165,9 +155,9 @@ function RoomModal({editRoom,onClose,onSave,showToast}){
           </button>
         </div>
 
-        <form onSubmit={submit} style={{padding:'16px 18px 20px',display:'flex',flexDirection:'column',gap:13}}>
+        <form onSubmit={submit} style={{padding:'16px 18px 20px',display:'flex',flexDirection:'column',gap:14}}>
 
-          {/* ── ROOM IMAGE + NAME row ── */}
+          {/* ── Room image + Name row ── */}
           <div style={{display:'flex',gap:13,alignItems:'flex-start'}}>
             {/* Room image with camera overlay */}
             <div style={{position:'relative',flexShrink:0}}>
@@ -190,25 +180,25 @@ function RoomModal({editRoom,onClose,onSave,showToast}){
             {/* Room name */}
             <div style={{flex:1}}>
               <label style={lab}>Room Name *</label>
-              <input style={inp} placeholder="e.g. Global Chat" value={form.name} onChange={e=>set('name',e.target.value)} onFocus={onF} onBlur={onB}/>
+              <input style={inp} placeholder="e.g. Global Chat" value={form.name} onChange={e=>set('name',e.target.value)} onFocus={onF} onBlur={onB} required/>
             </div>
           </div>
 
           {/* Description */}
           <div>
             <label style={lab}>Description</label>
-            <textarea style={{...inp,resize:'vertical',minHeight:56,lineHeight:1.5}} placeholder="What's this room about?" value={form.description} onChange={e=>set('description',e.target.value)} onFocus={onF} onBlur={onB}/>
+            <textarea style={{...inp,resize:'vertical',minHeight:60,lineHeight:1.5}} placeholder="What's this room about?" value={form.description} onChange={e=>set('description',e.target.value)} onFocus={onF} onBlur={onB}/>
           </div>
 
-          {/* Room type — rank dropdown */}
+          {/* Room type — rank dropdown (only that rank and above can enter) */}
           <div>
             <label style={lab}>Minimum Rank to Enter</label>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:5}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:5}}>
               {RANK_LIST.map(([k,v])=>(
                 <button key={k} type="button" onClick={()=>set('minRank',k)}
-                  style={{padding:'7px 3px',borderRadius:8,border:`2px solid ${form.minRank===k?v.color:'#e4e6ea'}`,background:form.minRank===k?v.color+'18':'#f9fafb',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:3}}>
+                  style={{padding:'7px 2px',borderRadius:8,border:`2px solid ${form.minRank===k?v.color:'#e4e6ea'}`,background:form.minRank===k?v.color+'18':'#f9fafb',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:3,transition:'all .15s'}}>
                   <img src={`/icons/ranks/${v.icon}`} alt="" style={{width:20,height:20,objectFit:'contain'}} onError={e=>e.target.style.display='none'}/>
-                  <span style={{fontSize:'0.55rem',fontWeight:700,color:form.minRank===k?v.color:'#6b7280',lineHeight:1.1,textAlign:'center'}}>{v.label}</span>
+                  <span style={{fontSize:'0.5rem',fontWeight:700,color:form.minRank===k?v.color:'#6b7280',lineHeight:1.1,textAlign:'center'}}>{v.label}</span>
                 </button>
               ))}
             </div>
@@ -234,14 +224,22 @@ function RoomModal({editRoom,onClose,onSave,showToast}){
 }
 
 // ── ROOM CARD ─────────────────────────────────────────────────
-function RoomCard({room,myLevel,onClick,onEdit,onDelete,onPin}){
+function RoomCard({room,myLevel,onClick,onEdit,onDelete,onPin,tObj}){
   const[hov,setHov]=useState(false)
   const typeInfo=ROOM_TYPES[room.type]||ROOM_TYPES.public
   const canAdmin=myLevel>=12
   const minRankInfo=R(room.minRank)
+  // Derive card colors from theme — dark themes get semi-transparent white, light gets white
+  const isDark=tObj&&!['Dolphin','Lite'].includes(tObj.id)
+  const cardBg=isDark?'rgba(255,255,255,0.07)':'#fff'
+  const cardBgHov=isDark?'rgba(255,255,255,0.12)':'#fff'
+  const cardBorder=isDark?`rgba(255,255,255,0.1)`:( hov?'#1a73e8':'#e4e6ea')
+  const cardBorderHov=tObj?.accent||'#1a73e8'
+  const textColor=tObj?.text||'#111827'
+  const subColor=isDark?'rgba(255,255,255,0.45)':'#6b7280'
   return(
     <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{background:'#fff',border:`1.5px solid ${hov?'#1a73e8':'#e4e6ea'}`,borderRadius:13,cursor:'pointer',transition:'all .18s',position:'relative',boxShadow:hov?'0 4px 18px rgba(26,115,232,.13)':'0 1px 4px rgba(0,0,0,.05)',transform:hov?'translateY(-2px)':'none'}}>
+      style={{background:hov?cardBgHov:cardBg,border:`1.5px solid ${hov?cardBorderHov:cardBorder}`,borderRadius:13,cursor:'pointer',transition:'all .18s',position:'relative',boxShadow:hov?`0 4px 18px ${tObj?.accent||'#1a73e8'}22`:'0 1px 4px rgba(0,0,0,.08)',transform:hov?'translateY(-2px)':'none'}}>
       {canAdmin&&hov&&(
         <div onClick={e=>e.stopPropagation()} style={{position:'absolute',top:-10,right:-8,display:'flex',gap:4,zIndex:10}}>
           <AdminBtn icon="fi-sr-thumbtack" bg={room.isPinned?'#f59e0b':'#9ca3af'} title={room.isPinned?'Unpin':'Pin'} onClick={()=>onPin(room)}/>
@@ -255,11 +253,11 @@ function RoomCard({room,myLevel,onClick,onEdit,onDelete,onPin}){
         </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:3}}>
-            <span style={{fontFamily:'Outfit,sans-serif',fontWeight:800,fontSize:'0.95rem',color:'#111827',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:1}}>{room.name}</span>
+            <span style={{fontFamily:'Outfit,sans-serif',fontWeight:800,fontSize:'0.95rem',color:textColor,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:1}}>{room.name}</span>
             {room.isPinned&&<i className="fi fi-sr-thumbtack" style={{fontSize:10,color:'#f59e0b',flexShrink:0}}/>}
             {room.password&&<i className="fi fi-sr-lock" style={{fontSize:10,color:'#9ca3af',flexShrink:0}}/>}
           </div>
-          {room.description&&<div style={{fontSize:'0.73rem',color:'#6b7280',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginBottom:6}}>{room.description}</div>}
+          {room.description&&<div style={{fontSize:'0.73rem',color:subColor,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginBottom:6}}>{room.description}</div>}
           <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
             <span style={{display:'inline-flex',alignItems:'center',gap:4,background:typeInfo.bg,color:typeInfo.color,fontSize:'0.65rem',fontWeight:700,padding:'2px 7px',borderRadius:20}}>
               <i className={`fi ${typeInfo.icon}`} style={{fontSize:9}}/>{typeInfo.label}
@@ -269,7 +267,7 @@ function RoomCard({room,myLevel,onClick,onEdit,onDelete,onPin}){
                 style={{width:14,height:14,objectFit:'contain'}} onError={e=>e.target.style.display='none'}/>
             )}
             <div style={{flex:1}}/>
-            <span style={{display:'inline-flex',alignItems:'center',gap:4,fontSize:'0.78rem',fontWeight:800,color:(room.currentUsers||0)>0?'#22c55e':'#9ca3af'}}>
+            <span style={{display:'inline-flex',alignItems:'center',gap:4,fontSize:'0.78rem',fontWeight:800,color:(room.currentUsers||0)>0?'#22c55e':subColor}}>
               <i className="fi fi-sr-user" style={{fontSize:11}}/>{room.currentUsers||0}
             </span>
           </div>
@@ -456,15 +454,17 @@ export default function ChatLobby(){
   const regular=filtered.filter(r=>!r.isPinned)
 
   return(
-    <div style={{minHeight:'100dvh',background:'#f0f2f5'}}>
+    <div style={{minHeight:'100dvh',background:tObj.bg_chat,position:'relative'}}>
+      {/* Theme background image if any */}
+      {tObj.bg_image&&<div style={{position:'fixed',inset:0,backgroundImage:`url(${tObj.bg_image})`,backgroundSize:'cover',backgroundPosition:'center',opacity:0.18,pointerEvents:'none',zIndex:0}}/>}
       <TopToast toasts={toasts}/>
 
       {/* HEADER */}
-      <header style={{background:'#fff',borderBottom:'1px solid #e4e6ea',height:52,display:'flex',alignItems:'center',padding:'0 16px',position:'sticky',top:0,zIndex:900,boxShadow:'0 1px 4px rgba(0,0,0,.07)'}}>
+      <header style={{background:tObj.bg_header,borderBottom:`1px solid ${tObj.default_color}`,height:52,display:'flex',alignItems:'center',padding:'0 16px',position:'sticky',top:0,zIndex:900,boxShadow:'0 1px 4px rgba(0,0,0,.12)'}}>
         <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
           <img src="/favicon/favicon-192.png" alt="" style={{width:28,height:28,borderRadius:7}} onError={e=>e.target.style.display='none'}/>
           <span style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1.1rem',letterSpacing:'-0.3px'}}>
-            <span style={{color:'#111827'}}>Chats</span><span style={{color:'#1a73e8'}}>GenZ</span>
+            <span style={{color:tObj.text}}>Chats</span><span style={{color:tObj.accent}}>GenZ</span>
           </span>
         </div>
         <div style={{flex:1}}/>
@@ -479,18 +479,18 @@ export default function ChatLobby(){
         </div>
       </header>
 
-      {/* SEARCH + ADD — NO TYPE FILTER BAR */}
-      <div style={{background:'#fff',borderBottom:'1px solid #e4e6ea',padding:'10px 16px'}}>
+      {/* SEARCH + ADD */}
+      <div style={{background:tObj.bg_header,borderBottom:`1px solid ${tObj.default_color}`,padding:'10px 16px',position:'relative',zIndex:1}}>
         <div style={{maxWidth:860,margin:'0 auto',display:'flex',gap:8,alignItems:'center'}}>
           <div style={{flex:1,position:'relative'}}>
             <i className="fi fi-sr-search" style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'#9ca3af',fontSize:13,pointerEvents:'none'}}/>
             <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search rooms..."
-              style={{width:'100%',padding:'8px 12px 8px 34px',background:'#f9fafb',border:'1.5px solid #e4e6ea',borderRadius:10,color:'#111827',fontSize:'0.875rem',outline:'none',boxSizing:'border-box',fontFamily:'Nunito,sans-serif'}}
-              onFocus={e=>e.target.style.borderColor='#1a73e8'} onBlur={e=>e.target.style.borderColor='#e4e6ea'}/>
+              style={{width:'100%',padding:'8px 12px 8px 34px',background:'rgba(255,255,255,0.08)',border:`1.5px solid ${tObj.default_color}`,borderRadius:10,color:tObj.text,fontSize:'0.875rem',outline:'none',boxSizing:'border-box',fontFamily:'Nunito,sans-serif'}}
+              onFocus={e=>{e.target.style.borderColor=tObj.accent;e.target.style.background='rgba(255,255,255,0.12)'}} onBlur={e=>{e.target.style.borderColor=tObj.default_color;e.target.style.background='rgba(255,255,255,0.08)'}}/>
           </div>
           {canAdmin&&(
             <button onClick={()=>{setEditRoom(null);setModal(true)}}
-              style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'linear-gradient(135deg,#1a73e8,#1464cc)',color:'#fff',border:'none',borderRadius:10,cursor:'pointer',fontFamily:'Outfit,sans-serif',fontWeight:700,fontSize:'0.84rem',flexShrink:0,boxShadow:'0 2px 8px rgba(26,115,232,.3)',whiteSpace:'nowrap'}}>
+              style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:`linear-gradient(135deg,${tObj.accent},${tObj.accent}cc)`,color:'#fff',border:'none',borderRadius:10,cursor:'pointer',fontFamily:'Outfit,sans-serif',fontWeight:700,fontSize:'0.84rem',flexShrink:0,boxShadow:`0 2px 8px ${tObj.accent}44`,whiteSpace:'nowrap'}}>
               <i className="fi fi-sr-plus-small" style={{fontSize:14}}/><span>Add Room</span>
             </button>
           )}
@@ -498,11 +498,11 @@ export default function ChatLobby(){
       </div>
 
       {/* ROOM LIST */}
-      <div style={{maxWidth:860,margin:'0 auto',padding:'16px 16px 60px'}}>
+      <div style={{maxWidth:860,margin:'0 auto',padding:'16px 16px 60px',position:'relative',zIndex:1}}>
         {load&&(
           <div style={{textAlign:'center',padding:'80px 0'}}>
-            <div style={{width:34,height:34,border:'3px solid #e4e6ea',borderTop:'3px solid #1a73e8',borderRadius:'50%',animation:'spin .8s linear infinite',margin:'0 auto 12px'}}/>
-            <p style={{color:'#9ca3af',fontWeight:600,fontSize:'0.875rem'}}>Loading rooms...</p>
+            <div style={{width:34,height:34,border:`3px solid ${tObj.default_color}`,borderTop:`3px solid ${tObj.accent}`,borderRadius:'50%',animation:'spin .8s linear infinite',margin:'0 auto 12px'}}/>
+            <p style={{color:tObj.text,opacity:0.5,fontWeight:600,fontSize:'0.875rem'}}>Loading rooms...</p>
           </div>
         )}
         {error&&!load&&(
@@ -519,16 +519,16 @@ export default function ChatLobby(){
                   <span style={{fontSize:'0.7rem',fontWeight:800,color:'#f59e0b',letterSpacing:'1.5px',textTransform:'uppercase'}}>Featured</span>
                 </div>
                 <div style={{display:'flex',flexDirection:'column',gap:7}}>
-                  {pinned.map(r=><RoomCard key={r._id} room={r} myLevel={myLevel} onClick={join} onEdit={r=>{setEditRoom(r);setModal(false)}} onDelete={handleDelete} onPin={handlePin}/>)}
+                  {pinned.map(r=><RoomCard key={r._id} room={r} myLevel={myLevel} onClick={join} onEdit={r=>{setEditRoom(r);setModal(false)}} onDelete={handleDelete} onPin={handlePin} tObj={tObj}/>)}
                 </div>
               </section>
             )}
             {regular.length===0&&pinned.length===0?(
               <div style={{textAlign:'center',padding:'60px 20px'}}>
-                <i className="fi fi-sr-search" style={{fontSize:38,color:'#d1d5db',display:'block',marginBottom:10}}/>
-                <p style={{color:'#9ca3af',fontWeight:700,fontSize:'0.9rem'}}>{search?'No rooms match your search':'No rooms yet'}</p>
+                <i className="fi fi-sr-search" style={{fontSize:38,color:tObj.default_color,display:'block',marginBottom:10}}/>
+                <p style={{color:tObj.text,opacity:0.4,fontWeight:700,fontSize:'0.9rem'}}>{search?'No rooms match your search':'No rooms yet'}</p>
                 {canAdmin&&!search&&(
-                  <button onClick={()=>{setEditRoom(null);setModal(true)}} style={{marginTop:14,padding:'10px 20px',borderRadius:10,border:'none',background:'#1a73e8',color:'#fff',fontWeight:700,cursor:'pointer',fontFamily:'Outfit,sans-serif'}}>
+                  <button onClick={()=>{setEditRoom(null);setModal(true)}} style={{marginTop:14,padding:'10px 20px',borderRadius:10,border:'none',background:tObj.accent,color:'#fff',fontWeight:700,cursor:'pointer',fontFamily:'Outfit,sans-serif'}}>
                     <i className="fi fi-sr-plus-small" style={{marginRight:6}}/>Create First Room
                   </button>
                 )}
@@ -537,12 +537,12 @@ export default function ChatLobby(){
               <section>
                 {pinned.length>0&&(
                   <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:10}}>
-                    <i className="fi fi-sr-apps" style={{fontSize:12,color:'#9ca3af'}}/>
-                    <span style={{fontSize:'0.7rem',fontWeight:800,color:'#9ca3af',letterSpacing:'1.5px',textTransform:'uppercase'}}>All Rooms</span>
+                    <i className="fi fi-sr-apps" style={{fontSize:12,color:tObj.text,opacity:0.4}}/>
+                    <span style={{fontSize:'0.7rem',fontWeight:800,color:tObj.text,opacity:0.4,letterSpacing:'1.5px',textTransform:'uppercase'}}>All Rooms</span>
                   </div>
                 )}
                 <div style={{display:'flex',flexDirection:'column',gap:7}}>
-                  {regular.map(r=><RoomCard key={r._id} room={r} myLevel={myLevel} onClick={join} onEdit={r=>{setEditRoom(r);setModal(false)}} onDelete={handleDelete} onPin={handlePin}/>)}
+                  {regular.map(r=><RoomCard key={r._id} room={r} myLevel={myLevel} onClick={join} onEdit={r=>{setEditRoom(r);setModal(false)}} onDelete={handleDelete} onPin={handlePin} tObj={tObj}/>)}
                 </div>
               </section>
             )}
