@@ -453,7 +453,7 @@ export default function Login() {
 
             {/* ── Paragraph ad zone 5884710 ─────────────────────────── */}
             <div style={{ margin:'20px 0' }}>
-              <MagAdInline zoneId="5884710" className="eas6a97888e2" />
+              {/* MagAdInline removed */}
             </div>
 
             <div style={{ background:'linear-gradient(135deg,#f0f9ff,#e0f2fe)',border:'2px solid #bae6fd',borderRadius:14,padding:'20px 22px',marginBottom:20 }}>
@@ -488,9 +488,9 @@ export default function Login() {
       {modal==='register' && <RegisterModal onClose={()=>setModal(null)}/>}
 
       {/* Bottom slide-up popup ad — zone 5884708, appears after 3s, has close btn */}
-      <BottomPopupAd zoneId="5884708" className="eas6a97888e31" />
-      {/* VAST video ad — zone 5885566 (login page) */}
-      <VastVideoAd zone={1} />
+      {/* BottomPopupAd disabled for mobile fix */}
+      
+      {/* VastVideoAd disabled for mobile fix */}
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@900&display=swap');
