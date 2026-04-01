@@ -9,6 +9,7 @@
 import { useState } from 'react'
 import { API, R, RL, GBR, SYS_CFG, SYSTEM_SENDER, resolveNameColor } from './chatConstants.js'
 import { RIcon } from './ChatIcons.jsx'
+import { WhisperMessage } from './ChatWhisper.jsx'
 import { SpotifyEmbed, isSpotifyUrl } from '../../components/SpotifyPlayer.jsx'
 import { YTMessage } from './ChatMedia.jsx'
 
@@ -130,13 +131,22 @@ function Msg({msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myLe
   if(isSystem) {
     const cfg = SYS_CFG[msg.type] || SYS_CFG.system
     const ts = formatTs(msg.createdAt)
+    const canDelSys = myLevel >= 11
     return(
-      <div style={{display:'flex',alignItems:'flex-start',gap:7,padding:'2px 10px',margin:'1px 0',clear:'both'}}>
-        <img src={SYSTEM_SENDER.avatar} alt="System"
-          style={{width:26,height:26,borderRadius:'50%',flexShrink:0,marginTop:1,objectFit:'cover',border:'1.5px solid #e4e6ea',background:'#f3f4f6'}}
-          onError={e=>{e.target.src='/default_images/avatar/default_bot.png'}}/>
+      <div style={{display:'flex',alignItems:'flex-start',gap:7,padding:'2px 10px',margin:'1px 0',clear:'both',position:'relative'}}
+        onMouseEnter={e=>e.currentTarget.querySelector('.sys-del-btn')?.style&&(e.currentTarget.querySelector('.sys-del-btn').style.opacity='1')}
+        onMouseLeave={e=>e.currentTarget.querySelector('.sys-del-btn')?.style&&(e.currentTarget.querySelector('.sys-del-btn').style.opacity='0')}>
+        {/* Bot rank icon + system avatar */}
+        <div style={{position:'relative',flexShrink:0}}>
+          <img src={SYSTEM_SENDER.avatar} alt="System"
+            style={{width:26,height:26,borderRadius:'50%',flexShrink:0,marginTop:1,objectFit:'cover',border:'1.5px solid #e4e6ea',background:'#f3f4f6'}}
+            onError={e=>{e.target.src='/default_images/avatar/default_bot.png'}}/>
+          {/* Bot rank icon badge */}
+          <img src="/icons/ranks/bot.svg" alt="" style={{position:'absolute',bottom:-2,right:-3,width:11,height:11,objectFit:'contain'}} onError={e=>e.target.style.display='none'}/>
+        </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:2}}>
+            <img src="/icons/ranks/bot.svg" alt="" style={{width:11,height:11,objectFit:'contain'}} onError={e=>e.target.style.display='none'}/>
             <span style={{fontSize:'0.72rem',fontWeight:700,color:'#6b7280',fontFamily:'Outfit,sans-serif'}}>System</span>
             <i className={`fi ${cfg.icon}`} style={{fontSize:'0.6rem',color:cfg.accent}}/>
             <span style={{marginLeft:'auto',fontSize:'0.6rem',color:'#bbb',whiteSpace:'nowrap'}}>{ts}</span>
@@ -145,55 +155,18 @@ function Msg({msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myLe
             <span style={{fontSize:'0.78rem',color:'#374151',fontWeight:500}}>{msg.content}</span>
           </div>
         </div>
+        {canDelSys&&(
+          <button className="sys-del-btn" onClick={e=>{e.stopPropagation();socket?.emit('deleteMessage',{messageId:msg._id,roomId})}}
+            style={{position:'absolute',right:4,top:'50%',transform:'translateY(-50%)',background:'rgba(239,68,68,.1)',border:'none',borderRadius:5,color:'#ef4444',cursor:'pointer',fontSize:10,padding:'2px 5px',opacity:0,transition:'opacity .15s',whiteSpace:'nowrap'}}>
+            <i className="fi fi-sr-trash" style={{fontSize:9}}/>
+          </button>
+        )}
       </div>
     )
   }
 
   // ── WHISPER/ECHO MESSAGE — styled distinctly, only visible to sender+recipient ──
-  if(msg.type === 'whisper' || msg.isEcho) {
-    const ts = formatTs(msg.createdAt)
-    const fromUser = msg.from || msg.sender
-    const toUser = msg.to
-    const fromName = fromUser?.username || 'Unknown'
-    const toName = toUser?.username || ''
-    return (
-      <div style={{display:'flex',alignItems:'flex-start',gap:7,padding:'3px 14px',margin:'1px 0'}}>
-        <img
-          src={fromUser?.avatar || '/default_images/avatar/default_guest.png'}
-          alt=""
-          style={{width:26,height:26,borderRadius:'50%',flexShrink:0,marginTop:1,objectFit:'cover',border:'1.5px solid #818cf8',background:'#eef2ff'}}
-          onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}
-        />
-        <div style={{flex:1,minWidth:0}}>
-          <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:2}}>
-            <span style={{fontSize:'0.7rem',fontWeight:800,color:'#6366f1',fontFamily:'Nunito,sans-serif'}}>
-              👁️ {fromName}
-              {toName && (
-                <span style={{color:'#a5b4fc',fontWeight:500}}> ▸ {toName}</span>
-              )}
-              <span style={{marginLeft:6,fontSize:'0.65rem',fontWeight:400,color:'#9ca3af',background:'#f0f0ff',borderRadius:4,padding:'1px 5px'}}>whisper</span>
-            </span>
-            <span style={{marginLeft:'auto',fontSize:'0.6rem',color:'#bbb',whiteSpace:'nowrap'}}>{ts}</span>
-          </div>
-          <div style={{
-            display:'inline-block',
-            background:'rgba(99,102,241,0.10)',
-            border:'1px solid #6366f133',
-            borderRadius:'0 10px 10px 10px',
-            padding:'6px 12px',
-            maxWidth:'min(85%,400px)',
-          }}>
-            <span style={{fontSize:'0.85rem',color:'#818cf8',fontStyle:'italic',fontFamily:'Nunito,sans-serif',wordBreak:'break-word'}}>
-              {msg.content}
-            </span>
-          </div>
-          <div style={{fontSize:'0.6rem',color:'#a5b4fc',marginTop:2,fontFamily:'Nunito,sans-serif'}}>
-            🔒 Only visible to you
-          </div>
-        </div>
-      </div>
-    )
-  }
+
 
   const ri = R(msg.sender?.rank)
   const bdr = GBR(msg.sender?.gender, msg.sender?.rank)
