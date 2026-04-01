@@ -39,72 +39,8 @@ import { FriendReqPanel, NotifPanel, DMPanel }                           from '.
 import { GiftPanel }                                                     from './ChatGifts.jsx'
 import { ChatSettingsOverlay, AvatarDropdown, Footer }                   from './ChatSettings.jsx'
 import { WebcamPanel }                                                   from './ChatWebcam.jsx'
+import { WhisperBox, WhisperMessage }                                    from './ChatWhisper.jsx'
 
-// ── WhisperBox (fixed: robust userId, error display, enter-to-send) ───────
-function WhisperBox({target,roomId,socket,onClose}) {
-  const [text,setText]=useState('')
-  const [sent,setSent]=useState(false)
-  const [err,setErr]=useState('')
-
-  // Resolve the correct user ID — backend onlineUsers map uses userId string.
-  // Message sender objects expose _id (ObjectId) or userId (string). Convert to string.
-  const toUserId = String(target.userId || target._id || '')
-
-  function send(e){
-    e.preventDefault()
-    if(!text.trim()||!socket) return
-    if(!toUserId){ setErr('Could not resolve user ID.'); return }
-    setErr('')
-    socket.emit('sendEcho',{toUserId, content:text.trim(), roomId})
-    setSent(true)
-    setTimeout(()=>{setSent(false);setText('');onClose()},2000)
-  }
-
-  return(
-    <div style={{position:'fixed',inset:0,zIndex:1010,background:'rgba(0,0,0,.65)',backdropFilter:'blur(4px)',display:'flex',alignItems:'flex-end',justifyContent:'center',padding:'0 0 90px'}} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{background:'#1e1b4b',border:'1px solid #4338ca',borderRadius:14,padding:'14px 16px',width:'min(430px,95vw)',boxShadow:'0 8px 32px rgba(79,70,229,.4)'}}>
-        {/* Header */}
-        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
-          <div style={{width:34,height:34,borderRadius:'50%',background:'#312e81',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1rem',flexShrink:0}}>👁️</div>
-          <div style={{flex:1}}>
-            <div style={{fontSize:'0.84rem',fontWeight:800,color:'#e0e7ff',fontFamily:'Nunito,sans-serif'}}>
-              Whisper to <span style={{color:'#a78bfa'}}>{target.username}</span>
-            </div>
-            <div style={{fontSize:'0.67rem',color:'#818cf8',fontFamily:'Nunito,sans-serif'}}>
-              Private · only {target.username} can see this message
-            </div>
-          </div>
-          <button onClick={onClose} style={{background:'none',border:'none',color:'#6366f1',cursor:'pointer',fontSize:18,lineHeight:1,padding:'0 2px'}}>✕</button>
-        </div>
-        {/* Error */}
-        {err&&<div style={{fontSize:'0.75rem',color:'#f87171',marginBottom:8,padding:'4px 8px',background:'rgba(239,68,68,.1)',borderRadius:6,fontFamily:'Nunito,sans-serif'}}>⚠️ {err}</div>}
-        {sent
-          ? <div style={{textAlign:'center',padding:'12px',color:'#a78bfa',fontWeight:700,fontSize:'0.9rem',fontFamily:'Nunito,sans-serif'}}>👁️ Whisper sent!</div>
-          : (
-          <form onSubmit={send} style={{display:'flex',gap:8}}>
-            <input
-              autoFocus
-              value={text}
-              onChange={e=>{setText(e.target.value);setErr('')}}
-              onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send(e)}}}
-              placeholder={`Whisper to ${target.username}...`}
-              maxLength={500}
-              style={{flex:1,padding:'9px 12px',background:'#312e81',border:`1.5px solid ${err?'#ef4444':'#4338ca'}`,borderRadius:9,color:'#e0e7ff',fontSize:'0.875rem',outline:'none',fontFamily:'Nunito,sans-serif'}}
-              onFocus={e=>e.target.style.borderColor='#818cf8'}
-              onBlur={e=>e.target.style.borderColor=err?'#ef4444':'#4338ca'}
-            />
-            <button type="submit" disabled={!text.trim()} style={{padding:'9px 14px',borderRadius:9,border:'none',background:text.trim()?'linear-gradient(135deg,#6366f1,#4338ca)':'#374151',color:'#fff',fontWeight:700,cursor:text.trim()?'pointer':'not-allowed',transition:'background .15s'}}>
-              👁️
-            </button>
-          </form>
-        )}
-        <div style={{fontSize:'0.62rem',color:'#4338ca',marginTop:8,textAlign:'center',fontFamily:'Nunito,sans-serif'}}>
-          Press Enter or click 👁️ to send
-        </div>
-      </div>
-    </div>
-  )
-}
 
 export default function ChatRoom() {
   const {roomSlug}=useParams(), nav=useNavigate(), toast=useToast()
@@ -194,8 +130,15 @@ export default function ChatRoom() {
     s.on('roomUserCount',  n=>setOnlineCount(n))
     // Backend sends systemMessage for join/leave/kick/mute/ban/dice — NOT userJoined/userLeft
     s.on('systemMessage',  m=>{
-      setMsgs(p=>[...p,{_id:Date.now()+'s'+Math.random(),type:m.type||'system',content:m.text,createdAt:new Date()}])
+      const sysId = m._id || ('sys_'+Date.now()+Math.random().toString(36).slice(2,7))
+      setMsgs(p=>{
+        // Dedupe: skip if same content appeared in last 2 seconds (join/leave spam)
+        const last = p[p.length-1]
+        if(last && last.type===m.type && last.content===m.text && (Date.now()-new Date(last.createdAt).getTime())<2000) return p
+        return [...p,{_id:sysId,type:m.type||'system',content:m.text,createdAt:new Date()}]
+      })
       if(m.type==='join') Sounds.join()
+      if(m.type==='leave') Sounds.leave?.()
     })
     s.on('messageDeleted', ({messageId})=>setMsgs(p=>p.filter(m=>m._id!==messageId)))
     s.on('typing',         ({username,isTyping:t})=>setTypers(p=>t?[...new Set([...p,username])]:p.filter(n=>n!==username)))
@@ -326,11 +269,8 @@ export default function ChatRoom() {
         {/* Webcam button */}
         <HBtn img="/default_images/icons/webcam.svg" title="Webcam" active={showCam} onClick={e=>{e.stopPropagation();setShowCam(p=>!p)}}/>
 
-        {/* Room name - center */}
-        <div style={{flex:1,textAlign:'center',minWidth:0}}>
-          <div style={{fontSize:'0.84rem',fontWeight:800,color:thText,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontFamily:'Outfit,sans-serif'}}>{room?.name||'Chat Room'}</div>
-          <div style={{fontSize:'0.62rem',color:connected?'#22c55e':thText+'88'}}>{connected?`● ${Math.max(users.length,onlineCount)||users.length} online`:'Connecting...'}</div>
-        </div>
+        {/* Spacer — no room name/count in header */}
+        <div style={{flex:1}}/>
 
         {/* Right icons - using SVGs from public folder */}
         <div style={{position:'relative'}}>
@@ -348,7 +288,7 @@ export default function ChatRoom() {
           {showNotif&&<NotifPanel onClose={()=>setShowNotif(false)} onCount={n=>setNotif(p=>({...p,notif:n}))}/>}
         </div>
 
-        {isStaffRole&&<HBtn img="/default_images/icons/warning.svg" title="Reports" badge={notif.reports}/>}
+        {isStaffRole&&<HBtn icon="fi-sr-flag" title="Reports" badge={notif.reports}/>}
 
         <AvatarDropdown me={me} status={status} setStatus={setStatus} onLeave={leave} socket={sockRef.current} onOpenSettings={()=>setShowChatSettings(true)} onOpenProfile={()=>setProf(me)}/>
       </div>
@@ -364,7 +304,7 @@ export default function ChatRoom() {
 
       {/* ── BODY ── */}
       <div style={{flex:1,display:'flex',overflow:'hidden'}}>
-        {showLeft&&<LeftSidebar room={room} nav={nav} socket={sockRef.current} roomId={room?._id||roomSlug} onClose={()=>setLeft(false)} me={me} onStyleSaved={(updated)=>{if(updated)setMe(p=>({...p,...updated}))}}/>}
+        {showLeft&&<LeftSidebar room={room} nav={nav} socket={sockRef.current} roomId={room?._id||roomSlug} onClose={()=>setLeft(false)} me={me} tObj={tObj} onStyleSaved={(updated)=>{if(updated)setMe(p=>({...p,...updated}))}}/>}
 
         {/* MESSAGES */}
         <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',minWidth:0,background:thBg}}>
