@@ -49,31 +49,42 @@ function UserItem({u, onClick, showMood=true, th}) {
   const status = u.status||'online'
   const thB = th || { bg_header:'#fff', text:'#111827', default_color:'#e4e6ea', accent:'#1a73e8' }
 
+  // Status badge: icon + color per status
+  const stColor = ST_COLOR[status]||'#22c55e'
+  const stIcon  = ST_ICON[status]||'fi-sr-circle'
+
   return (
     <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
       onClick={()=>onClick?.(u)}
       style={{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',cursor:'pointer',
         background:hov?`${thB.accent||'#1a73e8'}12`:'transparent',transition:'background .12s'}}>
-      {/* Avatar + status dot */}
+      {/* Avatar + status icon badge */}
       <div style={{position:'relative',flexShrink:0}}>
         <img src={u.avatar||'/default_images/avatar/default_guest.png'} alt=""
           style={{width:30,height:30,borderRadius:'50%',objectFit:'cover',border:`1.5px solid ${GBR(u.gender,u.rank)}`,display:'block'}}
           onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
-        {/* Status dot */}
-        <span style={{position:'absolute',bottom:0,right:0,width:8,height:8,
-          background:ST_COLOR[status]||'#22c55e',borderRadius:'50%',border:'1.5px solid #fff'}}/>
+        {/* Status badge — icon changes per status */}
+        <span style={{
+          position:'absolute',bottom:-1,right:-1,width:13,height:13,
+          background:stColor,borderRadius:'50%',border:'1.5px solid #fff',
+          display:'flex',alignItems:'center',justifyContent:'center',
+        }}>
+          <i className={`fi ${stIcon}`} style={{fontSize:6,color:'#fff',lineHeight:1}}/>
+        </span>
       </div>
       {/* Name + mood */}
       <div style={{flex:1,minWidth:0}}>
         <div style={{display:'flex',alignItems:'center',gap:4}}>
           {u.isCamHost&&<i className="fi fi-sr-video-camera" style={{fontSize:9,color:'#ef4444',flexShrink:0}}/>}
-          <span style={{fontSize:'0.8rem',fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:100,...nameStyle}}>
+          <span style={{fontSize:'0.8rem',fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:110,...nameStyle}}>
             {u.username}
           </span>
         </div>
+        {/* Mood shown below username */}
         {showMood&&u.mood&&(
-          <div style={{fontSize:'0.65rem',color:thB.text+'66',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginTop:1}}>
-            {u.mood}
+          <div style={{fontSize:'0.63rem',color:thB.text+'77',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginTop:1,display:'flex',alignItems:'center',gap:3}}>
+            <i className="fi fi-sr-face-smile" style={{fontSize:8,flexShrink:0}}/>
+            <span>{u.mood}</span>
           </div>
         )}
       </div>
@@ -98,6 +109,7 @@ function RightSidebar({users, myLevel, onUserClick, onWhisper, onClose, tObj}) {
   const [staffTab,setST]  = useState('online')
   const [friends,setFriends] = useState([])
   const [staffAll,setStaff]  = useState([])
+  const [staffLoading,setStaffLoading] = useState(false)
   const [isMobile,setMob] = useState(window.innerWidth<768)
 
   const th = tObj||{bg_header:'#fff',bg_log:'#f3f4f6',text:'#111827',accent:'#1a73e8',default_color:'#e4e6ea'}
@@ -118,9 +130,11 @@ function RightSidebar({users, myLevel, onUserClick, onWhisper, onClose, tObj}) {
   // Fetch all staff when tab opens
   useEffect(()=>{
     if(tab!=='staff') return
+    setStaffLoading(true)
     const t=localStorage.getItem('cgz_token')
     fetch(`${API}/api/users/staff`,{headers:{Authorization:`Bearer ${t}`}})
       .then(r=>r.json()).then(d=>setStaff(d.staff||[])).catch(()=>{})
+      .finally(()=>setStaffLoading(false))
   },[tab])
 
   // Hide invisible users from userlist
@@ -179,8 +193,6 @@ function RightSidebar({users, myLevel, onUserClick, onWhisper, onClose, tObj}) {
   const onlineStaffIds = new Set(visible.filter(u=>RL(u.rank)>=11).map(u=>String(u._id||u.userId)))
   const staffOnline  = staffAll.filter(s=>onlineStaffIds.has(String(s._id||s.userId)))
   const staffOffline = staffAll.filter(s=>!onlineStaffIds.has(String(s._id||s.userId)))
-  // Fallback — use current room users for staff if fetch not done
-  const staffFromRoom = sorted.filter(u=>RL(u.rank)>=11)
 
   const sideStyle = {
     position:'fixed', top:50, right:0, bottom:42,
@@ -279,7 +291,7 @@ function RightSidebar({users, myLevel, onUserClick, onWhisper, onClose, tObj}) {
           color:th.text+'55',letterSpacing:'1px',textTransform:'uppercase',flexShrink:0}}>
           {tab==='users'?`Online · ${onlineF.length}`
           :tab==='friends'?`Friends · ${friendTab==='online'?friendsOnline.length:friendsOffline.length}`
-          :tab==='staff'?`Staff · ${staffTab==='online'?staffOnline.length:staffOffline.length}`
+          :tab==='staff'?`Staff · ${staffTab==='online'?`${staffOnline.length} online`:`${staffOffline.length} offline`} · Total ${staffAll.length}`
           :`Results · ${searchResults.length}`}
         </div>
 
@@ -294,9 +306,11 @@ function RightSidebar({users, myLevel, onUserClick, onWhisper, onClose, tObj}) {
           )}
 
           {tab==='staff' && (
-            staffTab==='online'
-              ? renderList(staffAll.length?staffOnline:staffFromRoom, 'No staff online')
-              : renderList(staffAll.length?staffOffline:[], 'No offline staff')
+            staffLoading
+              ? <div style={{padding:20,textAlign:'center'}}><div style={{width:20,height:20,border:`2px solid ${th.accent}44`,borderTop:`2px solid ${th.accent}`,borderRadius:'50%',animation:'spin .8s linear infinite',margin:'0 auto'}}/></div>
+              : staffTab==='online'
+                ? renderList(staffOnline, 'No staff online')
+                : renderList(staffOffline.map(s=>({...s,status:'offline'})), 'No offline staff')
           )}
 
           {tab==='search' && (
@@ -313,10 +327,10 @@ function RightSidebar({users, myLevel, onUserClick, onWhisper, onClose, tObj}) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// LEFT SIDEBAR — full spec
+// LEFT SIDEBAR — full spec with overlay panels
 // ─────────────────────────────────────────────────────────────
 function LeftSidebar({room, nav, socket, roomId, onClose, me, tObj}) {
-  const [open,setOpen]   = useState(null)   // id of open sub-menu
+  const [open,setOpen]   = useState(null)   // id of open overlay panel
   const [isMobile,setMob]= useState(window.innerWidth<768)
   const th = tObj||{bg_header:'#1a1f2e',bg_chat:'#151520',text:'#e2e8f0',accent:'#1a73e8',default_color:'#2d3555'}
 
@@ -329,130 +343,136 @@ function LeftSidebar({room, nav, socket, roomId, onClose, me, tObj}) {
   const BG = th.bg_header||'#1a1f2e'
   const ACC= th.accent||'#1a73e8'
   const BD = `${th.default_color||'#2d3555'}66`
+  const PANEL_BG = th.bg_chat||'#0f0f1e'
 
-  const menuItem=(id,icon,label,hasChevron,extra)=>(
-    <button key={id} onClick={()=>setOpen(p=>p===id?null:id)}
+  // All items always have chevron right — click opens overlay
+  const menuItem=(id,icon,label,extra)=>(
+    <button key={id} onClick={e=>{e.stopPropagation();setOpen(p=>p===id?null:id)}}
       style={{width:'100%',display:'flex',alignItems:'center',gap:11,padding:'11px 14px',
-        border:'none',background:open===id?ACC+'18':'none',cursor:'pointer',textAlign:'left',
+        border:'none',background:open===id?`${ACC}22`:'none',cursor:'pointer',textAlign:'left',
         borderBottom:`1px solid ${BD}`,transition:'background .12s',
         borderLeft:`3px solid ${open===id?ACC:'transparent'}`}}
-      onMouseEnter={e=>{if(open!==id)e.currentTarget.style.background=ACC+'0d'}}
+      onMouseEnter={e=>{if(open!==id)e.currentTarget.style.background=`${ACC}0d`}}
       onMouseLeave={e=>{if(open!==id)e.currentTarget.style.background='none'}}>
       {extra?.img
         ? <img src={extra.img} alt="" style={{width:18,height:18,objectFit:'contain',flexShrink:0}}/>
         : <i className={`fi ${icon}`} style={{fontSize:16,color:open===id?ACC:C+'99',width:18,textAlign:'center',flexShrink:0}}/>}
       <span style={{flex:1,fontSize:'0.84rem',fontWeight:600,color:open===id?ACC:C}}>{label}</span>
-      {hasChevron&&<i className={`fi fi-sr-angle-${open===id?'down':'right'}`} style={{fontSize:11,color:C+'55',flexShrink:0}}/>}
+      <i className="fi fi-sr-angle-right" style={{fontSize:11,color:open===id?ACC:C+'44',flexShrink:0,transition:'transform .2s',transform:open===id?'rotate(90deg)':'rotate(0deg)'}}/>
     </button>
   )
 
-  const sideW = isMobile ? '100%' : open ? '260px' : '56px'
+  // Inline panel rendered below button (not overlay)
+  const inlinePanel=(id,children)=>open===id?(
+    <div style={{background:`${PANEL_BG}ee`,borderBottom:`1px solid ${BD}`}}>
+      {children}
+    </div>
+  ):null
+
+  // Sidebar width: on desktop, 260px always (not collapsible icon-only)
+  const sidebarWidth = isMobile ? 'min(280px,88vw)' : '260px'
 
   return(
     <>
-      {isMobile&&<div style={{position:'fixed',inset:0,zIndex:199,background:'rgba(0,0,0,.5)'}} onClick={onClose}/>}
+      {/* Backdrop */}
+      {isMobile && <div style={{position:'fixed',inset:0,zIndex:199,background:'rgba(0,0,0,.55)'}} onClick={onClose}/>}
+
       <div style={{
-        position:'fixed',top:50,left:0,bottom:42,zIndex:200,
-        width:isMobile?'min(280px,85vw)':'auto',
+        position: isMobile ? 'fixed' : 'relative',
+        top: isMobile ? 50 : undefined,
+        left: isMobile ? 0 : undefined,
+        bottom: isMobile ? 42 : undefined,
+        zIndex: isMobile ? 200 : undefined,
+        width: sidebarWidth,
+        flexShrink: 0,
         display:'flex',flexDirection:'column',
         background:BG,
-        boxShadow:'4px 0 20px rgba(0,0,0,.35)',
+        boxShadow: isMobile ? '4px 0 24px rgba(0,0,0,.45)' : '2px 0 12px rgba(0,0,0,.25)',
         overflowY:'auto',
-        minWidth: isMobile?undefined:56,
+        height: isMobile ? undefined : '100%',
       }}>
 
         {/* Room info at top */}
-        <div style={{padding:'12px 14px',borderBottom:`1px solid ${BD}`,flexShrink:0}}>
+        <div style={{padding:'14px',borderBottom:`1px solid ${BD}`,flexShrink:0}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
             <img src={room?.icon||'/default_images/rooms/default_room.png'} alt=""
-              style={{width:36,height:36,borderRadius:9,objectFit:'cover',flexShrink:0,border:`1px solid ${BD}`}}
-              onError={e=>e.target.style.display='none'}/>
+              style={{width:38,height:38,borderRadius:10,objectFit:'cover',flexShrink:0,border:`1.5px solid ${ACC}44`}}
+              onError={e=>e.target.src='/default_images/rooms/default_room.png'}/>
             <div style={{minWidth:0,flex:1}}>
-              <div style={{fontFamily:'Outfit,sans-serif',fontWeight:800,fontSize:'0.88rem',color:C,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{room?.name||'Chat Room'}</div>
-              {room?.description&&<div style={{fontSize:'0.65rem',color:C+'66',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginTop:1}}>{room.description}</div>}
+              <div style={{fontFamily:'Outfit,sans-serif',fontWeight:800,fontSize:'0.9rem',color:C,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{room?.name||'Chat Room'}</div>
+              {room?.description&&<div style={{fontSize:'0.67rem',color:C+'66',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginTop:2,lineHeight:1.3}}>{room.description}</div>}
             </div>
-            <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:C+'55',fontSize:16,padding:0,flexShrink:0}}><i className="fi fi-sr-cross-small"/></button>
+            <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:C+'55',fontSize:17,padding:2,flexShrink:0,display:'flex',alignItems:'center'}}><i className="fi fi-sr-cross-small"/></button>
           </div>
         </div>
 
         {/* Menu items */}
         <div style={{flex:1,overflowY:'auto'}}>
+
           {/* Room List */}
-          {menuItem('rooms','fi-sr-house-chimney','Room List',true)}
-          {open==='rooms'&&(
-            <div style={{background:`${th.bg_chat||'#0f0f1e'}cc`,borderBottom:`1px solid ${BD}`,maxHeight:320,overflowY:'auto'}}>
+          {menuItem('rooms','fi-sr-list','Room List')}
+          {inlinePanel('rooms',
+            <div style={{maxHeight:340,overflowY:'auto'}}>
               <RoomListPanel nav={nav} onEnter={onClose} tObj={th}/>
             </div>
           )}
 
           {/* News */}
-          {menuItem('news','fi-sr-newspaper','News',false)}
-          {open==='news'&&(
-            <div style={{padding:'12px 14px',background:`${th.bg_chat||'#0f0f1e'}cc`,borderBottom:`1px solid ${BD}`}}>
+          {menuItem('news','fi-sr-newspaper','News')}
+          {inlinePanel('news',
+            <div style={{padding:'12px 14px'}}>
               <p style={{fontSize:'0.8rem',color:C+'66',margin:0}}>No announcements yet.</p>
             </div>
           )}
 
           {/* Friends Wall */}
-          {menuItem('wall','fi-sr-rss','Friends Wall',false)}
-          {open==='wall'&&(
-            <div style={{padding:'12px 14px',background:`${th.bg_chat||'#0f0f1e'}cc`,borderBottom:`1px solid ${BD}`}}>
+          {menuItem('wall','fi-sr-rss','Friend Wall')}
+          {inlinePanel('wall',
+            <div style={{padding:'12px 14px'}}>
               <p style={{fontSize:'0.8rem',color:C+'66',margin:0}}>Wall posts coming soon!</p>
             </div>
           )}
 
           {/* Forum */}
-          {menuItem('forum','fi-sr-comments-alt','Forum',false)}
-          {open==='forum'&&(
-            <div style={{padding:'12px 14px',background:`${th.bg_chat||'#0f0f1e'}cc`,borderBottom:`1px solid ${BD}`}}>
+          {menuItem('forum','fi-sr-comments-alt','Forum')}
+          {inlinePanel('forum',
+            <div style={{padding:'12px 14px'}}>
               <p style={{fontSize:'0.8rem',color:C+'66',margin:0}}>Forum coming soon!</p>
             </div>
           )}
 
           {/* Contact */}
-          {menuItem('contact','fi-sr-envelope','Contact Us',false)}
-          {open==='contact'&&(
-            <div style={{background:`${th.bg_chat||'#0f0f1e'}cc`,borderBottom:`1px solid ${BD}`}}>
-              <ContactPanel th={th}/>
-            </div>
-          )}
+          {menuItem('contact','fi-sr-envelope','Contact Us')}
+          {inlinePanel('contact',<ContactPanel th={th}/>)}
 
           {/* Username Change */}
-          {menuItem('username','fi-sr-user-pen','Username Change',false)}
-          {open==='username'&&(
-            <div style={{background:`${th.bg_chat||'#0f0f1e'}cc`,borderBottom:`1px solid ${BD}`}}>
-              <UsernamePanel th={th}/>
-            </div>
-          )}
+          {menuItem('username','fi-sr-user-pen','Username Change')}
+          {inlinePanel('username',<UsernamePanel th={th}/>)}
 
           {/* Games */}
-          {menuItem('games','fi-sr-dice','Games',true)}
-          {open==='games'&&(
-            <div style={{background:`${th.bg_chat||'#0f0f1e'}cc`,borderBottom:`1px solid ${BD}`,padding:10}}>
+          {menuItem('games','fi-sr-dice','Games')}
+          {inlinePanel('games',
+            <div style={{padding:'10px 10px'}}>
               <GamesPanel socket={socket} roomId={roomId} myGold={me?.gold||0} tObj={th}/>
             </div>
           )}
 
           {/* Leaderboard */}
-          {menuItem('leaderboard','fi-sr-medal','Leaderboard',true)}
-          {open==='leaderboard'&&(
-            <div style={{background:`${th.bg_chat||'#0f0f1e'}cc`,borderBottom:`1px solid ${BD}`,maxHeight:400,overflowY:'auto'}}>
+          {menuItem('leaderboard','fi-sr-medal','Leaderboard')}
+          {inlinePanel('leaderboard',
+            <div style={{maxHeight:420,overflowY:'auto'}}>
               <LeaderboardPanel tObj={th}/>
             </div>
           )}
 
           {/* Buy Premium */}
-          {menuItem('premium','fi-sr-diamond','Buy Premium',true,{img:'/icons/ranks/premium.svg'})}
-          {open==='premium'&&(
-            <div style={{background:`${th.bg_chat||'#0f0f1e'}cc`,borderBottom:`1px solid ${BD}`}}>
-              <PremiumPanel th={th}/>
-            </div>
-          )}
+          {menuItem('premium','fi-sr-diamond','Buy Premium',{img:'/icons/ranks/premium.svg'})}
+          {inlinePanel('premium',<PremiumPanel th={th}/>)}
 
           {/* Store */}
-          {menuItem('store','fi-sr-shopping-cart','Store',true)}
-          {open==='store'&&(
-            <div style={{background:`${th.bg_chat||'#0f0f1e'}cc`,borderBottom:`1px solid ${BD}`,padding:12}}>
+          {menuItem('store','fi-sr-shopping-cart','Store')}
+          {inlinePanel('store',
+            <div style={{padding:12}}>
               <StorePanel th={th}/>
             </div>
           )}
@@ -634,6 +654,7 @@ function LeaderboardPanel({tObj}) {
   const [load,setLoad]=useState(false)
   const th = tObj||{text:'#e2e8f0',accent:'#1a73e8',default_color:'#2d3555'}
   const C = th.text||'#e2e8f0'
+  const ACC = th.accent||'#1a73e8'
 
   useEffect(()=>{
     setLoad(true)
@@ -643,44 +664,45 @@ function LeaderboardPanel({tObj}) {
   },[type,period])
 
   const LB_TYPES=[
-    {id:'xp',     label:'Top XP',       icon:'fi-sr-star'},
-    {id:'gold',   label:'Top Gold',     icon:'fi-sr-coins'},
-    {id:'likes',  label:'Top Likes',    icon:'fi-sr-heart'},
-    {id:'gifts',  label:'Top Gifts',    icon:'fi-sr-gift'},
-    {id:'quiz',   label:'Top Quiz',     icon:'fi-sr-quiz'},
-    {id:'views',  label:'Top Profile Views',icon:'fi-sr-eye'},
+    {id:'gold',  label:'Top Gold',         icon:'fi-sr-coins'},
+    {id:'xp',    label:'Top XP',           icon:'fi-sr-star'},
+    {id:'likes', label:'Top Likes',        icon:'fi-sr-heart'},
+    {id:'gifts', label:'Top Gifts',        icon:'fi-sr-gift'},
+    {id:'quiz',  label:'Top Quiz',         icon:'fi-sr-quiz'},
+    {id:'views', label:'Top Profile Views',icon:'fi-sr-eye'},
   ]
+  const PERIODS=[{id:'weekly',label:'Weekly'},{id:'monthly',label:'Monthly'},{id:'all',label:'All Time'}]
   const MEDAL=['🥇','🥈','🥉']
 
   return(
     <div style={{display:'flex',flexDirection:'column'}}>
-      {/* Period tabs */}
-      <div style={{display:'flex',borderBottom:`1px solid ${th.default_color}44`,flexShrink:0}}>
-        {['all','weekly','monthly'].map(p=>(
-          <button key={p} onClick={()=>setPeriod(p)}
-            style={{flex:1,padding:'7px 4px',border:'none',background:'none',cursor:'pointer',
-              borderBottom:`2px solid ${period===p?th.accent:'transparent'}`,
-              color:period===p?th.accent:C+'55',fontSize:'0.68rem',fontWeight:700,textTransform:'capitalize'}}>
-            {p==='all'?'All Time':p}
+      {/* Type tabs — scrollable row */}
+      <div style={{display:'flex',borderBottom:`1px solid ${th.default_color}44`,overflowX:'auto',flexShrink:0}}>
+        {LB_TYPES.map(t=>(
+          <button key={t.id} onClick={()=>setType(t.id)}
+            style={{display:'flex',alignItems:'center',gap:5,padding:'8px 11px',border:'none',background:'none',cursor:'pointer',
+              borderBottom:`2px solid ${type===t.id?ACC:'transparent'}`,
+              color:type===t.id?ACC:C+'55',fontSize:'0.68rem',fontWeight:700,whiteSpace:'nowrap',flexShrink:0,transition:'all .15s'}}>
+            <i className={`fi ${t.icon}`} style={{fontSize:11}}/>
+            {t.label}
           </button>
         ))}
       </div>
-      {/* Type buttons */}
-      <div style={{display:'flex',gap:4,padding:'6px 8px',overflowX:'auto',flexShrink:0,flexWrap:'wrap'}}>
-        {LB_TYPES.map(t=>(
-          <button key={t.id} onClick={()=>setType(t.id)}
-            style={{display:'flex',alignItems:'center',gap:4,padding:'4px 9px',borderRadius:20,
-              border:`1.5px solid ${type===t.id?th.accent:'rgba(255,255,255,.12)'}`,
-              background:type===t.id?th.accent+'22':'none',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>
-            <i className={`fi ${t.icon}`} style={{fontSize:11,color:type===t.id?th.accent:C+'66'}}/>
-            <span style={{fontSize:'0.65rem',fontWeight:700,color:type===t.id?th.accent:C+'66'}}>{t.label}</span>
+      {/* Period tabs */}
+      <div style={{display:'flex',borderBottom:`1px solid ${th.default_color}33`,flexShrink:0}}>
+        {PERIODS.map(p=>(
+          <button key={p.id} onClick={()=>setPeriod(p.id)}
+            style={{flex:1,padding:'6px 4px',border:'none',background:'none',cursor:'pointer',
+              borderBottom:`2px solid ${period===p.id?ACC:'transparent'}`,
+              color:period===p.id?ACC:C+'55',fontSize:'0.68rem',fontWeight:700,transition:'all .15s'}}>
+            {p.label}
           </button>
         ))}
       </div>
       {/* List */}
       <div>
         {load
-          ? <div style={{padding:14,textAlign:'center'}}><div style={{width:18,height:18,border:`2px solid ${th.accent}44`,borderTop:`2px solid ${th.accent}`,borderRadius:'50%',animation:'spin .8s linear infinite',margin:'0 auto'}}/></div>
+          ? <div style={{padding:14,textAlign:'center'}}><div style={{width:18,height:18,border:`2px solid ${ACC}44`,borderTop:`2px solid ${ACC}`,borderRadius:'50%',animation:'spin .8s linear infinite',margin:'0 auto'}}/></div>
           : data.length===0
           ? <p style={{textAlign:'center',color:C+'44',fontSize:'0.76rem',padding:'14px 10px'}}>No data</p>
           : data.map((u,i)=>(
@@ -693,7 +715,7 @@ function LeaderboardPanel({tObj}) {
                 <div style={{fontSize:'0.78rem',fontWeight:700,color:C,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{u.username}</div>
                 <div style={{display:'flex',alignItems:'center',gap:3}}><RIcon rank={u.rank} size={9}/><span style={{fontSize:'0.6rem',color:R(u.rank).color}}>{R(u.rank).label}</span></div>
               </div>
-              <span style={{fontSize:'0.8rem',fontWeight:800,color:th.accent,flexShrink:0}}>
+              <span style={{fontSize:'0.8rem',fontWeight:800,color:ACC,flexShrink:0}}>
                 {type==='xp'?u.xp||0:type==='gold'?u.gold||0:type==='likes'?u.likes||0:type==='gifts'?u.totalGiftsReceived||0:type==='quiz'?u.quizScore||0:u.profileViews||0}
               </span>
             </div>
