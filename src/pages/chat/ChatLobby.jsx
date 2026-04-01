@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { API, RANKS, R, RL, GBR } from './chatConstants.js'
+import { THEMES } from '../../components/StyleModal.jsx'
 const DEFAULT_AVATAR = '/default_images/avatar/default_guest.png'
 
 
@@ -89,6 +90,7 @@ function RoomModal({editRoom,onClose,onSave,showToast}){
   const[saving,setSaving]=useState(false)
   const[prev,setPrev]=useState(editRoom?.icon||'')
   const[file,setFile]=useState(null)
+  const[customIcon,setCustomIcon]=useState(!!(editRoom?.icon&&editRoom.icon!=='/default_images/rooms/default_room.png'))
   const[activeTab,setActiveTab]=useState('basic')
   const[form,setForm]=useState({
     name:        editRoom?.name        || '',
@@ -163,138 +165,60 @@ function RoomModal({editRoom,onClose,onSave,showToast}){
           </button>
         </div>
 
-        {/* Tabs */}
-        <div style={{display:'flex',borderBottom:'1px solid #f0f2f5'}}>
-          {TABS.map(t=>(
-            <button key={t.id} onClick={()=>setActiveTab(t.id)}
-              style={{flex:1,padding:'10px 4px',border:'none',background:'none',cursor:'pointer',borderBottom:`2px solid ${activeTab===t.id?'#1a73e8':'transparent'}`,color:activeTab===t.id?'#1a73e8':'#9ca3af',fontSize:'0.82rem',fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',gap:5,transition:'all .15s'}}>
-              <i className={`fi ${t.icon}`} style={{fontSize:13}}/>{t.label}
-            </button>
-          ))}
-        </div>
-
         <form onSubmit={submit} style={{padding:'16px 18px 20px',display:'flex',flexDirection:'column',gap:13}}>
 
-          {/* ── BASIC TAB ── */}
-          {activeTab==='basic'&&(
-            <>
-              <div style={{display:'flex',alignItems:'center',gap:12}}>
-                <div style={{width:60,height:60,borderRadius:12,overflow:'hidden',background:'#f3f4f6',flexShrink:0,border:'1.5px solid #e4e6ea'}}>
-                  <img src={prev||'/default_images/rooms/default_room.png'} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>{e.target.src='/default_images/rooms/default_room.png'}}/>
-                </div>
-                <label style={{flex:1,padding:'9px 12px',background:'#f0f7ff',border:'1.5px dashed #1a73e8',borderRadius:9,cursor:'pointer',fontSize:'0.8rem',color:'#1a73e8',fontWeight:700,textAlign:'center',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
-                  <i className="fi fi-sr-upload"/>Upload Icon
-                  <input type="file" accept=".png,.jpg,.jpeg" style={{display:'none'}} onChange={e=>{const f=e.target.files[0];if(f){setFile(f);setPrev(URL.createObjectURL(f))}}}/>
-                </label>
+          {/* ── ROOM IMAGE + NAME row ── */}
+          <div style={{display:'flex',gap:13,alignItems:'flex-start'}}>
+            {/* Room image with camera overlay */}
+            <div style={{position:'relative',flexShrink:0}}>
+              <div style={{width:72,height:72,borderRadius:13,overflow:'hidden',background:'#f3f4f6',border:'1.5px solid #e4e6ea'}}>
+                <img src={prev||'/default_images/rooms/default_room.png'} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>{e.target.src='/default_images/rooms/default_room.png'}}/>
               </div>
-              <div>
-                <label style={lab}>Room Name *</label>
-                <input style={inp} placeholder="e.g. Global Chat" value={form.name} onChange={e=>set('name',e.target.value)} onFocus={onF} onBlur={onB}/>
-              </div>
-              <div>
-                <label style={lab}>Description</label>
-                <textarea style={{...inp,resize:'vertical',minHeight:65,lineHeight:1.5}} placeholder="What's this room about?" value={form.description} onChange={e=>set('description',e.target.value)} onFocus={onF} onBlur={onB}/>
-              </div>
-              <div>
-                <label style={lab}>Topic / Welcome Message</label>
-                <input style={inp} placeholder="Current topic shown at top of chat..." value={form.topic} onChange={e=>set('topic',e.target.value)} onFocus={onF} onBlur={onB}/>
-              </div>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-                <div>
-                  <label style={lab}>Max Users</label>
-                  <input type="number" style={inp} min={2} max={1000} value={form.maxUsers} onChange={e=>set('maxUsers',parseInt(e.target.value)||500)} onFocus={onF} onBlur={onB}/>
-                </div>
-                <div>
-                  <label style={lab}>Password <span style={{fontWeight:400,color:'#9ca3af'}}>(optional)</span></label>
-                  <input style={inp} placeholder="Leave empty for no lock" value={form.password} onChange={e=>set('password',e.target.value)} onFocus={onF} onBlur={onB}/>
-                </div>
-              </div>
-              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'11px 13px',background:'#f9fafb',border:'1.5px solid #e4e6ea',borderRadius:9}}>
-                <div style={{display:'flex',alignItems:'center',gap:9}}>
-                  <i className="fi fi-sr-thumbtack" style={{color:'#f59e0b',fontSize:16}}/>
-                  <div>
-                    <div style={{fontSize:'0.84rem',fontWeight:700,color:'#374151'}}>Pin Room</div>
-                    <div style={{fontSize:'0.7rem',color:'#9ca3af'}}>Show in Featured section</div>
-                  </div>
-                </div>
-                <Toggle value={form.isPinned} onChange={v=>set('isPinned',v)}/>
-              </div>
-            </>
-          )}
+              {/* Camera icon overlay */}
+              <label style={{position:'absolute',bottom:-6,right:-6,width:24,height:24,borderRadius:'50%',background:'#1a73e8',border:'2px solid #fff',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 2px 6px rgba(0,0,0,.2)'}}>
+                <i className="fi fi-sr-camera" style={{fontSize:10,color:'#fff'}}/>
+                <input type="file" accept=".png,.jpg,.jpeg" style={{display:'none'}} onChange={e=>{const f=e.target.files[0];if(f){setFile(f);setPrev(URL.createObjectURL(f));setCustomIcon(true)}}}/>
+              </label>
+              {/* Cross icon if custom image */}
+              {customIcon&&(
+                <button type="button" onClick={()=>{setFile(null);setPrev('');setCustomIcon(false)}}
+                  style={{position:'absolute',top:-6,right:-6,width:18,height:18,borderRadius:'50%',background:'#ef4444',border:'2px solid #fff',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',padding:0}}>
+                  <i className="fi fi-sr-cross-small" style={{fontSize:8,color:'#fff'}}/>
+                </button>
+              )}
+            </div>
+            {/* Room name */}
+            <div style={{flex:1}}>
+              <label style={lab}>Room Name *</label>
+              <input style={inp} placeholder="e.g. Global Chat" value={form.name} onChange={e=>set('name',e.target.value)} onFocus={onF} onBlur={onB}/>
+            </div>
+          </div>
 
-          {/* ── ACCESS TAB ── */}
-          {activeTab==='access'&&(
-            <>
-              <div style={{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:10,padding:'10px 13px',fontSize:'0.8rem',color:'#1d4ed8'}}>
-                Set room type and minimum rank required to enter. Users below this rank will be blocked.
-              </div>
-              <div>
-                <label style={lab}>Room Type</label>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:7}}>
-                  {Object.entries(ROOM_TYPES).map(([k,v])=>(
-                    <button key={k} type="button" onClick={()=>set('type',k)}
-                      style={{padding:'10px 6px',borderRadius:9,border:`2px solid ${form.type===k?v.color:'#e4e6ea'}`,background:form.type===k?v.bg:'#f9fafb',cursor:'pointer',transition:'all .15s',textAlign:'center'}}>
-                      <i className={`fi ${v.icon}`} style={{fontSize:16,color:form.type===k?v.color:'#9ca3af',display:'block',marginBottom:4}}/>
-                      <span style={{fontSize:'0.72rem',fontWeight:700,color:form.type===k?v.color:'#6b7280'}}>{v.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label style={lab}>Minimum Rank to Enter</label>
-                <p style={{fontSize:'0.72rem',color:'#9ca3af',marginBottom:8}}>Only users with this rank or higher can enter</p>
-                <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6}}>
-                  {RANK_LIST.map(([k,v])=>(
-                    <button key={k} type="button" onClick={()=>set('minRank',k)}
-                      style={{padding:'8px 4px',borderRadius:8,border:`2px solid ${form.minRank===k?v.color:'#e4e6ea'}`,background:form.minRank===k?v.color+'18':'#f9fafb',cursor:'pointer',transition:'all .12s',display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
-                      <img src={`/icons/ranks/${v.icon}`} alt="" style={{width:22,height:22,objectFit:'contain'}} onError={e=>e.target.style.display='none'}/>
-                      <span style={{fontSize:'0.6rem',fontWeight:700,color:form.minRank===k?v.color:'#6b7280',lineHeight:1.2,textAlign:'center'}}>{v.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'11px 13px',background:'#f9fafb',border:'1.5px solid #e4e6ea',borderRadius:9}}>
-                <div>
-                  <div style={{fontSize:'0.84rem',fontWeight:700,color:'#374151'}}>Allow Guests</div>
-                  <div style={{fontSize:'0.7rem',color:'#9ca3af'}}>Let unregistered users view chat</div>
-                </div>
-                <Toggle value={form.permissions.allowGuests} onChange={v=>setPerm('allowGuests',v)}/>
-              </div>
-            </>
-          )}
+          {/* Description */}
+          <div>
+            <label style={lab}>Description</label>
+            <textarea style={{...inp,resize:'vertical',minHeight:56,lineHeight:1.5}} placeholder="What's this room about?" value={form.description} onChange={e=>set('description',e.target.value)} onFocus={onF} onBlur={onB}/>
+          </div>
 
-          {/* ── PERMISSIONS TAB ── */}
-          {activeTab==='perms'&&(
-            <>
-              <div style={{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:10,padding:'10px 13px',fontSize:'0.8rem',color:'#1d4ed8'}}>
-                Set minimum rank required for each action in this room.
-              </div>
-              {[
-                {key:'sendMessages',label:'Send Messages',   icon:'fi-sr-comment'},
-                {key:'sendImages',  label:'Send Images',     icon:'fi-sr-picture'},
-                {key:'sendGifs',    label:'Send GIFs',       icon:'fi-sr-gif'},
-                {key:'sendGifts',   label:'Send Gifts',      icon:'fi-sr-gift'},
-                {key:'useCam',      label:'Use Webcam',      icon:'fi-sr-video-camera'},
-                {key:'makeCalls',   label:'Make Calls',      icon:'fi-sr-phone-call'},
-              ].map(item=>(
-                <div key={item.key} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 12px',background:'#f9fafb',border:'1px solid #e4e6ea',borderRadius:9}}>
-                  <i className={`fi ${item.icon}`} style={{color:'#6b7280',fontSize:15,width:18,textAlign:'center',flexShrink:0}}/>
-                  <span style={{flex:1,fontSize:'0.84rem',fontWeight:600,color:'#374151'}}>{item.label}</span>
-                  <select value={form.permissions[item.key]} onChange={e=>setPerm(item.key,e.target.value)}
-                    style={{padding:'5px 8px',border:'1.5px solid #e4e6ea',borderRadius:7,fontSize:'0.78rem',outline:'none',color:'#374151',background:'#fff',cursor:'pointer'}}>
-                    {RANK_LIST.map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
-                  </select>
-                </div>
+          {/* Room type — rank dropdown */}
+          <div>
+            <label style={lab}>Minimum Rank to Enter</label>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:5}}>
+              {RANK_LIST.map(([k,v])=>(
+                <button key={k} type="button" onClick={()=>set('minRank',k)}
+                  style={{padding:'7px 3px',borderRadius:8,border:`2px solid ${form.minRank===k?v.color:'#e4e6ea'}`,background:form.minRank===k?v.color+'18':'#f9fafb',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:3}}>
+                  <img src={`/icons/ranks/${v.icon}`} alt="" style={{width:20,height:20,objectFit:'contain'}} onError={e=>e.target.style.display='none'}/>
+                  <span style={{fontSize:'0.55rem',fontWeight:700,color:form.minRank===k?v.color:'#6b7280',lineHeight:1.1,textAlign:'center'}}>{v.label}</span>
+                </button>
               ))}
-              <div style={{display:'flex',alignItems:'center',gap:10,padding:'9px 12px',background:'#f9fafb',border:'1px solid #e4e6ea',borderRadius:9}}>
-                <i className="fi fi-sr-clock" style={{color:'#6b7280',fontSize:15,width:18,textAlign:'center',flexShrink:0}}/>
-                <span style={{flex:1,fontSize:'0.84rem',fontWeight:600,color:'#374151'}}>Slow Mode (seconds)</span>
-                <input type="number" min={0} max={300} value={form.permissions.slowMode}
-                  onChange={e=>setPerm('slowMode',parseInt(e.target.value)||0)}
-                  style={{width:70,padding:'5px 8px',border:'1.5px solid #e4e6ea',borderRadius:7,fontSize:'0.84rem',outline:'none',textAlign:'center'}}/>
-              </div>
-            </>
-          )}
+            </div>
+          </div>
+
+          {/* Password */}
+          <div>
+            <label style={lab}>Password <span style={{fontWeight:400,color:'#9ca3af'}}>(optional)</span></label>
+            <input style={inp} placeholder="Leave empty for no lock" value={form.password} onChange={e=>set('password',e.target.value)} onFocus={onF} onBlur={onB}/>
+          </div>
 
           {/* Save/Cancel */}
           <div style={{display:'flex',gap:10,marginTop:4,position:'sticky',bottom:0,background:'#fff',paddingTop:8}}>
@@ -341,10 +265,8 @@ function RoomCard({room,myLevel,onClick,onEdit,onDelete,onPin}){
               <i className={`fi ${typeInfo.icon}`} style={{fontSize:9}}/>{typeInfo.label}
             </span>
             {room.minRank&&room.minRank!=='guest'&&(
-              <span style={{display:'inline-flex',alignItems:'center',gap:3,background:'#f3f4f6',color:'#374151',fontSize:'0.65rem',fontWeight:700,padding:'2px 7px',borderRadius:20}}>
-                <img src={`/icons/ranks/${minRankInfo.icon}`} alt="" style={{width:10,height:10,objectFit:'contain'}} onError={e=>e.target.style.display='none'}/>
-                {minRankInfo.label}
-              </span>
+              <img src={`/icons/ranks/${minRankInfo.icon}`} alt={minRankInfo.label} title={`${minRankInfo.label}+ only`}
+                style={{width:14,height:14,objectFit:'contain'}} onError={e=>e.target.style.display='none'}/>
             )}
             <div style={{flex:1}}/>
             <span style={{display:'inline-flex',alignItems:'center',gap:4,fontSize:'0.78rem',fontWeight:800,color:(room.currentUsers||0)>0?'#22c55e':'#9ca3af'}}>
@@ -379,7 +301,7 @@ function ProfileDropdown({user,onClose,onLogout}){
       </div>
       <div style={{padding:'4px'}}>
         {[
-          {icon:'fi-ss-user',label:'My Profile',onClick:()=>{onClose();nav(`/profile/${user?.username}`)}},
+          {icon:'fi-sr-user-pen',label:'Edit Profile',onClick:()=>{onClose();nav(`/profile/${user?.username}`)}},
           isAdmin&&{icon:'fi-sr-dashboard',label:'Admin Panel',color:'#ef4444',onClick:()=>{onClose();window.location.href='/admin'}},
         ].filter(Boolean).map((item,i)=>(
           <button key={i} onClick={item.onClick}
@@ -405,6 +327,9 @@ export default function ChatLobby(){
   const[rooms,setRooms]   =useState([])
   const[load,setLoad]     =useState(true)
   const[error,setError]   =useState('')
+  // Theme sync with ChatRoom
+  const chatTheme = user?.chatTheme || 'Dolphin'
+  const tObj = THEMES.find(t=>t.id===chatTheme) || THEMES[0] || {bg_header:'#fff',bg_chat:'#f4f6fb',accent:'#1a73e8',text:'#111827',default_color:'#e4e6ea'}
   const[search,setSearch] =useState('')
   const[passRoom,setPassRoom]=useState(null)
   const[dropOpen,setDrop] =useState(false)
