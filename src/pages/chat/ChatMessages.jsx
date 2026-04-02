@@ -124,7 +124,7 @@ export function QuotedMessage({ replyTo }) {
   )
 }
 
-function Msg({msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myLevel, socket, roomId, onYTMinimize}) {
+function Msg({msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myLevel, socket, roomId, onYTMinimize, onIgnore}) {
   const isSystem = ['system','join','leave','kick','mute','ban','mod','dice','gift','warning','success','error'].includes(msg.type)
 
   // ── SYSTEM MESSAGE ──
@@ -262,7 +262,7 @@ function Msg({msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myLe
       onMouseLeave={e=>e.currentTarget.style.background='transparent'}
     >
       <img src={msg.sender?.avatar||'/default_images/avatar/default_guest.png'} alt=""
-        onClick={e=>{e.stopPropagation();onMiniCard(msg.sender,{x:0,y:0})}}
+        onClick={e=>{e.stopPropagation();onMiniCard(msg.sender,{x:Math.min(e.clientX,window.innerWidth-240),y:Math.min(e.clientY+8,window.innerHeight-360)})}}
         style={{width:28,height:28,borderRadius:'50%',objectFit:'cover',border:`1.5px solid ${bdr}`,flexShrink:0,cursor:'pointer',marginTop:2}}
         onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
       <div style={{flex:1,minWidth:0}}>
