@@ -31,7 +31,7 @@ import { HBtn }                                                          from '.
 // ── Feature components ────────────────────────────────────────
 import { PaintingCanvas, GifPicker, YTPanel, SpotifyPanel, EmoticonPicker } from './ChatMedia.jsx'
 import { DiceRoll }                                                             from './ChatGames.jsx'
-import { SelfProfileOverlay, ProfileModal }                              from './ChatProfiles.jsx'
+import { MiniCard, SelfProfileOverlay, ProfileModal }                    from './ChatProfiles.jsx'
 import { Msg }                                                           from './ChatMessages.jsx'
 import { RightSidebar, LeftSidebar }                                     from './ChatSidebars.jsx'
 import { RadioPanel }                                                    from './ChatRadio.jsx'
@@ -138,11 +138,11 @@ export default function ChatRoom() {
         return [...p,{_id:sysId,type:m.type||'system',content:m.text,createdAt:new Date()}]
       })
       if(m.type==='join') Sounds.join()
-      if(m.type==='leave') Sounds.leave()
+      if(m.type==='leave') Sounds.leave?.()
     })
     s.on('messageDeleted', ({messageId})=>setMsgs(p=>p.filter(m=>m._id!==messageId)))
     s.on('typing',         ({username,isTyping:t})=>setTypers(p=>t?[...new Set([...p,username])]:p.filter(n=>n!==username)))
-    s.on('youAreKicked',   ({reason})=>{Sounds.mute();toast?.show(reason||'You were kicked','error',5000);setTimeout(()=>nav('/chat'),2000)})
+    s.on('youAreKicked',   ({reason,kickDurationMinutes,isBan})=>{Sounds.mute();nav('/kicked',{state:{reason:reason||'You were kicked from the room.',isBan:!!isBan,kickDurationMinutes:kickDurationMinutes||0}})})
     s.on('accessDenied',   ({msg})=>{toast?.show(msg||'Access denied','error',5000);setTimeout(()=>nav('/chat'),2000)})
     s.on('youAreMuted',    ({minutes})=>{Sounds.mute();toast?.show(`🔇 Muted for ${minutes} minutes`,'warn',6000)})
     s.on('levelUp',        ({level,gold})=>{Sounds.levelUp()})
@@ -157,7 +157,7 @@ export default function ChatRoom() {
     s.on('roomUpdated',    d=>setRoom(p=>p?{...p,...d}:p))
     s.on('roomClosed',     ({message})=>{toast?.show(message||'Room closed','error',4000);setTimeout(()=>nav('/chat'),2000)})
     s.on('badgeEarned',    ({badge})=>{Sounds.badge()})
-    s.on('mentioned',      ({by,content})=>{ Sounds.mention(); })
+    s.on('mentioned',      ({by,content})=>{ /* mention notifications disabled */ })
     s.on('messageReaction',({messageId,reactions})=>{setMsgs(p=>p.map(m=>m._id===messageId?{...m,reactions}:m))})
     s.on('messagePinned',  ({messageId})=>{setMsgs(p=>p.map(m=>m._id===messageId?{...m,isPinned:true}:m))})
     s.on('userMuted',      ({userId:uid,minutes,by})=>{setMsgs(p=>[...p,{_id:Date.now()+'mu',type:'mute',content:`${by} muted a user for ${minutes} minutes`,createdAt:new Date()}])})
@@ -174,7 +174,6 @@ export default function ChatRoom() {
     s.on('echoMessage', (payload)=>{
       // Both sender (echo back) and recipient get this event.
       // payload has shape: { _id, roomId, content, isEcho, createdAt, from:{...}, to:{...} }
-      Sounds.whisper?.()
       const { from, to, content, _id, createdAt } = payload
       if(from) {
         setMsgs(p=>[...p,{
@@ -226,7 +225,21 @@ export default function ChatRoom() {
 
   const handleMention=useCallback((text)=>{setInput(p=>text+(p?' '+p:''));inputRef.current?.focus()},[])
   const handleHide=useCallback((id)=>{setHidden(p=>new Set([...p,id]))},[])
-  const handleMiniCard=useCallback((user,pos)=>{setProf(user)},[])
+  const [ignoredUsers,setIgnored]=useState(()=>new Set())
+  const handleIgnore=useCallback((uid)=>{
+    setIgnored(p=>new Set([...p,uid]))
+    setHidden(p=>{
+      // Also auto-hide all currently loaded messages from ignored user
+      const next=new Set(p)
+      return next
+    })
+    // Mark messages from ignored user as hidden
+    setMsgs(prev=>prev.map(m=>
+      (m.sender?._id===uid||m.sender?.userId===uid)?{...m,_ignored:true}:m
+    ))
+  },[])
+  const [miniCardData,setMiniCardData]=useState(null)  // {user, pos}
+  const handleMiniCard=useCallback((user,pos)=>{ setMiniCardData({user,pos}) },[])
   const myLevel=RANKS[me?.rank]?.level||1
   const isStaffRole=myLevel>=11
 
@@ -256,15 +269,15 @@ export default function ChatRoom() {
   )
 
   return (
-    <div style={{height:'100svh',minHeight:'-webkit-fill-available',display:'flex',flexDirection:'column',background:thBg,overflow:'hidden',position:'relative'}} onClick={closeAll}>
+    <div style={{height:'100dvh',display:'flex',flexDirection:'column',background:thBg,overflow:'hidden',position:'relative'}} onClick={closeAll}>
       {thBgImg&&<div style={{position:'fixed',inset:0,backgroundImage:`url(${thBgImg})`,backgroundSize:'cover',backgroundPosition:'center',backgroundRepeat:'no-repeat',zIndex:0,pointerEvents:'none',opacity:0.6}}/>}
 
       {/* ── HEADER ── */}
-      <div style={{height:50,background:thHeader,borderBottom:`1px solid ${thBorder}22`,display:'flex',alignItems:'center',padding:'0 8px',gap:2,flexShrink:0,boxShadow:'0 1px 4px rgba(0,0,0,.18)',position:'relative',zIndex:100}}>
+      <div style={{height:50,background:thHeader,borderBottom:`1px solid ${thBorder}22`,display:'flex',alignItems:'center',padding:'0 8px',gap:2,flexShrink:0,boxShadow:'0 1px 4px rgba(0,0,0,.18)'}}>
         {/* Hamburger */}
         <button onClick={e=>{e.stopPropagation();setLeft(s=>!s)}} title="Menu"
           style={{background:showLeft?thAccent+'33':'none',border:'none',cursor:'pointer',color:showLeft?thAccent:thText,width:34,height:34,borderRadius:7,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0,opacity:0.9}}>
-          <i className="fas fa-bars"/>
+          <i className="fi fi-sr-bars-sort"/>
         </button>
 
         {/* Webcam button */}
@@ -275,7 +288,7 @@ export default function ChatRoom() {
 
         {/* Right icons - using SVGs from public folder */}
         <div style={{position:'relative'}}>
-          <HBtn img="/default_images/icons/comment.svg" title="Messages" badge={notif.dm} active={showDM} onClick={e=>{e.stopPropagation();setShowDM(p=>!p);setShowNotif(false)}}/>
+          <HBtn icon="fi-ss-envelope" title="Messages" badge={notif.dm} active={showDM} onClick={e=>{e.stopPropagation();setShowDM(p=>!p);setShowNotif(false)}}/>
           {showDM&&<DMPanel me={me} socket={sockRef.current} onClose={()=>setShowDM(false)} onCount={n=>setNotif(p=>({...p,dm:n}))}/>}
         </div>
 
@@ -285,11 +298,11 @@ export default function ChatRoom() {
         </div>
 
         <div style={{position:'relative'}}>
-          <HBtn img="/default_images/icons/congratulation.svg" title="Notifications" badge={notif.notif} active={showNotif} onClick={e=>{e.stopPropagation();setShowNotif(p=>!p);setShowDM(false)}}/>
+          <HBtn icon="fi-ss-bell" title="Notifications" badge={notif.notif} active={showNotif} onClick={e=>{e.stopPropagation();setShowNotif(p=>!p);setShowDM(false)}}/>
           {showNotif&&<NotifPanel onClose={()=>setShowNotif(false)} onCount={n=>setNotif(p=>({...p,notif:n}))}/>}
         </div>
 
-        {isStaffRole&&<HBtn img="/default_images/icons/warning.svg" title="Reports" badge={notif.reports}/>}
+        {isStaffRole&&<HBtn icon="fi-sr-flag" title="Reports" badge={notif.reports}/>}
 
         <AvatarDropdown me={me} status={status} setStatus={setStatus} onLeave={leave} socket={sockRef.current} onOpenSettings={()=>setShowChatSettings(true)} onOpenProfile={()=>setProf(me)}/>
       </div>
@@ -320,8 +333,8 @@ export default function ChatRoom() {
           {showCam&&<WebcamPanel socket={sockRef.current} roomId={roomId} me={me} onClose={()=>setShowCam(false)}/>}
           <div style={{flex:1,overflowY:'auto',padding:'6px 0'}}>
             {messages.map((m,i)=>(
-              !hiddenMsgs.has(m._id)&&<Msg key={m._id||i} msg={m} myId={me?._id} myLevel={myLevel}
-                onMiniCard={handleMiniCard} onMention={handleMention} onHide={handleHide}
+              !hiddenMsgs.has(m._id)&&!m._ignored&&!(ignoredUsers.has(m.sender?._id)||ignoredUsers.has(m.sender?.userId))&&<Msg key={m._id||i} msg={m} myId={me?._id} myLevel={myLevel}
+                onMiniCard={handleMiniCard} onMention={handleMention} onHide={handleHide} onIgnore={handleIgnore}
                 onWhisper={u=>setWhisper(u)}
                 onQuote={msg=>{setQuotedMsg(msg);inputRef.current?.focus()}}
                 onYTMinimize={v=>setMiniYT(v)}
@@ -464,9 +477,25 @@ export default function ChatRoom() {
       {showDiceAnim&&diceRollVal&&<DiceRoll value={diceRollVal} onDone={()=>{setShowDiceAnim(false);setDiceRollVal(null)}}/>}
       {profUser&&(profUser._id===me?._id
         ? <SelfProfileOverlay user={me} onClose={()=>setProf(null)} onUpdated={u=>{if(u)setMe(p=>({...p,...u}))}}/>
-        : <ProfileModal user={profUser} myLevel={myLevel} socket={sockRef.current} roomId={roomId} onClose={()=>setProf(null)} onGift={u=>setGiftTgt(u)}/>
+        : <ProfileModal user={profUser} myId={me?._id} myLevel={myLevel} socket={sockRef.current} roomId={roomId} onClose={()=>setProf(null)} onGift={u=>setGiftTgt(u)} ignoredUsers={ignoredUsers} onIgnore={handleIgnore}/>
       )}
-      {giftTarget&&<GiftPanel targetUser={giftTarget} myGold={me?.gold||0} onClose={()=>setGiftTgt(null)} onSent={()=>{setGiftTgt(null)}} socket={sockRef.current} roomId={roomId}/>}
+      {/* MiniCard — shown on avatar click in messages */}
+      {miniCardData&&miniCardData.user&&miniCardData.user._id!==me?._id&&(
+        <MiniCard
+          user={miniCardData.user}
+          myId={me?._id}
+          myLevel={myLevel}
+          pos={miniCardData.pos}
+          socket={sockRef.current}
+          roomId={roomId}
+          ignoredUsers={ignoredUsers}
+          onIgnore={handleIgnore}
+          onClose={()=>setMiniCardData(null)}
+          onFull={()=>{setProf(miniCardData.user);setMiniCardData(null)}}
+          onGift={u=>{setGiftTgt(u);setMiniCardData(null)}}
+        />
+      )}
+      {giftTarget&&<GiftPanel targetUser={giftTarget} myGold={me?.gold||0} onClose={()=>setGiftTgt(null)} onSent={()=>{setGiftTgt(null)}} socket={sockRef.current} roomId={roomId} onGoldSpent={(price)=>setMe(p=>p?{...p,gold:Math.max(0,(p.gold||0)-price)}:p)}/>}
       {/* ── WHISPER BOX — renders when user clicks Whisper on a message or user list ── */}
       {whisperTarget&&<WhisperBox target={whisperTarget} roomId={roomId} socket={sockRef.current} onClose={()=>setWhisper(null)}/>}
 
@@ -477,8 +506,6 @@ export default function ChatRoom() {
         @keyframes diceBounce{0%{transform:translate(-50%,-50%) scale(1.2)}50%{transform:translate(-50%,-55%) scale(0.95)}100%{transform:translate(-50%,-50%) scale(1)}}
         @keyframes slideDown{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
         *{-webkit-tap-highlight-color:transparent}
-        html,body{overscroll-behavior:none;-webkit-overflow-scrolling:touch}
-        input,textarea{-webkit-user-select:auto}
         input,textarea,select{font-size:16px!important}
       `}</style>
     </div>
