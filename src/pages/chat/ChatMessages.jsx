@@ -124,41 +124,87 @@ export function QuotedMessage({ replyTo }) {
   )
 }
 
-function Msg({msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myLevel, socket, roomId, onYTMinimize, onIgnore}) {
+function Msg({msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myLevel, socket, roomId, onYTMinimize}) {
   const isSystem = ['system','join','leave','kick','mute','ban','mod','dice','gift','warning','success','error'].includes(msg.type)
 
   // ── SYSTEM MESSAGE ──
   if(isSystem) {
-    const cfg = SYS_CFG[msg.type] || SYS_CFG.system
-    const ts = formatTs(msg.createdAt)
-    const canDelSys = myLevel >= 11
+    const cfg    = SYS_CFG[msg.type] || SYS_CFG.system
+    const ts     = formatTs(msg.createdAt)
+    const canDel = myLevel >= 11
+    const meta   = msg.meta || {}
+    // meta: { targetUsername, targetRank, targetAvatar, actorUsername, action, roll, won, payout, bet }
+    const tRank  = meta.targetRank
+    const tUser  = meta.targetUsername
+    const tAvatar= meta.targetAvatar
+    const isDice = msg.type==='dice'
+
+    // Action label
+    const ACTION_MAP = {
+      join:  'has joined',  leave: 'has left',
+      kick:  'was kicked',  mute:  'was muted',
+      ban:   'was banned',  mod:   'was promoted',
+      gift:  'sent a gift', dice:  '',
+    }
+    const actionLabel = ACTION_MAP[meta.action||msg.type] || ''
+
     return(
-      <div style={{display:'flex',alignItems:'flex-start',gap:7,padding:'2px 10px',margin:'1px 0',clear:'both',position:'relative'}}
-        onMouseEnter={e=>e.currentTarget.querySelector('.sys-del-btn')?.style&&(e.currentTarget.querySelector('.sys-del-btn').style.opacity='1')}
-        onMouseLeave={e=>e.currentTarget.querySelector('.sys-del-btn')?.style&&(e.currentTarget.querySelector('.sys-del-btn').style.opacity='0')}>
-        {/* Bot rank icon + system avatar */}
+      <div
+        style={{display:'flex',alignItems:'flex-start',gap:7,padding:'3px 10px',margin:'1px 0',clear:'both',position:'relative'}}
+        onMouseEnter={e=>{const b=e.currentTarget.querySelector('.sys-del');if(b)b.style.opacity='1'}}
+        onMouseLeave={e=>{const b=e.currentTarget.querySelector('.sys-del');if(b)b.style.opacity='0'}}>
+
+        {/* System bot avatar */}
         <div style={{position:'relative',flexShrink:0}}>
           <img src={SYSTEM_SENDER.avatar} alt="System"
-            style={{width:26,height:26,borderRadius:'50%',flexShrink:0,marginTop:1,objectFit:'cover',border:'1.5px solid #e4e6ea',background:'#f3f4f6'}}
+            style={{width:26,height:26,borderRadius:'50%',objectFit:'cover',border:'1.5px solid #e4e6ea',background:'#f3f4f6',display:'block'}}
             onError={e=>{e.target.src='/default_images/avatar/default_bot.png'}}/>
-          {/* Bot rank icon badge */}
+          {/* Bot rank badge */}
           <img src="/icons/ranks/bot.svg" alt="" style={{position:'absolute',bottom:-2,right:-3,width:11,height:11,objectFit:'contain'}} onError={e=>e.target.style.display='none'}/>
         </div>
+
         <div style={{flex:1,minWidth:0}}>
-          <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:2}}>
-            <img src="/icons/ranks/bot.svg" alt="" style={{width:11,height:11,objectFit:'contain'}} onError={e=>e.target.style.display='none'}/>
-            <span style={{fontSize:'0.72rem',fontWeight:700,color:'#6b7280',fontFamily:'Outfit,sans-serif'}}>System</span>
-            <i className={`fi ${cfg.icon}`} style={{fontSize:'0.6rem',color:cfg.accent}}/>
-            <span style={{marginLeft:'auto',fontSize:'0.6rem',color:'#bbb',whiteSpace:'nowrap'}}>{ts}</span>
+          {/* Name row: bot_rank_icon System */}
+          <div style={{display:'flex',alignItems:'center',gap:4,marginBottom:3}}>
+            <img src="/icons/ranks/bot.svg" alt="" style={{width:10,height:10,objectFit:'contain'}} onError={e=>e.target.style.display='none'}/>
+            <span style={{fontSize:'0.7rem',fontWeight:800,color:'#6b7280',fontFamily:'Outfit,sans-serif'}}>System</span>
+            <span style={{marginLeft:'auto',fontSize:'0.58rem',color:'#bbb',whiteSpace:'nowrap'}}>{ts}</span>
           </div>
-          <div style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f8f9fa',borderLeft:`2.5px solid ${cfg.accent}`,borderRadius:'0 8px 8px 0',padding:'4px 10px',maxWidth:'min(92%,480px)'}}>
-            <span style={{fontSize:'0.78rem',color:'#374151',fontWeight:500}}>{msg.content}</span>
-          </div>
+
+          {/* Message content */}
+          {isDice ? (
+            /* Dice message format */
+            <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'rgba(124,58,237,.08)',border:'1.5px solid rgba(124,58,237,.2)',borderRadius:9,padding:'5px 10px',maxWidth:'min(95%,460px)'}}>
+              <i className="fi fi-sr-dice" style={{fontSize:13,color:'#7c3aed',flexShrink:0}}/>
+              {tRank&&<img src={`/icons/ranks/${R(tRank).icon}`} alt="" style={{width:13,height:13,objectFit:'contain',flexShrink:0}} onError={e=>e.target.style.display='none'}/>}
+              <span style={{fontSize:'0.78rem',fontWeight:700,color:'#7c3aed'}}>{tUser}</span>
+              <span style={{fontSize:'0.75rem',color:'#6b7280'}}>
+                {meta.won
+                  ? <>rolled <strong style={{color:'#374151'}}>{meta.roll}</strong> — <span style={{color:'#22c55e',fontWeight:800}}>+{meta.payout} 🏆</span></>
+                  : <>rolled <strong style={{color:'#374151'}}>{meta.roll}</strong> — <span style={{color:'#ef4444',fontWeight:700}}>-{meta.bet||100}</span></>
+                }
+              </span>
+            </div>
+          ) : tUser ? (
+            /* Structured: rank_icon username has joined/left/etc */
+            <div style={{display:'inline-flex',alignItems:'center',gap:5,background:`${cfg.accent}10`,borderLeft:`2.5px solid ${cfg.accent}`,borderRadius:'0 8px 8px 0',padding:'4px 10px',maxWidth:'min(95%,460px)'}}>
+              {tRank&&<img src={`/icons/ranks/${R(tRank).icon}`} alt="" style={{width:13,height:13,objectFit:'contain',flexShrink:0}} onError={e=>e.target.style.display='none'}/>}
+              <span style={{fontSize:'0.78rem',fontWeight:800,color:cfg.accent}}>{tUser}</span>
+              <span style={{fontSize:'0.75rem',color:'#6b7280',fontWeight:500}}>{actionLabel}</span>
+            </div>
+          ) : (
+            /* Fallback: plain text */
+            <div style={{display:'inline-flex',alignItems:'center',gap:5,background:'rgba(0,0,0,.04)',borderLeft:`2.5px solid ${cfg.accent}`,borderRadius:'0 8px 8px 0',padding:'4px 10px',maxWidth:'min(95%,460px)'}}>
+              <span style={{fontSize:'0.78rem',color:'#374151',fontWeight:500}}>{msg.content}</span>
+            </div>
+          )}
         </div>
-        {canDelSys&&(
-          <button className="sys-del-btn" onClick={e=>{e.stopPropagation();socket?.emit('deleteMessage',{messageId:msg._id,roomId})}}
-            style={{position:'absolute',right:4,top:'50%',transform:'translateY(-50%)',background:'rgba(239,68,68,.1)',border:'none',borderRadius:5,color:'#ef4444',cursor:'pointer',fontSize:10,padding:'2px 5px',opacity:0,transition:'opacity .15s',whiteSpace:'nowrap'}}>
-            <i className="fi fi-sr-trash" style={{fontSize:9}}/>
+
+        {canDel&&(
+          <button className="sys-del"
+            onClick={e=>{e.stopPropagation();socket?.emit('deleteMessage',{messageId:msg._id,roomId})}}
+            style={{position:'absolute',right:4,top:'50%',transform:'translateY(-50%)',background:'rgba(239,68,68,.1)',border:'none',borderRadius:5,color:'#ef4444',cursor:'pointer',fontSize:9,padding:'2px 5px',opacity:0,transition:'opacity .15s'}}>
+            <i className="fi fi-sr-trash" style={{fontSize:8}}/>
           </button>
         )}
       </div>
@@ -262,7 +308,7 @@ function Msg({msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myLe
       onMouseLeave={e=>e.currentTarget.style.background='transparent'}
     >
       <img src={msg.sender?.avatar||'/default_images/avatar/default_guest.png'} alt=""
-        onClick={e=>{e.stopPropagation();onMiniCard(msg.sender,{x:Math.min(e.clientX,window.innerWidth-240),y:Math.min(e.clientY+8,window.innerHeight-360)})}}
+        onClick={e=>{e.stopPropagation();onMiniCard(msg.sender,{x:0,y:0})}}
         style={{width:28,height:28,borderRadius:'50%',objectFit:'cover',border:`1.5px solid ${bdr}`,flexShrink:0,cursor:'pointer',marginTop:2}}
         onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
       <div style={{flex:1,minWidth:0}}>
