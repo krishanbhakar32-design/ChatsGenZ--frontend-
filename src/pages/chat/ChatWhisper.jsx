@@ -31,7 +31,7 @@ export function WhisperBox({ target, roomId, socket, onClose }) {
     <div
       style={{
         position: 'fixed', inset: 0, zIndex: 1500,
-        background: 'rgba(0,0,0,.65)', backdropFilter: 'blur(5px)',
+        background: 'rgba(0,0,0,.55)',
         display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
         padding: '0 0 80px',
       }}
@@ -123,47 +123,67 @@ export function WhisperMessage({ msg, myId, onWhisperReply }) {
 
   return (
     <div
-      style={{ display:'flex', alignItems:'flex-start', gap:7, padding:'3px 14px', margin:'1px 0', position:'relative' }}
-      onClick={() => setShowOpts(p => !p)}
+      style={{ display:'flex', alignItems:'flex-start', gap:7, padding:'4px 10px', margin:'2px 0', position:'relative' }}
     >
       <img
         src={fromUser?.avatar || '/default_images/avatar/default_guest.png'}
         alt=""
-        style={{ width:26, height:26, borderRadius:'50%', flexShrink:0, marginTop:1,
-          objectFit:'cover', border:'1.5px solid #818cf8', background:'#eef2ff' }}
+        style={{ width:28, height:28, borderRadius:'50%', flexShrink:0, marginTop:1,
+          objectFit:'cover', border:'2px solid #6366f1', background:'#1e1b4b' }}
         onError={e => { e.target.src='/default_images/avatar/default_guest.png' }}
       />
       <div style={{ flex:1, minWidth:0 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:5, marginBottom:2 }}>
-          <span style={{ fontSize:'0.7rem', fontWeight:800, color:'#6366f1', fontFamily:'Nunito,sans-serif' }}>
-            {fromName}
-            {toName && <span style={{ color:'#a5b4fc', fontWeight:500 }}> ▸ {toName}</span>}
-            <span style={{ marginLeft:6, fontSize:'0.62rem', fontWeight:400, color:'#9ca3af',
-              background:'rgba(99,102,241,.12)', borderRadius:4, padding:'1px 6px' }}>
-              whisper
-            </span>
+        {/* Header row: from → to */}
+        <div style={{ display:'flex', alignItems:'center', gap:5, marginBottom:3 }}>
+          <span style={{ fontSize:'0.72rem', fontWeight:800, color:'#818cf8' }}>{fromName}</span>
+          {toName && <>
+            <i className="fi fi-sr-arrow-right" style={{ fontSize:9, color:'#6366f155' }}/>
+            <span style={{ fontSize:'0.72rem', fontWeight:700, color:'#a5b4fc' }}>{toName}</span>
+          </>}
+          <span style={{ fontSize:'0.6rem', fontWeight:600, color:'#6366f1',
+            background:'rgba(99,102,241,.15)', border:'1px solid rgba(99,102,241,.3)',
+            borderRadius:4, padding:'1px 6px', marginLeft:2 }}>
+            whisper
           </span>
-        </div>
-        <div style={{ background:'rgba(99,102,241,.1)', border:'1px solid #6366f133', borderRadius:'0 8px 8px 8px',
-          padding:'5px 10px', display:'inline-block', maxWidth:'min(88%,400px)', cursor:'pointer' }}>
-          <span style={{ fontSize:'0.82rem', color:'#c7d2fe', fontStyle:'italic' }}>{msg.content}</span>
+          {isMine && <span style={{ marginLeft:'auto', fontSize:'0.58rem', color:'#6366f155' }}>you</span>}
         </div>
 
-        {/* Options on click */}
-        {showOpts && (
-          <div style={{ display:'flex', gap:6, marginTop:5 }}
-            onClick={e => e.stopPropagation()}>
+        {/* Message bubble — purple gradient, works on all themes */}
+        <div
+          onClick={() => setShowOpts(p => !p)}
+          style={{
+            background: 'linear-gradient(135deg, #312e81 0%, #1e1b4b 100%)',
+            border: '1px solid rgba(99,102,241,.4)',
+            borderRadius: '2px 10px 10px 10px',
+            padding: '7px 12px',
+            display: 'inline-block',
+            maxWidth: 'min(88%, 380px)',
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(99,102,241,.2)',
+          }}>
+          <span style={{ fontSize:'0.84rem', color:'#e0e7ff', fontStyle:'italic', lineHeight:1.4 }}>
+            {msg.content}
+          </span>
+        </div>
+
+        {/* Click options: reply + report (only for receiver) */}
+        {showOpts && !isMine && (
+          <div style={{ display:'flex', gap:6, marginTop:5 }} onClick={e => e.stopPropagation()}>
             <button
               onClick={() => { onWhisperReply?.(fromUser); setShowOpts(false) }}
               style={{ padding:'4px 12px', borderRadius:8, border:'1px solid #6366f1',
-                background:'#6366f118', color:'#a78bfa', cursor:'pointer', fontSize:'0.75rem', fontWeight:700 }}>
-              ↩ Reply
+                background:'rgba(99,102,241,.15)', color:'#a78bfa',
+                cursor:'pointer', fontSize:'0.75rem', fontWeight:700,
+                display:'flex', alignItems:'center', gap:4 }}>
+              <i className="fi fi-sr-reply-all" style={{ fontSize:10 }}/> Whisper Back
             </button>
             <button
               onClick={() => setShowOpts(false)}
-              style={{ padding:'4px 12px', borderRadius:8, border:'1px solid #ef4444',
-                background:'#ef444418', color:'#f87171', cursor:'pointer', fontSize:'0.75rem', fontWeight:700 }}>
-              ⚑ Report
+              style={{ padding:'4px 12px', borderRadius:8, border:'1px solid rgba(239,68,68,.4)',
+                background:'rgba(239,68,68,.1)', color:'#f87171',
+                cursor:'pointer', fontSize:'0.75rem', fontWeight:700,
+                display:'flex', alignItems:'center', gap:4 }}>
+              <i className="fi fi-sr-flag" style={{ fontSize:10 }}/> Report
             </button>
           </div>
         )}
