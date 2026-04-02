@@ -3,11 +3,13 @@ const SOUND_FILES = {
   join:        '/sounds/join.mp3',
   leave:       '/sounds/whistle.mp3',
   private:     '/sounds/private.mp3',
+  whisper:     '/sounds/private.mp3',   // whisper uses same as private
   call_in:     '/sounds/call_in.mp3',
   call_out:    '/sounds/call_out.mp3',
   call_end:    '/sounds/call_end.mp3',
   new_message: '/sounds/new_messages.mp3',
   mention:     '/sounds/username.mp3',
+  quote:       '/sounds/notify.mp3',    // quote notification
   gift:        '/sounds/action.mp3',
   badge:       '/sounds/badge.mp3',
   levelup:     '/sounds/levelup.mp3',
@@ -39,6 +41,8 @@ export const Sounds = {
   join:       ()=>playSound('join'),
   leave:      ()=>playSound('leave'),
   mention:    ()=>playSound('mention'),
+  quote:      ()=>playSound('quote'),
+  whisper:    ()=>playSound('whisper'),
   privateMsg: ()=>playSound('private'),
   callIn:     ()=>playSound('call_in'),
   callOut:    ()=>playSound('call_out'),
