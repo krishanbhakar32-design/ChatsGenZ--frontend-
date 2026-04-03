@@ -50,7 +50,7 @@ function GiftPanel({targetUser, myGold, onClose, onSent, socket, roomId, onGoldS
             </div>
           </div>
           <button onClick={onClose} style={{background:'#f3f4f6',border:'none',width:28,height:28,borderRadius:7,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#6b7280',fontSize:12}}>
-            <i className="fi fi-sr-cross-small"/>
+            <i className="fa-solid fa-xmark"/>
           </button>
         </div>
 
