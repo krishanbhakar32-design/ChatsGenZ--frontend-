@@ -2521,6 +2521,7 @@ function IpBans() {
       {confirm && <Confirm msg={confirm.msg} onYes={() => { confirm.cb(); setConfirm(null); }} onNo={() => setConfirm(null)} />}
     </div>
   );
+}
 
 // ── Broadcast ──────────────────────────────────────────────────
 function Broadcast() {
@@ -3384,7 +3385,7 @@ function BotsSection() {
   // Manual send form
   const [sendForm, setSendForm] = useState({ roomId:'', content:'' });
 
-  const API_BASE = import.meta?.env?.VITE_API_URL || 'http://localhost:5000';
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
   const tok = () => localStorage.getItem('token');
 
   const apiBot = async (path, opts = {}) => {
