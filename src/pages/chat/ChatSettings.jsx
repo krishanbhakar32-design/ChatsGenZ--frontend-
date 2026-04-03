@@ -148,16 +148,16 @@ function ChatSettingsOverlay({me,onClose,onSaved}){
   }
 
   const TABS=[
-    {id:'chatOptions',icon:'fi-sr-settings-sliders',label:'Chat Options'},
-    {id:'nameColor',  icon:'fi-sr-brush',           label:'Username'},
-    {id:'textColor',  icon:'fi-sr-comment-alt',     label:'Text Color'},
-    {id:'sounds',     icon:'fi-sr-volume',          label:'Sounds'},
+    {id:'chatOptions',icon:'fa-solid fa-user-gear',label:'Chat Options'},
+    {id:'nameColor',  icon:'fa-solid fa-signature',           label:'Username'},
+    {id:'textColor',  icon:'fa-solid fa-comments',     label:'Text Color'},
+    {id:'sounds',     icon:'fa-solid fa-microphone-lines',          label:'Sounds'},
   ]
   const OPT_BTNS=[
-    {id:'chatOptions',label:'Chat Options',icon:'fi-sr-settings-sliders'},
-    {id:'nameColor',  label:'Username Color',icon:'fi-sr-brush'},
-    {id:'textColor',  label:'Text Color',icon:'fi-sr-text'},
-    {id:'sounds',     label:'Sounds',icon:'fi-sr-volume'},
+    {id:'chatOptions',label:'Chat Options',icon:'fa-solid fa-user-gear'},
+    {id:'nameColor',  label:'Username Color',icon:'fa-solid fa-signature'},
+    {id:'textColor',  label:'Text Color',icon:'fa-solid fa-signature'},
+    {id:'sounds',     label:'Sounds',icon:'fa-solid fa-microphone-lines'},
   ]
 
   return(
@@ -168,7 +168,7 @@ function ChatSettingsOverlay({me,onClose,onSaved}){
         <div style={{background:'linear-gradient(135deg,#1a1f2e,#2d3555)',padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
             <div style={{width:32,height:32,borderRadius:8,background:'rgba(255,255,255,.12)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-              <i className="fi fi-sr-settings" style={{fontSize:16,color:'#fff'}}/>
+              <i className="fa-solid fa-gear" style={{fontSize:16,color:'#fff'}}/>
             </div>
             <div>
               <div style={{fontFamily:'Outfit,sans-serif',fontWeight:800,fontSize:'0.95rem',color:'#fff'}}>Chat Options</div>
@@ -176,7 +176,7 @@ function ChatSettingsOverlay({me,onClose,onSaved}){
             </div>
           </div>
           <button onClick={onClose} style={{background:'rgba(255,255,255,.1)',border:'none',borderRadius:8,width:30,height:30,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:14}}>
-            <i className="fi fi-sr-cross-small"/>
+            <i className="fa-solid fa-xmark"/>
           </button>
         </div>
 
@@ -185,7 +185,7 @@ function ChatSettingsOverlay({me,onClose,onSaved}){
           {TABS.map(t=>(
             <button key={t.id} onClick={()=>{setTab(t.id);setOk('')}}
               style={{flex:'1 1 auto',minWidth:70,padding:'10px 6px',border:'none',background:'none',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:3,borderBottom:`2px solid ${tab===t.id?'#1a73e8':'transparent'}`,marginBottom:-2,color:tab===t.id?'#1a73e8':'#6b7280',transition:'all .15s'}}>
-              <i className={`fi ${t.icon}`} style={{fontSize:15}}/>
+              <i className={`${t.icon}`} style={{fontSize:15}}/>
               <span style={{fontSize:'0.58rem',fontWeight:700,whiteSpace:'nowrap'}}>{t.label}</span>
             </button>
           ))}
@@ -193,26 +193,26 @@ function ChatSettingsOverlay({me,onClose,onSaved}){
 
         {/* Body */}
         <div style={{flex:1,overflowY:'auto',padding:'14px'}}>
-          {ok&&<div style={{background:'#f0fdf4',border:'1px solid #86efac',borderRadius:8,padding:'7px 12px',fontSize:'0.78rem',color:'#15803d',marginBottom:10,display:'flex',alignItems:'center',gap:6}}><i className="fi fi-sr-check-circle" style={{fontSize:14}}/> {ok}</div>}
+          {ok&&<div style={{background:'#f0fdf4',border:'1px solid #86efac',borderRadius:8,padding:'7px 12px',fontSize:'0.78rem',color:'#15803d',marginBottom:10,display:'flex',alignItems:'center',gap:6}}><i className="fa-solid fa-circle-check" style={{fontSize:14}}/> {ok}</div>}
 
           {/* Chat Options tab */}
           {tab==='chatOptions'&&(
             <>
               <button onClick={()=>setOptOpen(p=>!p)} style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'11px 14px',background:'#f9fafb',border:'1.5px solid #e4e6ea',borderRadius:optOpen?'10px 10px 0 0':10,cursor:'pointer',marginBottom:0,transition:'all .15s'}}>
                 <div style={{display:'flex',alignItems:'center',gap:9}}>
-                  <i className="fi fi-sr-settings-sliders" style={{color:'#1a73e8',fontSize:15}}/>
+                  <i className="fa-solid fa-user-gear" style={{color:'#1a73e8',fontSize:15}}/>
                   <span style={{fontWeight:700,fontSize:'0.85rem',color:'#111827'}}>Chat Options</span>
                 </div>
-                <i className={`fi fi-sr-angle-${optOpen?'down':'right'}`} style={{color:'#9ca3af',fontSize:13}}/>
+                <i className={`fa-solid fa-angle-${optOpen?'down':'right'}`} style={{color:'#9ca3af',fontSize:13}}/>
               </button>
               {optOpen&&(
                 <div style={{background:'#f9fafb',border:'1.5px solid #e4e6ea',borderTop:'none',borderRadius:'0 0 10px 10px',marginBottom:12,overflow:'hidden'}}>
                   {OPT_BTNS.map(b=>(
                     <button key={b.id} onClick={()=>setTab(b.id)}
                       style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'10px 14px',background:'none',border:'none',borderBottom:'1px solid #e4e6ea',cursor:'pointer',textAlign:'left'}}>
-                      <i className={`fi ${b.icon}`} style={{fontSize:14,color:'#6b7280',width:18,textAlign:'center'}}/>
+                      <i className={`${b.icon}`} style={{fontSize:14,color:'#6b7280',width:18,textAlign:'center'}}/>
                       <span style={{fontSize:'0.83rem',fontWeight:600,color:'#374151'}}>{b.label}</span>
-                      <i className="fi fi-sr-angle-right" style={{marginLeft:'auto',color:'#d1d5db',fontSize:11}}/>
+                      <i className="fa-solid fa-angle-right" style={{marginLeft:'auto',color:'#d1d5db',fontSize:11}}/>
                     </button>
                   ))}
                 </div>
@@ -237,7 +237,7 @@ function ChatSettingsOverlay({me,onClose,onSaved}){
                       </div>
                     )}
                     <div style={{background:t.bg_header,padding:'5px 8px',display:'flex',alignItems:'center',gap:4,minHeight:26}}>
-                      {selTheme===t.id&&<i className="fi fi-sr-check-circle" style={{fontSize:8,color:t.accent||'#fff',flexShrink:0}}/>}
+                      {selTheme===t.id&&<i className="fa-solid fa-circle-check" style={{fontSize:8,color:t.accent||'#fff',flexShrink:0}}/>}
                       <span style={{fontSize:'0.65rem',fontWeight:800,color:'#fff',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',textShadow:'0 1px 3px rgba(0,0,0,.6)',flex:1}}>{t.name}</span>
                     </div>
                     <div style={{background:t.bg_image?`url(${t.bg_image})`:t.bg_chat,backgroundSize:'cover',backgroundPosition:'center',padding:'5px 8px',height:40,display:'flex',alignItems:'center',position:'relative'}}>
@@ -269,11 +269,11 @@ function ChatSettingsOverlay({me,onClose,onSaved}){
               {nameTab==='solid'&&(
                 <div style={{display:'flex',flexWrap:'wrap',marginBottom:12}}>
                   <div onClick={()=>setNameSel('')} style={{...SW,background:'#f3f4f6',border:`2px solid ${nameSel===''?'#1a73e8':'#e4e6ea'}`}}>
-                    {nameSel===''&&<i className="fi fi-sr-check" style={{fontSize:9,color:'#1a73e8'}}/>}
+                    {nameSel===''&&<i className="fa-solid fa-check" style={{fontSize:9,color:'#1a73e8'}}/>}
                   </div>
                   {SOLID_COLORS.map((c,i)=>(
                     <div key={i} onClick={()=>setNameSel(`bcolor${i+1}`)} style={{...SW,background:c,border:`2px solid ${nameSel===`bcolor${i+1}`?'#fff':'transparent'}`,transform:nameSel===`bcolor${i+1}`?'scale(1.25)':'scale(1)'}}>
-                      {nameSel===`bcolor${i+1}`&&<i className="fi fi-sr-check" style={{fontSize:8,color:'#fff'}}/>}
+                      {nameSel===`bcolor${i+1}`&&<i className="fa-solid fa-check" style={{fontSize:8,color:'#fff'}}/>}
                     </div>
                   ))}
                 </div>
@@ -282,7 +282,7 @@ function ChatSettingsOverlay({me,onClose,onSaved}){
                 <div style={{display:'flex',flexWrap:'wrap',marginBottom:12}}>
                   {BUB_GRADS.map((g,i)=>(
                     <div key={i} onClick={()=>setNameSel(`bgrad${i+1}`)} style={{...SW,background:g,border:`2px solid ${nameSel===`bgrad${i+1}`?'#fff':'transparent'}`,transform:nameSel===`bgrad${i+1}`?'scale(1.25)':'scale(1)'}}>
-                      {nameSel===`bgrad${i+1}`&&<i className="fi fi-sr-check" style={{fontSize:8,color:'#fff'}}/>}
+                      {nameSel===`bgrad${i+1}`&&<i className="fa-solid fa-check" style={{fontSize:8,color:'#fff'}}/>}
                     </div>
                   ))}
                 </div>
@@ -325,7 +325,7 @@ function ChatSettingsOverlay({me,onClose,onSaved}){
                   </div>
                   {SOLID_COLORS.map((c,i)=>(
                     <div key={i} onClick={()=>setBubSel(`bubcolor${i+1}`)} style={{...SW,background:c,border:`2px solid ${bubSel===`bubcolor${i+1}`?'#fff':'transparent'}`,transform:bubSel===`bubcolor${i+1}`?'scale(1.25)':'scale(1)'}}>
-                      {bubSel===`bubcolor${i+1}`&&<i className="fi fi-sr-check" style={{fontSize:8,color:'#fff'}}/>}
+                      {bubSel===`bubcolor${i+1}`&&<i className="fa-solid fa-check" style={{fontSize:8,color:'#fff'}}/>}
                     </div>
                   ))}
                 </div>
@@ -334,7 +334,7 @@ function ChatSettingsOverlay({me,onClose,onSaved}){
                 <div style={{display:'flex',flexWrap:'wrap',marginBottom:10}}>
                   {BUB_GRADS.map((g,i)=>(
                     <div key={i} onClick={()=>setBubSel(`bubgrad${i+1}`)} style={{...SW,background:g,border:`2px solid ${bubSel===`bubgrad${i+1}`?'#fff':'transparent'}`,transform:bubSel===`bubgrad${i+1}`?'scale(1.25)':'scale(1)'}}>
-                      {bubSel===`bubgrad${i+1}`&&<i className="fi fi-sr-check" style={{fontSize:8,color:'#fff'}}/>}
+                      {bubSel===`bubgrad${i+1}`&&<i className="fa-solid fa-check" style={{fontSize:8,color:'#fff'}}/>}
                     </div>
                   ))}
                 </div>
@@ -412,7 +412,7 @@ function ChatSettingsOverlay({me,onClose,onSaved}){
           <div style={{borderTop:'1px solid #f3f4f6',padding:'12px 14px',display:'flex',gap:8,flexShrink:0,background:'#fafafa'}}>
             <button onClick={onClose} style={{flex:1,padding:'9px',borderRadius:8,border:'1.5px solid #e4e6ea',background:'#fff',color:'#6b7280',cursor:'pointer',fontSize:'0.82rem',fontWeight:600}}>Cancel</button>
             <button onClick={save} disabled={saving} style={{flex:2,padding:'9px',borderRadius:8,border:'none',background:saving?'#9ca3af':'linear-gradient(135deg,#1a73e8,#0d5bcd)',color:'#fff',cursor:saving?'not-allowed':'pointer',fontSize:'0.82rem',fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
-              <i className={saving?'fi fi-sr-spinner':'fi fi-sr-disk'} style={{fontSize:14}}/> {saving?'Saving…':'Apply'}
+              <i className={saving?'fa-solid fa-circle-notch fa-spin':'fa-solid fa-floppy-disk'} style={{fontSize:14}}/> {saving?'Saving…':'Apply'}
             </button>
           </div>
         )}
@@ -496,17 +496,17 @@ function AvatarDropdown({me,status,setStatus,onLeave,socket,onOpenSettings,onOpe
           {/* Menu */}
           <div>
             {[
-              {icon:'fi-sr-user',            label:'My Profile',   color:'#a78bfa',fn:()=>{onOpenProfile?.();setOpen(false)}},
-              {icon:'fi-sr-settings-sliders', label:'Chat Options', chevron:true, color:'#60a5fa',fn:()=>{onOpenSettings?.();setOpen(false)}},
-              ...(isStaffRole?[{icon:'fi-sr-dashboard',label:'Admin Panel',color:'#f59e0b',fn:()=>{window.location.href='/admin'}}]:[]),
+              {icon:'fa-solid fa-address-card',            label:'My Profile',   color:'#a78bfa',fn:()=>{onOpenProfile?.();setOpen(false)}},
+              {icon:'fa-solid fa-user-gear', label:'Chat Options', chevron:true, color:'#60a5fa',fn:()=>{onOpenSettings?.();setOpen(false)}},
+              ...(isStaffRole?[{icon:'fa-solid fa-gauge',label:'Admin Panel',color:'#f59e0b',fn:()=>{window.location.href='/admin'}}]:[]),
             ].map(item=>(
               <button key={item.label} onClick={item.fn}
                 style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'10px 14px',background:'none',border:'none',borderBottom:'1px solid #2d3555',cursor:'pointer',textAlign:'left',transition:'background .12s'}}
                 onMouseEnter={e=>e.currentTarget.style.background='#2d3555'}
                 onMouseLeave={e=>e.currentTarget.style.background='none'}>
-                <i className={`fi ${item.icon}`} style={{fontSize:14,color:item.color,width:18,textAlign:'center',flexShrink:0}}/>
+                <i className={`${item.icon}`} style={{fontSize:14,color:item.color,width:18,textAlign:'center',flexShrink:0}}/>
                 <span style={{fontSize:'0.84rem',fontWeight:600,color:'#e2e8f0',flex:1}}>{item.label}</span>
-                {item.chevron&&<i className="fi fi-sr-angle-right" style={{fontSize:11,color:'#6b7280',flexShrink:0}}/>}
+                {item.chevron&&<i className="fa-solid fa-angle-right" style={{fontSize:11,color:'#6b7280',flexShrink:0}}/>}
               </button>
             ))}
           </div>
@@ -527,13 +527,13 @@ function AvatarDropdown({me,status,setStatus,onLeave,socket,onOpenSettings,onOpe
             <button onClick={()=>{onLeave();setOpen(false)}}
               style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'10px 14px',background:'none',border:'none',borderBottom:'1px solid #2d3555',cursor:'pointer',textAlign:'left'}}
               onMouseEnter={e=>e.currentTarget.style.background='#2d3555'} onMouseLeave={e=>e.currentTarget.style.background='none'}>
-              <i className="fi fi-sr-sign-out-alt" style={{fontSize:14,color:'#60a5fa',width:18,textAlign:'center'}}/>
+              <i className="fa-solid fa-circle-left" style={{fontSize:14,color:'#60a5fa',width:18,textAlign:'center'}}/>
               <span style={{fontSize:'0.84rem',fontWeight:600,color:'#e2e8f0'}}>Leave Room</span>
             </button>
             <button onClick={()=>{const t=localStorage.getItem('cgz_token');if(t)fetch(`${API}/api/auth/logout`,{method:'POST',headers:{Authorization:`Bearer ${t}`}}).catch(()=>{});localStorage.removeItem('cgz_token');nav('/login')}}
               style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'10px 14px',background:'none',border:'none',cursor:'pointer',textAlign:'left'}}
               onMouseEnter={e=>e.currentTarget.style.background='rgba(239,68,68,.12)'} onMouseLeave={e=>e.currentTarget.style.background='none'}>
-              <i className="fi fi-sr-user-logout" style={{fontSize:14,color:'#f87171',width:18,textAlign:'center'}}/>
+              <i className="fa-solid fa-right-from-bracket" style={{fontSize:14,color:'#f87171',width:18,textAlign:'center'}}/>
               <span style={{fontSize:'0.84rem',fontWeight:600,color:'#f87171'}}>Logout</span>
             </button>
           </div>
@@ -549,9 +549,9 @@ function AvatarDropdown({me,status,setStatus,onLeave,socket,onOpenSettings,onOpe
 function Footer({showRadio,setShowRadio,showRight,setRight,notif}){
   return(
     <div style={{background:'#fff',borderTop:'1px solid #e4e6ea',padding:'4px 10px',display:'flex',alignItems:'center',gap:4,flexShrink:0,position:'relative'}}>
-      <FBtn icon="fi-sr-radio" active={showRadio} onClick={()=>setShowRadio(s=>!s)} title="Radio"/>
+      <FBtn faIcon="fa-solid fa-radio" active={showRadio} onClick={()=>setShowRadio(s=>!s)} title="Radio"/>
       <div style={{flex:1}}/>
-      <FBtn icon="fi-sr-list" active={showRight} onClick={()=>setRight(s=>!s)} title="User List" badge={notif.friends}/>
+      <FBtn faIcon="fa-solid fa-users" active={showRight} onClick={()=>setRight(s=>!s)} title="User List" badge={notif.friends}/>
     </div>
   )
 }
