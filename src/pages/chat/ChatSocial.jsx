@@ -34,13 +34,13 @@ function FriendReqPanel({onClose,onCount}) {
     <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',background:'#fff',border:'1px solid #e4e6ea',borderRadius:14,width:'min(300px,92vw)',maxHeight:380,display:'flex',flexDirection:'column',boxShadow:'0 8px 28px rgba(0,0,0,.14)',zIndex:999}} onClick={e=>e.stopPropagation()}>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 13px',borderBottom:'1px solid #f3f4f6',flexShrink:0}}>
         <span style={{fontFamily:'Outfit,sans-serif',fontWeight:800,fontSize:'0.88rem',color:'#111827'}}>Friend Requests</span>
-        <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:13}}><i className="fi fi-sr-cross-small"/></button>
+        <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:13}}><i className="fa-solid fa-xmark"/></button>
       </div>
       <div style={{flex:1,overflowY:'auto'}}>
         {load&&<div style={{textAlign:'center',padding:20}}><div style={{width:20,height:20,border:'2px solid #e4e6ea',borderTop:'2px solid #1a73e8',borderRadius:'50%',animation:'spin .8s linear infinite',margin:'0 auto'}}/></div>}
         {!load&&reqs.length===0&&(
           <div style={{textAlign:'center',padding:'28px 16px',color:'#9ca3af'}}>
-            <i className="fi fi-sr-user-add" style={{fontSize:26,display:'block',marginBottom:8,opacity:0.3}}/>
+            <i className="fa-solid fa-user-plus" style={{fontSize:26,display:'block',marginBottom:8,opacity:0.3}}/>
             <p style={{fontSize:'0.84rem',fontWeight:600,margin:0}}>No pending requests</p>
           </div>
         )}
@@ -96,12 +96,12 @@ function NotifPanel({onClose,onCount}) {
         </div>
         <div style={{display:'flex',gap:5,alignItems:'center'}}>
           {unread>0&&<button onClick={markAll} style={{background:'none',border:'none',cursor:'pointer',color:'#1a73e8',fontSize:'0.73rem',fontWeight:600}}>Mark all</button>}
-          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:13}}><i className="fi fi-sr-cross-small"/></button>
+          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:13}}><i className="fa-solid fa-xmark"/></button>
         </div>
       </div>
       <div style={{flex:1,overflowY:'auto'}}>
         {load&&<div style={{textAlign:'center',padding:20}}><div style={{width:20,height:20,border:'2px solid #e4e6ea',borderTop:'2px solid #1a73e8',borderRadius:'50%',animation:'spin .8s linear infinite',margin:'0 auto'}}/></div>}
-        {!load&&list.length===0&&<div style={{textAlign:'center',padding:'28px 16px',color:'#9ca3af'}}><i className="fi fi-sr-bell" style={{fontSize:28,display:'block',marginBottom:8,opacity:0.3}}/><p style={{fontSize:'0.84rem',fontWeight:600,margin:0}}>No notifications</p></div>}
+        {!load&&list.length===0&&<div style={{textAlign:'center',padding:'28px 16px',color:'#9ca3af'}}><i className="fa-solid fa-bell" style={{fontSize:28,display:'block',marginBottom:8,opacity:0.3}}/><p style={{fontSize:'0.84rem',fontWeight:600,margin:0}}>No notifications</p></div>}
         {list.map(n=>(
           <div key={n._id} style={{display:'flex',alignItems:'flex-start',gap:10,padding:'9px 13px',borderBottom:'1px solid #f9fafb',background:n.isRead?'transparent':'#f0f7ff'}}>
             <div style={{width:30,height:30,borderRadius:8,background:'#f3f4f6',display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,flexShrink:0}}>
@@ -152,16 +152,16 @@ function DMPanel({me,socket,onClose,onCount}) {
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 13px',borderBottom:'1px solid #f3f4f6',flexShrink:0}}>
         {active?(
           <div style={{display:'flex',alignItems:'center',gap:8}}>
-            <button onClick={()=>setActive(null)} style={{background:'none',border:'none',cursor:'pointer',color:'#1a73e8',fontSize:13}}><i className="fi fi-sr-arrow-left"/></button>
+            <button onClick={()=>setActive(null)} style={{background:'none',border:'none',cursor:'pointer',color:'#1a73e8',fontSize:13}}><i className="fa-solid fa-arrow-left"/></button>
             <span style={{fontFamily:'Outfit,sans-serif',fontWeight:800,fontSize:'0.86rem',color:'#111827'}}>{active.username}</span>
           </div>
         ):<span style={{fontFamily:'Outfit,sans-serif',fontWeight:800,fontSize:'0.88rem',color:'#111827'}}>💬 Messages</span>}
-        <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:13}}><i className="fi fi-sr-cross-small"/></button>
+        <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:13}}><i className="fa-solid fa-xmark"/></button>
       </div>
       {!active?(
         <div style={{flex:1,overflowY:'auto'}}>
           {load&&<div style={{textAlign:'center',padding:18}}><div style={{width:20,height:20,border:'2px solid #e4e6ea',borderTop:'2px solid #1a73e8',borderRadius:'50%',animation:'spin .8s linear infinite',margin:'0 auto'}}/></div>}
-          {!load&&convos.length===0&&<div style={{textAlign:'center',padding:'28px 16px',color:'#9ca3af'}}><i className="fi fi-sr-envelope" style={{fontSize:26,display:'block',marginBottom:8,opacity:0.3}}/><p style={{fontSize:'0.84rem',fontWeight:600,margin:0}}>No messages</p></div>}
+          {!load&&convos.length===0&&<div style={{textAlign:'center',padding:'28px 16px',color:'#9ca3af'}}><i className="fa-solid fa-envelope" style={{fontSize:26,display:'block',marginBottom:8,opacity:0.3}}/><p style={{fontSize:'0.84rem',fontWeight:600,margin:0}}>No messages</p></div>}
           {convos.map(c=>(
             <div key={c.userId} onClick={()=>openConvo(c)} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 13px',borderBottom:'1px solid #f9fafb',cursor:'pointer',background:c.unread>0?'#f0f7ff':'transparent',transition:'background .12s'}} onMouseEnter={e=>e.currentTarget.style.background='#f3f4f6'} onMouseLeave={e=>e.currentTarget.style.background=c.unread>0?'#f0f7ff':'transparent'}>
               <img src={c.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{width:34,height:34,borderRadius:'50%',objectFit:'cover',flexShrink:0,border:`1.5px solid ${GBR(c.gender,c.rank)}`}} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
@@ -191,7 +191,7 @@ function DMPanel({me,socket,onClose,onCount}) {
               style={{flex:1,padding:'7px 11px',background:'#f9fafb',border:'1.5px solid #e4e6ea',borderRadius:20,fontSize:'0.84rem',outline:'none',color:'#111827',fontFamily:'Nunito,sans-serif'}}
               onFocus={e=>e.target.style.borderColor='#1a73e8'} onBlur={e=>e.target.style.borderColor='#e4e6ea'}/>
             <button type="submit" disabled={!input.trim()} style={{width:32,height:32,borderRadius:'50%',border:'none',background:input.trim()?'linear-gradient(135deg,#1a73e8,#1464cc)':'#f3f4f6',color:input.trim()?'#fff':'#9ca3af',cursor:input.trim()?'pointer':'not-allowed',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,flexShrink:0}}>
-              <i className="fi fi-sr-paper-plane"/>
+              <i className="fa-solid fa-paper-plane"/>
             </button>
           </form>
         </>
