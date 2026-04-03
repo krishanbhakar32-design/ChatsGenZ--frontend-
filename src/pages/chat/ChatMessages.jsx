@@ -148,7 +148,7 @@ function Msg({msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myLe
           <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:2}}>
             <img src="/icons/ranks/bot.svg" alt="" style={{width:11,height:11,objectFit:'contain'}} onError={e=>e.target.style.display='none'}/>
             <span style={{fontSize:'0.72rem',fontWeight:700,color:'#6b7280',fontFamily:'Outfit,sans-serif'}}>System</span>
-            <i className={`fi ${cfg.icon}`} style={{fontSize:'0.6rem',color:cfg.accent}}/>
+            <i className={`${cfg.icon}`} style={{fontSize:'0.6rem',color:cfg.accent}}/>
             <span style={{marginLeft:'auto',fontSize:'0.6rem',color:'#bbb',whiteSpace:'nowrap'}}>{ts}</span>
           </div>
           <div style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f8f9fa',borderLeft:`2.5px solid ${cfg.accent}`,borderRadius:'0 8px 8px 0',padding:'4px 10px',maxWidth:'min(92%,480px)'}}>
@@ -158,7 +158,7 @@ function Msg({msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myLe
         {canDelSys&&(
           <button className="sys-del-btn" onClick={e=>{e.stopPropagation();socket?.emit('deleteMessage',{messageId:msg._id,roomId})}}
             style={{position:'absolute',right:4,top:'50%',transform:'translateY(-50%)',background:'rgba(239,68,68,.1)',border:'none',borderRadius:5,color:'#ef4444',cursor:'pointer',fontSize:10,padding:'2px 5px',opacity:0,transition:'opacity .15s',whiteSpace:'nowrap'}}>
-            <i className="fi fi-sr-trash" style={{fontSize:9}}/>
+            <i className="fa-solid fa-trash" style={{fontSize:9}}/>
           </button>
         )}
       </div>
@@ -213,7 +213,7 @@ function Msg({msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myLe
       <div style={{position:'fixed',top:menuPos.y,left:menuPos.x,background:'#1e293b',border:'1px solid #334155',borderRadius:10,zIndex:8889,minWidth:175,overflow:'hidden',boxShadow:'0 8px 24px rgba(0,0,0,.4)'}}>
         {[
           {
-            icon:'fi-sr-reply-all',
+            icon:'fa-solid fa-reply-all',
             label:'Quote',
             color:'#60a5fa',
             disabled: false,
@@ -224,7 +224,7 @@ function Msg({msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myLe
             }
           },
           {
-            icon:'fi-sr-comment-user',
+            icon:'fa-solid fa-hand-lizard',
             label:'Whisper',
             color:'#a78bfa',
             disabled: isMine,
@@ -234,9 +234,9 @@ function Msg({msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myLe
               setMenuPos(null)
             }
           },
-          {icon:'fi-sr-eye-crossed', label:'Hide',   color:'#9ca3af', disabled:false, fn:()=>{onHide?.(msg._id);setMenuPos(null)}},
-          {icon:'fi-sr-flag',        label:'Report', color:'#ef4444', disabled:false, fn:()=>setMenuPos(null)},
-          ...(canDel?[{icon:'fi-sr-trash', label:'Delete', color:'#f87171', disabled:false, fn:()=>{
+          {icon:'fa-solid fa-eye-slash', label:'Hide',   color:'#9ca3af', disabled:false, fn:()=>{onHide?.(msg._id);setMenuPos(null)}},
+          {icon:'fa-sharp fa-solid fa-flag',        label:'Report', color:'#ef4444', disabled:false, fn:()=>setMenuPos(null)},
+          ...(canDel?[{icon:'fa-solid fa-trash', label:'Delete', color:'#f87171', disabled:false, fn:()=>{
             socket?.emit('deleteMessage',{messageId:msg._id,roomId})
             setMenuPos(null)
           }}]:[]),
@@ -249,7 +249,7 @@ function Msg({msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myLe
             }}
             onMouseEnter={e=>{if(!item.disabled)e.currentTarget.style.background='#334155'}}
             onMouseLeave={e=>e.currentTarget.style.background='none'}>
-            <i className={`fi ${item.icon}`} style={{fontSize:13,color:item.color,width:16,flexShrink:0}}/>
+            <i className={`${item.icon}`} style={{fontSize:13,color:item.color,width:16,flexShrink:0}}/>
             <span style={{fontSize:'0.83rem',fontWeight:700,color:'#f1f5f9'}}>{item.label}</span>
           </button>
         ))}
