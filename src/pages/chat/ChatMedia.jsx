@@ -194,7 +194,7 @@ function GifPicker({ onSelect, onClose }) {
       <ModalHeader icon="🎞️" title="GIF" subtitle="Powered by GIPHY" onClose={onClose}/>
       <div style={{padding:'10px 12px',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
         <div style={{position:'relative'}}>
-          <i className="fi fi-sr-search" style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',fontSize:13,color:'#9ca3af',pointerEvents:'none'}}/>
+          <i className="fa-solid fa-magnifying-glass" style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',fontSize:13,color:'#9ca3af',pointerEvents:'none'}}/>
           <input autoFocus value={q} onChange={e=>setQ(e.target.value)} placeholder="Search GIFs..."
             style={{width:'100%',padding:'9px 12px 9px 32px',border:'1.5px solid #e4e6ea',borderRadius:22,fontSize:'0.86rem',outline:'none',boxSizing:'border-box',background:'#f9fafb',fontFamily:'Nunito,sans-serif'}}
             onFocus={e=>e.target.style.borderColor='#1a73e8'} onBlur={e=>e.target.style.borderColor='#e4e6ea'}/>
@@ -241,7 +241,7 @@ function YTPanel({ onClose, onSend }) {
       <ModalHeader icon="▶️" title="YouTube" subtitle="Paste a link to share a video in chat" onClose={onClose}/>
       <div style={{padding:'14px',display:'flex',flexDirection:'column',gap:12}}>
         <div style={{position:'relative'}}>
-          <i className="fi fi-sr-link" style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',fontSize:14,color:'#9ca3af',pointerEvents:'none'}}/>
+          <i className="fa-solid fa-link" style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',fontSize:14,color:'#9ca3af',pointerEvents:'none'}}/>
           <input autoFocus value={link} onChange={e=>setLink(e.target.value)} placeholder="Paste YouTube link..."
             style={{width:'100%',padding:'11px 12px 11px 34px',border:'1.5px solid #e4e6ea',borderRadius:10,fontSize:'0.88rem',outline:'none',boxSizing:'border-box',fontFamily:'Nunito,sans-serif'}}
             onFocus={e=>e.target.style.borderColor='#ef4444'} onBlur={e=>e.target.style.borderColor='#e4e6ea'}/>
@@ -334,7 +334,7 @@ function SpotifyPanel({ onClose, onSend }) {
         {embedId&&(
           <button onClick={handleSend}
             style={{width:'100%',padding:'11px',borderRadius:9,border:'none',background:'linear-gradient(135deg,#1DB954,#17a349)',color:'#000',fontWeight:800,fontSize:'0.88rem',cursor:'pointer',fontFamily:'Nunito,sans-serif',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-            <i className="fi fi-sr-paper-plane-top" style={{fontSize:15}}/> Share in chat
+            <i className="fa-solid fa-paper-plane" style={{fontSize:15}}/> Share in chat
           </button>
         )}
       </div>
