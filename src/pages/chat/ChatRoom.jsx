@@ -26,7 +26,7 @@ import { Sounds }                                    from '../../utils/sounds.js
 import { API, RANKS, R, RL, GBR, isStaff, resolveNameColor } from './chatConstants.js'
 
 // ── Icon components ───────────────────────────────────────────
-import { HBtn }                                                          from './ChatIcons.jsx'
+import { HBtn, FA }                                                from './ChatIcons.jsx'
 
 // ── Feature components ────────────────────────────────────────
 import { PaintingCanvas, GifPicker, YTPanel, SpotifyPanel, EmoticonPicker } from './ChatMedia.jsx'
@@ -277,7 +277,7 @@ export default function ChatRoom() {
         {/* Hamburger */}
         <button onClick={e=>{e.stopPropagation();setLeft(s=>!s)}} title="Menu"
           style={{background:showLeft?thAccent+'33':'none',border:'none',cursor:'pointer',color:showLeft?thAccent:thText,width:34,height:34,borderRadius:7,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0,opacity:0.9}}>
-          <i className="fi fi-sr-bars-sort"/>
+          <i className="fa-solid fa-bars"/>
         </button>
 
         {/* Webcam button */}
@@ -288,21 +288,21 @@ export default function ChatRoom() {
 
         {/* Right icons - using SVGs from public folder */}
         <div style={{position:'relative'}}>
-          <HBtn icon="fi-ss-envelope" title="Messages" badge={notif.dm} active={showDM} onClick={e=>{e.stopPropagation();setShowDM(p=>!p);setShowNotif(false)}}/>
+          <HBtn faIcon="fa-solid fa-envelope" title="Messages" badge={notif.dm} active={showDM} onClick={e=>{e.stopPropagation();setShowDM(p=>!p);setShowNotif(false)}}/>
           {showDM&&<DMPanel me={me} socket={sockRef.current} onClose={()=>setShowDM(false)} onCount={n=>setNotif(p=>({...p,dm:n}))}/>}
         </div>
 
         <div style={{position:'relative'}}>
-          <HBtn icon="fi-sr-user-add" title="Friend Requests" badge={notif.friends} active={showFriends} onClick={e=>{e.stopPropagation();setShowFriends(p=>!p);setShowDM(false);setShowNotif(false)}}/>
+          <HBtn faIcon="fa-solid fa-user-plus" title="Friend Requests" badge={notif.friends} active={showFriends} onClick={e=>{e.stopPropagation();setShowFriends(p=>!p);setShowDM(false);setShowNotif(false)}}/>
           {showFriends&&<FriendReqPanel onClose={()=>setShowFriends(false)} onCount={n=>setNotif(p=>({...p,friends:n}))}/>}
         </div>
 
         <div style={{position:'relative'}}>
-          <HBtn icon="fi-ss-bell" title="Notifications" badge={notif.notif} active={showNotif} onClick={e=>{e.stopPropagation();setShowNotif(p=>!p);setShowDM(false)}}/>
+          <HBtn faIcon="fa-solid fa-bell" title="Notifications" badge={notif.notif} active={showNotif} onClick={e=>{e.stopPropagation();setShowNotif(p=>!p);setShowDM(false)}}/>
           {showNotif&&<NotifPanel onClose={()=>setShowNotif(false)} onCount={n=>setNotif(p=>({...p,notif:n}))}/>}
         </div>
 
-        {isStaffRole&&<HBtn icon="fi-sr-flag" title="Reports" badge={notif.reports}/>}
+        {isStaffRole&&<HBtn faIcon="fa-sharp fa-solid fa-flag" title="Reports" badge={notif.reports}/>}
 
         <AvatarDropdown me={me} status={status} setStatus={setStatus} onLeave={leave} socket={sockRef.current} onOpenSettings={()=>setShowChatSettings(true)} onOpenProfile={()=>setProf(me)}/>
       </div>
@@ -324,7 +324,7 @@ export default function ChatRoom() {
         <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',minWidth:0,background:thBg}}>
           {room?.topic&&(
             <div style={{background:thHeader,borderBottom:`1px solid ${thBorder}33`,padding:'8px 14px',fontSize:'0.78rem',color:thText,flexShrink:0,display:'flex',alignItems:'flex-start',gap:10}}>
-              <i className="fi fi-sr-envelope" style={{fontSize:16,color:'#fbbf24',marginTop:1,flexShrink:0}}/>
+              <i className="fa-solid fa-circle-info" style={{fontSize:16,color:'#fbbf24',marginTop:1,flexShrink:0}}/>
               <span style={{flex:1,lineHeight:1.5}}>{room.topic}</span>
               <button onClick={()=>setRoom(p=>p?{...p,topic:''}:p)} style={{background:'none',border:'none',cursor:'pointer',color:'#64748b',fontSize:14,flexShrink:0,padding:0}}>✕</button>
             </div>
@@ -356,7 +356,7 @@ export default function ChatRoom() {
             {/* ── QUOTE PREVIEW BAR — shown when user clicked Quote on a message ── */}
             {quotedMsg&&(
               <div style={{display:'flex',alignItems:'center',gap:8,background:'rgba(99,102,241,0.10)',border:'1px solid #6366f133',borderRadius:8,padding:'5px 10px',marginBottom:5,borderLeft:'3px solid #6366f1'}}>
-                <i className="fi fi-sr-reply-all" style={{fontSize:12,color:'#6366f1',flexShrink:0}}/>
+                <i className="fa-solid fa-reply-all" style={{fontSize:12,color:'#6366f1',flexShrink:0}}/>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:'0.68rem',fontWeight:800,color:'#6366f1',fontFamily:'Nunito,sans-serif'}}>
                     Replying to {quotedMsg.sender?.username || 'Unknown'}
@@ -381,10 +381,10 @@ export default function ChatRoom() {
             {showPlus&&(
               <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:'calc(100% + 5px)',left:6,background:'#fff',border:'1px solid #e4e6ea',borderRadius:12,padding:8,display:'flex',gap:7,boxShadow:'0 4px 20px rgba(0,0,0,.14)',zIndex:50}}>
                 {[
-                  {type:'img',  icon:'/default_images/icons/upload.svg', fallback:'fi-sr-picture', label:'Image',   action:()=>{document.getElementById('cgz-img-input').click();setShowPlus(false)}},
-                  {type:'img',  icon:'/default_images/icons/giphy.svg',  fallback:'fi-sr-gif',     label:'GIF',     action:()=>{setShowGif(p=>!p);setShowPlus(false)}},
+                  {type:'img',  icon:'/default_images/icons/upload.svg', fallback:'fa-solid fa-image', label:'Image',   action:()=>{document.getElementById('cgz-img-input').click();setShowPlus(false)}},
+                  {type:'img',  icon:'/default_images/icons/giphy.svg',  fallback:'fa-solid fa-image',     label:'GIF',     action:()=>{setShowGif(p=>!p);setShowPlus(false)}},
                   {type:'emoji',emoji:'🎨',                                                         label:'Paint',   action:()=>{setShowPaint(true);setShowPlus(false)}},
-                  {type:'img',  icon:'/default_images/icons/youtube.svg',fallback:'fi-br-youtube', label:'YouTube', action:()=>{setShowYT(p=>!p);setShowPlus(false)}},
+                  {type:'img',  icon:'/default_images/icons/youtube.svg',fallback:'fa-brands fa-youtube', label:'YouTube', action:()=>{setShowYT(p=>!p);setShowPlus(false)}},
                   {type:'spotify',                                                                  label:'Spotify', action:()=>{setShowSpotify(p=>!p);setShowPlus(false)}, active:showSpotify},
                   {type:'emoji',emoji:'🎲',                                                         label:'Dice',    action:()=>{
                     if((me?.gold||0)<100){toast?.show('🎲 Need 100 gold to play dice!','error',3000);setShowPlus(false);return;}
@@ -437,7 +437,7 @@ export default function ChatRoom() {
               <button type="button" onClick={e=>{e.stopPropagation();setShowEmoji(p=>!p);setShowPlus(false)}}
                 style={{background:'none',border:'none',cursor:'pointer',color:'#6b7280',fontSize:20,padding:'0 1px',flexShrink:0,display:'flex',alignItems:'center',lineHeight:1,opacity:showEmoji?1:0.7}}>
                 <img src="/icons/emoticon/happy.png" alt="" style={{width:22,height:22,objectFit:'contain'}} onError={e=>{e.target.style.display='none';e.target.nextSibling.style.display='block'}}/>
-                <i className="fi fi-rr-smile" style={{display:'none'}}/>
+                <i className="fa-regular fa-face-smile" style={{display:'none'}}/>
               </button>
               {/* Input */}
               <input ref={inputRef} value={input} onChange={handleTyping}
@@ -448,7 +448,7 @@ export default function ChatRoom() {
               {/* Send */}
               <button type="submit" disabled={!input.trim()||!connected}
                 style={{width:34,height:34,borderRadius:'50%',border:'none',background:input.trim()&&connected?thAccent:'#f3f4f6',color:input.trim()&&connected?'#fff':'#9ca3af',cursor:input.trim()&&connected?'pointer':'not-allowed',display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,flexShrink:0,boxShadow:input.trim()&&connected?`0 2px 8px ${thAccent}55`:'none',transition:'all .15s'}}>
-                <i className="fi fi-sr-paper-plane-top"/>
+                <i className="fa-solid fa-paper-plane"/>
               </button>
             </form>
           </div>
