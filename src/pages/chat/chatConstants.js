@@ -30,18 +30,18 @@ export const STATUSES = [
 ]
 
 export const SYS_CFG = {
-  join:    { accent:'#22c55e', icon:'fi-sr-enter' },
-  leave:   { accent:'#9ca3af', icon:'fi-sr-exit' },
-  kick:    { accent:'#f59e0b', icon:'fi-sr-boot-heeled' },
-  ban:     { accent:'#ef4444', icon:'fi-sr-ban' },
-  mute:    { accent:'#f59e0b', icon:'fi-sr-volume-mute' },
-  mod:     { accent:'#6366f1', icon:'fi-sr-shield-check' },
-  dice:    { accent:'#7c3aed', icon:'fi-sr-dice' },
-  gift:    { accent:'#ec4899', icon:'fi-sr-gift' },
-  system:  { accent:'#1a73e8', icon:'fi-sr-info' },
-  warning: { accent:'#f59e0b', icon:'fi-sr-triangle-warning' },
-  error:   { accent:'#ef4444', icon:'fi-sr-circle-xmark' },
-  success: { accent:'#22c55e', icon:'fi-sr-check-circle' },
+  join:    { accent:'#22c55e', icon:'fa-solid fa-right-to-bracket' },
+  leave:   { accent:'#9ca3af', icon:'fa-solid fa-right-from-bracket' },
+  kick:    { accent:'#f59e0b', icon:'fa-solid fa-user-slash' },
+  ban:     { accent:'#ef4444', icon:'fa-solid fa-ban' },
+  mute:    { accent:'#f59e0b', icon:'fa-solid fa-microphone-slash' },
+  mod:     { accent:'#6366f1', icon:'fa-solid fa-user-shield' },
+  dice:    { accent:'#7c3aed', icon:'fa-solid fa-dice' },
+  gift:    { accent:'#ec4899', icon:'fa-solid fa-gift' },
+  system:  { accent:'#1a73e8', icon:'fa-solid fa-circle-info' },
+  warning: { accent:'#f59e0b', icon:'fa-solid fa-triangle-exclamation' },
+  error:   { accent:'#ef4444', icon:'fa-solid fa-circle-xmark' },
+  success: { accent:'#22c55e', icon:'fa-solid fa-circle-check' },
 }
 
 export const SYSTEM_SENDER = {
