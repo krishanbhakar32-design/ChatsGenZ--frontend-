@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { API_URL } from '../constants.js'
+import { API_URL } from '../siteConfig.js'
 
 const API = API_URL
 
