@@ -33,6 +33,7 @@ const Sitemap       = lazy(() => import('./pages/info/Sitemap.jsx'))
 // Admin Panel
 const AdminPanel    = lazy(() => import('./pages/admin/AdminPanel.jsx'))
 const Profile       = lazy(() => import('./pages/Profile.jsx'))
+const Premium       = lazy(() => import('./pages/Premium.jsx'))
 const Gifts         = lazy(() => import('./pages/Gifts.jsx'))
 const Leaderboard   = lazy(() => import('./pages/Leaderboard.jsx'))
 
@@ -93,6 +94,7 @@ export default function App() {
           <Route path="/terms"          element={<Terms />} />
           <Route path="/admin"              element={<AdminPanel />} />
           <Route path="/profile/:username" element={<Profile />} />
+          <Route path="/premium"           element={<Premium />} />
           <Route path="/gifts"             element={<Gifts />} />
           <Route path="/leaderboard"       element={<Leaderboard />} />
           {/* 404 */}
