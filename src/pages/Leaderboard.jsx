@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { API_URL, RANKS } from '../constants.js'
+import { API_URL } from '../siteConfig.js'
+import { RANKS } from '../constants.js'
 
 const API = API_URL
 
