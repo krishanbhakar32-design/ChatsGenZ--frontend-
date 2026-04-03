@@ -15,9 +15,8 @@
 // ============================================================
 
 // ── API URL ────────────────────────────────────────────────
-export const API_URL =
-  import.meta.env.VITE_API_URL ||
-  'https://chatsgenz-backend-production.up.railway.app'
+// Sourced from siteConfig.js — change the URL there, not here.
+export { API_URL } from './siteConfig'
 
 // ── RANKS ─────────────────────────────────────────────────
 // key = exact value stored in user.rank in the DB
