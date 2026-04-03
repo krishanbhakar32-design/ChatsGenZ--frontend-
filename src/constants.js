@@ -3,7 +3,7 @@
 // ============================================================
 
 // API URL sourced from siteConfig — single source of truth
-export { API_URL as API } from '../../siteConfig'
+export { API_URL as API } from './siteConfig'
 
 export const RANKS = {
   guest:      { label:'Guest',      color:'#888888', icon:'guest.svg',       level:1  },
