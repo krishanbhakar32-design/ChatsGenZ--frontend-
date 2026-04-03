@@ -262,9 +262,9 @@ function WebcamPanel({ socket, roomId, me, onClose }) {
               )}
 
               <CtrlBtn title={micOn ? 'Mute mic' : 'Unmute mic'} onClick={toggleMic}
-                img="/default_images/icons/audio.svg" icon="fi fi-sr-microphone" active={micOn ? undefined : false} />
+                img="/default_images/icons/audio.svg" icon="fa-solid fa-microphone-lines" active={micOn ? undefined : false} />
               <CtrlBtn title={camOn ? 'Hide cam' : 'Show cam'} onClick={toggleCam}
-                img="/default_images/icons/video.svg" icon="fi fi-sr-video-camera" active={camOn ? undefined : false} />
+                img="/default_images/icons/video.svg" icon="fa-solid fa-video-camera" active={camOn ? undefined : false} />
 
               {/* Filter */}
               <select value={filter} onChange={e => setFilter(e.target.value)}
