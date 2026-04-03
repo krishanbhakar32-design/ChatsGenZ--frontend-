@@ -101,7 +101,7 @@ export function WhisperBox({ target, roomId, socket, onClose }) {
                 color:'#fff', fontWeight:700, cursor: text.trim() ? 'pointer' : 'not-allowed',
                 display:'flex', alignItems:'center', gap:6, flexShrink:0,
               }}>
-              <i className="fi fi-sr-paper-plane-top" style={{ fontSize:14 }}/>
+              <i className="fa-solid fa-paper-plane-top" style={{ fontSize:14 }}/>
             </button>
           </form>
         )}
@@ -137,7 +137,7 @@ export function WhisperMessage({ msg, myId, onWhisperReply }) {
         <div style={{ display:'flex', alignItems:'center', gap:5, marginBottom:3 }}>
           <span style={{ fontSize:'0.72rem', fontWeight:800, color:'#818cf8' }}>{fromName}</span>
           {toName && <>
-            <i className="fi fi-sr-arrow-right" style={{ fontSize:9, color:'#6366f155' }}/>
+            <i className="fa-solid fa-arrow-right" style={{ fontSize:9, color:'#6366f155' }}/>
             <span style={{ fontSize:'0.72rem', fontWeight:700, color:'#a5b4fc' }}>{toName}</span>
           </>}
           <span style={{ fontSize:'0.6rem', fontWeight:600, color:'#6366f1',
@@ -175,7 +175,7 @@ export function WhisperMessage({ msg, myId, onWhisperReply }) {
                 background:'rgba(99,102,241,.15)', color:'#a78bfa',
                 cursor:'pointer', fontSize:'0.75rem', fontWeight:700,
                 display:'flex', alignItems:'center', gap:4 }}>
-              <i className="fi fi-sr-reply-all" style={{ fontSize:10 }}/> Whisper Back
+              <i className="fa-solid fa-reply-all" style={{ fontSize:10 }}/> Whisper Back
             </button>
             <button
               onClick={() => setShowOpts(false)}
@@ -183,7 +183,7 @@ export function WhisperMessage({ msg, myId, onWhisperReply }) {
                 background:'rgba(239,68,68,.1)', color:'#f87171',
                 cursor:'pointer', fontSize:'0.75rem', fontWeight:700,
                 display:'flex', alignItems:'center', gap:4 }}>
-              <i className="fi fi-sr-flag" style={{ fontSize:10 }}/> Report
+              <i className="fa-sharp fa-solid fa-flag" style={{ fontSize:10 }}/> Report
             </button>
           </div>
         )}
