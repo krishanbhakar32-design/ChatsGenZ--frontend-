@@ -1,22 +1,9 @@
 // ============================================================
-// ChatIcons.jsx — Shared icon components for ChatRoom
+// ChatIcons.jsx — ALL icons replaced with FontAwesome 6
+// Per user specification — no flaticon/fi classes anywhere
 // ============================================================
 import { useState } from 'react'
 import { RANKS, R } from './chatConstants.js'
-
-// SVG icon from /public/default_images/icons/ with flaticon fallback
-export function UIIcon({ name, size = 18, fallback, style = {} }) {
-  const [err, setErr] = useState(false)
-  if (!err) return (
-    <img
-      src={`/default_images/icons/${name}.svg`}
-      alt=""
-      style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0, ...style }}
-      onError={() => setErr(true)}
-    />
-  )
-  return <i className={`fi ${fallback || 'fi-sr-info'}`} style={{ fontSize: size - 2, ...style }} />
-}
 
 // Rank icon from /public/icons/ranks/
 export function RIcon({ rank, size = 'md' }) {
@@ -34,8 +21,8 @@ export function RIcon({ rank, size = 'md' }) {
   )
 }
 
-// Header icon button — supports SVG img or flaticon class
-export function HBtn({ icon, img, title, badge, active, onClick }) {
+// Header icon button — FontAwesome icons
+export function HBtn({ icon, faIcon, img, title, badge, active, onClick }) {
   return (
     <button
       onClick={onClick}
@@ -49,10 +36,12 @@ export function HBtn({ icon, img, title, badge, active, onClick }) {
       }}
     >
       {img
-        ? <img src={img} alt={title || ''} style={{ width: 18, height: 18, objectFit: 'contain', opacity: active ? 1 : 0.7 }} onError={e => { e.target.style.display = 'none'; e.target.nextSibling?.style && (e.target.nextSibling.style.display = 'block') }} />
-        : <i className={`fi ${icon}`} />
+        ? <img src={img} alt={title || ''} style={{ width: 18, height: 18, objectFit: 'contain', opacity: active ? 1 : 0.7 }}
+            onError={e => { e.target.style.display = 'none'; e.target.nextSibling?.style && (e.target.nextSibling.style.display = 'inline-block') }} />
+        : null
       }
-      {img && icon && <i className={`fi ${icon}`} style={{ display: 'none' }} />}
+      {faIcon && <i className={faIcon} style={{ display: img ? 'none' : 'inline-block' }} />}
+      {!img && !faIcon && icon && <i className={icon} />}
       {!!badge && (
         <span style={{
           position: 'absolute', top: 3, right: 3,
@@ -66,8 +55,8 @@ export function HBtn({ icon, img, title, badge, active, onClick }) {
   )
 }
 
-// Footer bar button
-export function FBtn({ icon, active, onClick, title, badge }) {
+// Footer bar button — FontAwesome
+export function FBtn({ icon, faIcon, active, onClick, title, badge }) {
   return (
     <button
       onClick={onClick}
@@ -79,7 +68,10 @@ export function FBtn({ icon, active, onClick, title, badge }) {
         transition: 'color .15s', minWidth: 44,
       }}
     >
-      <i className={`fi ${icon}`} style={{ fontSize: 18 }} />
+      {faIcon
+        ? <i className={faIcon} style={{ fontSize: 18 }} />
+        : <i className={icon} style={{ fontSize: 18 }} />
+      }
       {title && <span style={{ fontSize: '0.58rem', fontWeight: 600 }}>{title}</span>}
       {!!badge && (
         <span style={{
@@ -91,4 +83,95 @@ export function FBtn({ icon, active, onClick, title, badge }) {
       )}
     </button>
   )
+}
+
+// ── FA ICON MAP — all icons per user spec ──────────────────────
+// Use these constants throughout the app
+export const FA = {
+  // Navigation / UI
+  menu:           'fa-solid fa-bars',
+  close:          'fa-solid fa-xmark',
+  search:         'fa-solid fa-magnifying-glass',
+  settings:       'fa-solid fa-gear',
+  chatOptions:    'fa-solid fa-user-gear',
+
+  // Chat rooms / lobby
+  roomList:       'fa-solid fa-house-chimney-user',
+  leaveRoom:      'fa-solid fa-circle-left',
+  forum:          'fa-sharp fa-solid fa-rss',
+  friendsWall:    'fa-solid fa-square-rss',
+  news:           'fa-regular fa-newspaper',
+
+  // Profile / User
+  myProfile:      'fa-solid fa-address-card',
+  viewProfile:    'fa-solid fa-circle-user',
+  editProfile:    'fa-regular fa-pen-to-square',
+  usernamestyle:  'fa-solid fa-signature',
+  usernameEdit:   'fa-solid fa-user-pen',
+  addFriend:      'fa-solid fa-user-plus',
+  userList:       'fa-solid fa-users',
+  friendsList:    'fa-solid fa-user-group',
+  staffList:      'fa-solid fa-user-shield',
+
+  // Communication
+  dm:             'fa-solid fa-envelope',
+  contactUs:      'fa-solid fa-envelope',
+  messageBubble:  'fa-solid fa-comments',
+  quote:          'fa-solid fa-reply-all',
+  whisper:        'fa-solid fa-hand-lizard',
+  mic:            'fa-solid fa-microphone-lines',
+
+  // Social
+  notification:   'fa-solid fa-bell',
+  report:         'fa-sharp fa-solid fa-flag',
+  leaderboard:    'fa-sharp fa-solid fa-medal',
+  trophy:         'fa-solid fa-trophy',
+
+  // Store / Wallet
+  store:          'fa-solid fa-store',
+  wallet:         'fa-solid fa-wallet',
+
+  // Admin
+  adminPanel:     'fa-solid fa-gauge',
+
+  // Logout / Leave
+  logout:         'fa-solid fa-right-from-bracket',
+
+  // Media / Content
+  upload:         'fa-solid fa-upload',
+  image:          'fa-solid fa-image',
+  youtube:        'fa-brands fa-youtube',
+  dice:           'fa-solid fa-dice',
+
+  // Actions
+  trash:          'fa-solid fa-trash',
+  send:           'fa-solid fa-paper-plane',
+
+  // Status
+  check:          'fa-solid fa-check',
+  checkCircle:    'fa-solid fa-circle-check',
+  info:           'fa-solid fa-circle-info',
+  warning:        'fa-solid fa-triangle-exclamation',
+  ban:            'fa-solid fa-ban',
+  lock:           'fa-solid fa-lock',
+
+  // Arrow
+  arrowLeft:      'fa-solid fa-arrow-left',
+  arrowRight:     'fa-solid fa-arrow-right',
+  angleDown:      'fa-solid fa-angle-down',
+  angleRight:     'fa-solid fa-angle-right',
+
+  // Misc
+  spin:           'fa-solid fa-circle-notch fa-spin',
+  webcam:         'fa-solid fa-video',
+  radio:          'fa-solid fa-radio',
+  gift:           'fa-solid fa-gift',
+  phone:          'fa-solid fa-phone',
+  expand:         'fa-solid fa-expand',
+  compress:       'fa-solid fa-compress',
+  minus:          'fa-solid fa-minus',
+  plus:           'fa-solid fa-plus',
+  smile:          'fa-regular fa-face-smile',
+  paperPlane:     'fa-solid fa-paper-plane',
+  bars:           'fa-solid fa-bars',
 }
