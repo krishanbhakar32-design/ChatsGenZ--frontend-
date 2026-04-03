@@ -2521,7 +2521,6 @@ function IpBans() {
       {confirm && <Confirm msg={confirm.msg} onYes={() => { confirm.cb(); setConfirm(null); }} onNo={() => setConfirm(null)} />}
     </div>
   );
-}
 
 // ── Broadcast ──────────────────────────────────────────────────
 function Broadcast() {
