@@ -2490,6 +2490,17 @@ function IpBans() {
   );
 }
 
+// ── News ──────────────────────────────────────────────────────
+function News() {
+  const [news, setNews]       = useState([]);
+  const [title, setTitle]     = useState('');
+  const [content, setContent] = useState('');
+  const [confirm, setConfirm] = useState(null);
+  const load = useCallback(async () => {
+    try { const d = await api('/news'); setNews(d); }
+    catch { /* silent */ }
+  }, []);
+
   useEffect(() => { load(); }, [load]);
   const post = async () => {
     if (!title.trim() || !content.trim()) return;
