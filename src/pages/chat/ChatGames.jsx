@@ -70,7 +70,7 @@ function SpinWheelGame({socket,myGold,onClose}) {
         <div style={{background:'#fff',borderRadius:18,padding:'16px 14px',maxWidth:240,width:'100%',textAlign:'center',boxShadow:'0 20px 60px rgba(0,0,0,.3)'}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
             <span style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'0.95rem',color:'#111827'}}>🎡 Spin Wheel</span>
-            <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:15}}><i className="fi fi-sr-cross-small"/></button>
+            <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:15}}><i className="fa-solid fa-xmark"/></button>
           </div>
           {/* Wheel */}
           <div style={{position:'relative',width:200,height:200,margin:'0 auto 10px'}}>
@@ -318,8 +318,8 @@ function GamesPanel({socket, roomId, myGold=0, tObj}) {
 
   // No Spin Wheel in the list
   const GAMES=[
-    {id:'dice', icon:'fi-sr-dice',  label:'Dice',  desc:'Roll to win gold',  color:'#7c3aed', action:rollDice},
-    {id:'keno', icon:'fi-sr-grid',  label:'Keno',  desc:'Pick 2-10 numbers', color:'#1a73e8', action:()=>setShowKeno(true)},
+    {id:'dice', icon:'fa-solid fa-dice',  label:'Dice',  desc:'Roll to win gold',  color:'#7c3aed', action:rollDice},
+    {id:'keno', icon:'fa-solid fa-table-cells',  label:'Keno',  desc:'Pick 2-10 numbers', color:'#1a73e8', action:()=>setShowKeno(true)},
   ]
 
   return (
@@ -333,13 +333,13 @@ function GamesPanel({socket, roomId, myGold=0, tObj}) {
             onMouseEnter={e=>{e.currentTarget.style.background=`${g.color}20`;e.currentTarget.style.borderColor=g.color}}
             onMouseLeave={e=>{e.currentTarget.style.background=BG_ITEM;e.currentTarget.style.borderColor=`${th.default_color||'#2d3555'}55`}}>
             <div style={{width:34,height:34,borderRadius:9,background:`${g.color}25`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-              <i className={`fi ${g.icon}`} style={{color:g.color,fontSize:16}}/>
+              <i className={`${g.icon}`} style={{color:g.color,fontSize:16}}/>
             </div>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:'0.85rem',fontWeight:700,color:C}}>{g.label}</div>
               <div style={{fontSize:'0.7rem',color:C+'77'}}>{g.desc}</div>
             </div>
-            <i className="fi fi-sr-angle-right" style={{fontSize:10,color:C+'44',flexShrink:0}}/>
+            <i className="fa-solid fa-angle-right" style={{fontSize:10,color:C+'44',flexShrink:0}}/>
           </button>
         ))}
       </div>
