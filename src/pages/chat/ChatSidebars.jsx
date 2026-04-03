@@ -8,7 +8,7 @@ import { GamesPanel } from './ChatGames.jsx'
 
 // ─── Status dot colours ──────────────────────────────────────
 const ST_COLOR = { online:'#22c55e', away:'#f59e0b', busy:'#ef4444', invisible:'#9ca3af' }
-const ST_ICON  = { online:'fi-sr-circle',away:'fi-sr-clock',busy:'fi-sr-ban',invisible:'fi-sr-eye-crossed' }
+const ST_ICON  = { online:'fa-solid fa-circle',away:'fa-regular fa-clock',busy:'fa-solid fa-ban',invisible:'fa-solid fa-eye-slash' }
 
 // Full font map for username display
 const FONT_MAP = {
@@ -66,7 +66,7 @@ function UserItem({u, onClick, showMood=true, th}) {
       {/* Name + mood */}
       <div style={{flex:1,minWidth:0}}>
         <div style={{display:'flex',alignItems:'center',gap:4}}>
-          {u.isCamHost&&<i className="fi fi-sr-video-camera" style={{fontSize:9,color:'#ef4444',flexShrink:0}}/>}
+          {u.isCamHost&&<i className="fa-solid fa-video" style={{fontSize:9,color:'#ef4444',flexShrink:0}}/>}
           <span style={{fontSize:'0.8rem',fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:100,...nameStyle}}>
             {u.username}
           </span>
@@ -157,10 +157,10 @@ function RightSidebar({users, myLevel, onUserClick, onWhisper, onClose, tObj}) {
   },[search,genderF,tab])
 
   const TABS=[
-    {id:'users',   icon:'fi-sr-users-alt',    title:'Users'},
-    {id:'friends', icon:'fi-sr-user-trust',   title:'Friends'},
-    {id:'staff',   icon:'fi-sr-user-shield',  title:'Staff'},
-    {id:'search',  icon:'fi-sr-member-search',title:'Search'},
+    {id:'users',   icon:'fa-solid fa-users',       title:'Users'},
+    {id:'friends', icon:'fa-solid fa-user-group',  title:'Friends'},
+    {id:'staff',   icon:'fa-solid fa-user-shield', title:'Staff'},
+    {id:'search',  icon:'fa-solid fa-magnifying-glass',title:'Search'},
   ]
 
   function renderList(list, fallback) {
@@ -204,11 +204,11 @@ function RightSidebar({users, myLevel, onUserClick, onWhisper, onClose, tObj}) {
                 borderBottom:`2px solid ${tab===t.id?th.accent:'transparent'}`,
                 color:tab===t.id?th.accent:th.text+'77',fontSize:13,transition:'all .15s',
                 display:'flex',alignItems:'center',justifyContent:'center'}}>
-              <i className={`fi ${t.icon}`}/>
+              <i className={`${t.icon}`}/>
             </button>
           ))}
           <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:th.text+'66',padding:'4px 7px',fontSize:13}}>
-            <i className="fi fi-sr-cross-small"/>
+            <i className="fa-solid fa-xmark"/>
           </button>
         </div>
 
@@ -229,7 +229,7 @@ function RightSidebar({users, myLevel, onUserClick, onWhisper, onClose, tObj}) {
                 background:camOnly?'#ef444418':'none',cursor:'pointer',
                 fontSize:'0.65rem',fontWeight:700,color:camOnly?'#ef4444':th.text+'66',
                 display:'flex',alignItems:'center',gap:3}}>
-              <i className="fi fi-sr-video-camera" style={{fontSize:9}}/>Cam
+              <i className="fa-solid fa-video" style={{fontSize:9}}/>Cam
             </button>
           </div>
         )}
@@ -238,7 +238,7 @@ function RightSidebar({users, myLevel, onUserClick, onWhisper, onClose, tObj}) {
         {tab==='search'&&(
           <div style={{padding:'7px 8px',borderBottom:`1px solid ${th.default_color}33`,flexShrink:0}}>
             <div style={{position:'relative',marginBottom:5}}>
-              <i className="fi fi-sr-search" style={{position:'absolute',left:8,top:'50%',transform:'translateY(-50%)',fontSize:11,color:th.text+'55',pointerEvents:'none'}}/>
+              <i className="fa-solid fa-magnifying-glass" style={{position:'absolute',left:8,top:'50%',transform:'translateY(-50%)',fontSize:11,color:th.text+'55',pointerEvents:'none'}}/>
               <input autoFocus value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search users..."
                 style={{width:'100%',padding:'6px 8px 6px 25px',background:th.bg_log||'#f3f4f6',
                   border:`1.5px solid ${th.default_color}55`,borderRadius:7,fontSize:'0.78rem',
@@ -267,7 +267,7 @@ function RightSidebar({users, myLevel, onUserClick, onWhisper, onClose, tObj}) {
                   borderBottom:`2px solid ${(tab==='friends'?friendTab:staffTab)===t?th.accent:'transparent'}`,
                   color:(tab==='friends'?friendTab:staffTab)===t?th.accent:th.text+'55',
                   fontSize:'0.72rem',fontWeight:700,textTransform:'capitalize'}}>
-                <i className={`fi ${t==='online'?'fi-sr-circle':'fi-rr-circle'}`} style={{fontSize:8,marginRight:4,color:t==='online'?'#22c55e':'#9ca3af'}}/>
+                <i className={`${t==='online'?'fa-solid fa-circle':'fa-regular fa-circle'}`} style={{fontSize:8,marginRight:4,color:t==='online'?'#22c55e':'#9ca3af'}}/>
                 {t}
               </button>
             ))}
@@ -332,16 +332,16 @@ function LeftSidebar({room, nav, socket, roomId, onClose, me, tObj}) {
   const BD  = `${th.default_color||'#2d3555'}88`
 
   const ITEMS=[
-    {id:'rooms',      icon:'fi-sr-house-chimney', label:'Room List',      chevron:true},
-    {id:'news',       icon:'fi-sr-newspaper',     label:'News'},
-    {id:'wall',       icon:'fi-sr-rss',           label:'Friends Wall'},
-    {id:'forum',      icon:'fi-sr-comments-alt',  label:'Forum'},
-    {id:'contact',    icon:'fi-sr-envelope',      label:'Contact Us'},
-    {id:'username',   icon:'fi-sr-user-pen',      label:'Username Change'},
-    {id:'games',      icon:'fi-sr-dice',          label:'Games',          chevron:true},
-    {id:'leaderboard',icon:'fi-sr-medal',         label:'Leaderboard',    chevron:true},
-    {id:'premium',    icon:'fi-sr-diamond',       label:'Buy Premium',    chevron:true, img:'/icons/ranks/premium.svg'},
-    {id:'store',      icon:'fi-sr-shopping-cart', label:'Store',          chevron:true},
+    {id:'rooms',      icon:'fa-solid fa-house-chimney-user', label:'Room List',      chevron:true},
+    {id:'news',       icon:'fa-regular fa-newspaper',     label:'News'},
+    {id:'wall',       icon:'fa-solid fa-square-rss',      label:'Friends Wall'},
+    {id:'forum',      icon:'fa-sharp fa-solid fa-rss',    label:'Forum'},
+    {id:'contact',    icon:'fa-solid fa-envelope',        label:'Contact Us'},
+    {id:'username',   icon:'fa-solid fa-user-pen',        label:'Username Change'},
+    {id:'games',      icon:'fa-solid fa-dice',            label:'Games',          chevron:true},
+    {id:'leaderboard',icon:'fa-sharp fa-solid fa-medal',  label:'Leaderboard',    chevron:true},
+    {id:'premium',    icon:'fa-solid fa-star',            label:'Buy Premium',    chevron:true, img:'/icons/ranks/premium.svg'},
+    {id:'store',      icon:'fa-solid fa-store',           label:'Store',          chevron:true},
   ]
 
   const panelTitle = ITEMS.find(i=>i.id===panel)?.label||''
@@ -383,7 +383,7 @@ function LeftSidebar({room, nav, socket, roomId, onClose, me, tObj}) {
               onMouseLeave={e=>{if(panel!==item.id){e.currentTarget.style.background='none';e.currentTarget.style.color=C+'77'}}}>
               {item.img
                 ? <img src={item.img} alt="" style={{width:18,height:18,objectFit:'contain'}} onError={e=>e.target.style.display='none'}/>
-                : <i className={`fi ${item.icon}`} style={{fontSize:17}}/>}
+                : <i className={`${item.icon}`} style={{fontSize:17}}/>}
               <span style={{fontSize:'0.42rem',fontWeight:700,textAlign:'center',lineHeight:1.2,maxWidth:50,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
                 {item.label}
               </span>
@@ -393,7 +393,7 @@ function LeftSidebar({room, nav, socket, roomId, onClose, me, tObj}) {
           {/* Close button at bottom */}
           <div style={{marginTop:'auto',borderTop:`1px solid ${BD}`,padding:'6px 0',textAlign:'center'}}>
             <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:C+'44',fontSize:16,padding:'4px 8px'}}>
-              <i className="fi fi-sr-arrow-left"/>
+              <i className="fa-solid fa-arrow-left"/>
             </button>
           </div>
         </div>
@@ -405,7 +405,7 @@ function LeftSidebar({room, nav, socket, roomId, onClose, me, tObj}) {
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 13px',borderBottom:`1px solid ${BD}`,flexShrink:0,background:BG}}>
               <span style={{fontFamily:'Outfit,sans-serif',fontWeight:800,fontSize:'0.88rem',color:C}}>{panelTitle}</span>
               <button onClick={()=>setPanel(null)} style={{background:'none',border:'none',cursor:'pointer',color:C+'44',fontSize:14}}>
-                <i className="fi fi-sr-cross-small"/>
+                <i className="fa-solid fa-xmark"/>
               </button>
             </div>
 
@@ -548,17 +548,17 @@ function RoomListPanel({nav, onEnter, tObj}) {
               <img src={r.icon||'/default_images/rooms/default_room.png'} alt=""
                 style={{width:38,height:38,borderRadius:9,objectFit:'cover',border:`1px solid ${th.default_color}55`,display:'block'}}
                 onError={e=>e.target.src='/default_images/rooms/default_room.png'}/>
-              {r.isPinned&&<i className="fi fi-sr-thumbtack" style={{position:'absolute',top:-3,right:-3,fontSize:9,color:'#f59e0b'}}/>}
+              {r.isPinned&&<i className="fa-solid fa-thumbtack" style={{position:'absolute',top:-3,right:-3,fontSize:9,color:'#f59e0b'}}/>}
             </div>
             <div style={{flex:1,minWidth:0}}>
               <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:2}}>
                 <span style={{fontWeight:700,fontSize:'0.84rem',color:C,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:1}}>{r.name}</span>
-                {r.password&&<i className="fi fi-sr-lock" style={{fontSize:9,color:C+'55',flexShrink:0}}/>}
+                {r.password&&<i className="fa-solid fa-lock" style={{fontSize:9,color:C+'55',flexShrink:0}}/>}
               </div>
               {r.description&&<div style={{fontSize:'0.65rem',color:C+'55',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{r.description}</div>}
               <div style={{display:'flex',alignItems:'center',gap:6,marginTop:2}}>
                 <span style={{fontSize:'0.7rem',fontWeight:700,color:(r.currentUsers||0)>0?'#22c55e':C+'44',display:'flex',alignItems:'center',gap:3}}>
-                  <i className="fi fi-sr-user" style={{fontSize:9}}/>{r.currentUsers||0}
+                  <i className="fa-solid fa-address-card" style={{fontSize:9}}/>{r.currentUsers||0}
                 </span>
                 {r.minRank&&r.minRank!=='guest'&&(
                   <img src={`/icons/ranks/${mri.icon}`} alt={mri.label} title={mri.label+'+'}
