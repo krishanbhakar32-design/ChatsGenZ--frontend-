@@ -97,7 +97,7 @@ function GiftPanel({targetUser, myGold, onClose, onSent, socket, roomId, onGoldS
                 onMouseEnter={e => { if (canAfford && !isAny) { e.currentTarget.style.borderColor='#7c3aed'; e.currentTarget.style.background='#ede9fe' }}}
                 onMouseLeave={e => { if (!isSending) { e.currentTarget.style.borderColor=canAfford?'#e4e6ea':'#f0f0f0'; e.currentTarget.style.background=canAfford?'#f9fafb':'#fafafa' }}}>
                 <div style={{position:'relative',marginBottom:3}}>
-                  <img src={g.icon} alt={g.name} style={{width:34,height:34,objectFit:'contain',display:'block',transition:'transform .15s',transform:isSending?'scale(1.2)':'scale(1)'}} onError={e => e.target.style.display='none'}/>
+                  <img src={g.icon?.startsWith('http') ? g.icon : `/gifts/${(g.icon||g.name||'gift').toLowerCase().replace(/\s+/g,'-')}.svg`} alt={g.name} style={{width:34,height:34,objectFit:'contain',display:'block',transition:'transform .15s',transform:isSending?'scale(1.2)':'scale(1)'}} onError={e => e.target.style.display='none'}/>
                   {isSending && (
                     <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(237,233,254,.7)',borderRadius:4}}>
                       <div style={{width:14,height:14,border:'2px solid #c4b5fd',borderTop:'2px solid #7c3aed',borderRadius:'50%',animation:'spin .6s linear infinite'}}/>
