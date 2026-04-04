@@ -9,7 +9,7 @@ import Permissions, { PERMISSIONS_CSS } from './Permissions.jsx';
 import { PremiumSection, RevenueSection, ThemePermissionsSection, EXTRA_SECTIONS_CSS } from './PremiumRevenue.jsx';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-const token = () => localStorage.getItem('token');
+const token = () => localStorage.getItem('cgz_token');
 
 const api = async (path, opts = {}) => {
   const r = await fetch(`${API}/api/admin${path}`, {
