@@ -51,7 +51,7 @@ function UserItem({u, onClick, showMood=true, th}) {
 
   return (
     <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      onClick={()=>onClick?.(u)}
+      onClick={(e)=>onClick?.(u,e)}
       style={{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',cursor:'pointer',
         background:hov?`${thB.accent||'#1a73e8'}12`:'transparent',transition:'background .12s'}}>
       {/* Avatar + status dot */}
