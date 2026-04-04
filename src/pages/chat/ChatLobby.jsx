@@ -7,11 +7,11 @@ const DEFAULT_AVATAR = '/default_images/avatar/default_guest.png'
 
 
 const ROOM_TYPES = {
-  public:  { label:'Public',   color:'#1a73e8', bg:'#e8f0fe', icon:'fi-sr-globe'       },
-  private: { label:'Private',  color:'#dc2626', bg:'#fef2f2', icon:'fi-sr-lock'        },
-  member:  { label:'Members',  color:'#059669', bg:'#f0fdf4', icon:'fi-sr-user-check'  },
-  staff:   { label:'Staff',    color:'#d97706', bg:'#fffbeb', icon:'fi-sr-shield-check'},
-  admin:   { label:'Admin',    color:'#7c3aed', bg:'#f5f3ff', icon:'fi-sr-dashboard'   },
+  public:  { label:'Public',   color:'#1a73e8', bg:'#e8f0fe', icon:'fa-solid fa-earth-americas'       },
+  private: { label:'Private',  color:'#dc2626', bg:'#fef2f2', icon:'fa-solid fa-lock'        },
+  member:  { label:'Members',  color:'#059669', bg:'#f0fdf4', icon:'fa-solid fa-user-check'  },
+  staff:   { label:'Staff',    color:'#d97706', bg:'#fffbeb', icon:'fa-solid fa-user-shield'},
+  admin:   { label:'Admin',    color:'#7c3aed', bg:'#f5f3ff', icon:'fa-solid fa-gauge'   },
 }
 
 // Ordered rank list for room access selector (guest → owner)
@@ -58,7 +58,7 @@ function Toggle({value,onChange}){
 function AdminBtn({icon,bg,title,onClick}){
   return(
     <button onClick={onClick} title={title} style={{width:26,height:26,borderRadius:'50%',border:'none',background:bg,color:'#fff',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,boxShadow:'0 2px 6px rgba(0,0,0,.3)',flexShrink:0}}>
-      <i className={`fi ${icon}`}/>
+      <i className={`${icon}`}/>
     </button>
   )
 }
@@ -147,11 +147,11 @@ function RoomModal({editRoom,onClose,onSave,showToast}){
         {/* Header */}
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'16px 18px 12px',borderBottom:'1px solid #f0f2f5',position:'sticky',top:0,background:'#fff',zIndex:5}}>
           <h2 style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1rem',color:'#111827',margin:0,display:'flex',alignItems:'center',gap:8}}>
-            <i className={`fi fi-sr-${editRoom?'pencil':'plus-small'}`} style={{color:'#1a73e8'}}/>
+            <i className={editRoom?'fa-regular fa-pen-to-square':'fa-solid fa-plus'} style={{color:'#1a73e8'}}/>
             {editRoom?'Edit Room':'Add Room'}
           </h2>
           <button onClick={onClose} style={{background:'#f3f4f6',border:'none',width:30,height:30,borderRadius:8,cursor:'pointer',color:'#6b7280',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>
-            <i className="fi fi-sr-cross-small"/>
+            <i className="fa-solid fa-cross-small"/>
           </button>
         </div>
 
@@ -166,14 +166,14 @@ function RoomModal({editRoom,onClose,onSave,showToast}){
               </div>
               {/* Camera icon overlay */}
               <label style={{position:'absolute',bottom:-6,right:-6,width:24,height:24,borderRadius:'50%',background:'#1a73e8',border:'2px solid #fff',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 2px 6px rgba(0,0,0,.2)'}}>
-                <i className="fi fi-sr-camera" style={{fontSize:10,color:'#fff'}}/>
+                <i className="fa-solid fa-camera" style={{fontSize:10,color:'#fff'}}/>
                 <input type="file" accept=".png,.jpg,.jpeg" style={{display:'none'}} onChange={e=>{const f=e.target.files[0];if(f){setFile(f);setPrev(URL.createObjectURL(f));setCustomIcon(true)}}}/>
               </label>
               {/* Cross icon if custom image */}
               {customIcon&&(
                 <button type="button" onClick={()=>{setFile(null);setPrev('');setCustomIcon(false)}}
                   style={{position:'absolute',top:-6,right:-6,width:18,height:18,borderRadius:'50%',background:'#ef4444',border:'2px solid #fff',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',padding:0}}>
-                  <i className="fi fi-sr-cross-small" style={{fontSize:8,color:'#fff'}}/>
+                  <i className="fa-solid fa-cross-small" style={{fontSize:8,color:'#fff'}}/>
                 </button>
               )}
             </div>
@@ -242,9 +242,9 @@ function RoomCard({room,myLevel,onClick,onEdit,onDelete,onPin,tObj}){
       style={{background:hov?cardBgHov:cardBg,border:`1.5px solid ${hov?cardBorderHov:cardBorder}`,borderRadius:13,cursor:'pointer',transition:'all .18s',position:'relative',boxShadow:hov?`0 4px 18px ${tObj?.accent||'#1a73e8'}22`:'0 1px 4px rgba(0,0,0,.08)',transform:hov?'translateY(-2px)':'none'}}>
       {canAdmin&&hov&&(
         <div onClick={e=>e.stopPropagation()} style={{position:'absolute',top:-10,right:-8,display:'flex',gap:4,zIndex:10}}>
-          <AdminBtn icon="fi-sr-thumbtack" bg={room.isPinned?'#f59e0b':'#9ca3af'} title={room.isPinned?'Unpin':'Pin'} onClick={()=>onPin(room)}/>
-          <AdminBtn icon="fi-sr-pencil"    bg="#1a73e8" title="Edit Room"   onClick={()=>onEdit(room)}/>
-          <AdminBtn icon="fi-sr-trash"     bg="#ef4444" title="Delete Room" onClick={()=>onDelete(room)}/>
+          <AdminBtn icon="fa-solid fa-thumbtack" bg={room.isPinned?'#f59e0b':'#9ca3af'} title={room.isPinned?'Unpin':'Pin'} onClick={()=>onPin(room)}/>
+          <AdminBtn icon="fa-regular fa-pen-to-square"    bg="#1a73e8" title="Edit Room"   onClick={()=>onEdit(room)}/>
+          <AdminBtn icon="fa-solid fa-trash"     bg="#ef4444" title="Delete Room" onClick={()=>onDelete(room)}/>
         </div>
       )}
       <div onClick={()=>onClick(room)} style={{display:'flex',alignItems:'center',padding:'11px 13px',gap:11}}>
@@ -254,13 +254,13 @@ function RoomCard({room,myLevel,onClick,onEdit,onDelete,onPin,tObj}){
         <div style={{flex:1,minWidth:0}}>
           <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:3}}>
             <span style={{fontFamily:'Outfit,sans-serif',fontWeight:800,fontSize:'0.95rem',color:textColor,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:1}}>{room.name}</span>
-            {room.isPinned&&<i className="fi fi-sr-thumbtack" style={{fontSize:10,color:'#f59e0b',flexShrink:0}}/>}
-            {room.password&&<i className="fi fi-sr-lock" style={{fontSize:10,color:'#9ca3af',flexShrink:0}}/>}
+            {room.isPinned&&<i className="fa-solid fa-thumbtack" style={{fontSize:10,color:'#f59e0b',flexShrink:0}}/>}
+            {room.password&&<i className="fa-solid fa-lock" style={{fontSize:10,color:'#9ca3af',flexShrink:0}}/>}
           </div>
           {room.description&&<div style={{fontSize:'0.73rem',color:subColor,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginBottom:6}}>{room.description}</div>}
           <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
             <span style={{display:'inline-flex',alignItems:'center',gap:4,background:typeInfo.bg,color:typeInfo.color,fontSize:'0.65rem',fontWeight:700,padding:'2px 7px',borderRadius:20}}>
-              <i className={`fi ${typeInfo.icon}`} style={{fontSize:9}}/>{typeInfo.label}
+              <i className={`${typeInfo.icon}`} style={{fontSize:9}}/>{typeInfo.label}
             </span>
             {room.minRank&&room.minRank!=='guest'&&(
               <img src={`/icons/ranks/${minRankInfo.icon}`} alt={minRankInfo.label} title={`${minRankInfo.label}+ only`}
@@ -268,7 +268,7 @@ function RoomCard({room,myLevel,onClick,onEdit,onDelete,onPin,tObj}){
             )}
             <div style={{flex:1}}/>
             <span style={{display:'inline-flex',alignItems:'center',gap:4,fontSize:'0.78rem',fontWeight:800,color:(room.currentUsers||0)>0?'#22c55e':subColor}}>
-              <i className="fi fi-sr-user" style={{fontSize:11}}/>{room.currentUsers||0}
+              <i className="fa-solid fa-user" style={{fontSize:11}}/>{room.currentUsers||0}
             </span>
           </div>
         </div>
@@ -299,20 +299,20 @@ function ProfileDropdown({user,onClose,onLogout}){
       </div>
       <div style={{padding:'4px'}}>
         {[
-          {icon:'fi-sr-user-pen',label:'Edit Profile',onClick:()=>{onClose();nav(`/profile/${user?.username}`)}},
-          isAdmin&&{icon:'fi-sr-dashboard',label:'Admin Panel',color:'#ef4444',onClick:()=>{onClose();window.location.href='/admin'}},
+          {icon:'fa-solid fa-user-pen',label:'Edit Profile',onClick:()=>{onClose();nav(`/profile/${user?.username}`)}},
+          isAdmin&&{icon:'fa-solid fa-gauge',label:'Admin Panel',color:'#ef4444',onClick:()=>{onClose();window.location.href='/admin'}},
         ].filter(Boolean).map((item,i)=>(
           <button key={i} onClick={item.onClick}
             style={{display:'flex',alignItems:'center',gap:9,width:'100%',padding:'9px 11px',background:'none',border:'none',cursor:'pointer',color:item.color||'#374151',fontSize:'0.84rem',fontWeight:600,borderRadius:8,textAlign:'left'}}
             onMouseEnter={e=>e.currentTarget.style.background='#f3f4f6'} onMouseLeave={e=>e.currentTarget.style.background='none'}>
-            <i className={`fi ${item.icon}`} style={{fontSize:14,width:18,textAlign:'center',flexShrink:0}}/>{item.label}
+            <i className={`${item.icon}`} style={{fontSize:14,width:18,textAlign:'center',flexShrink:0}}/>{item.label}
           </button>
         ))}
         <div style={{height:1,background:'#f0f2f5',margin:'3px 2px'}}/>
         <button onClick={()=>{onClose();onLogout()}}
           style={{display:'flex',alignItems:'center',gap:9,width:'100%',padding:'9px 11px',background:'none',border:'none',cursor:'pointer',color:'#ef4444',fontSize:'0.84rem',fontWeight:600,borderRadius:8,textAlign:'left'}}
           onMouseEnter={e=>e.currentTarget.style.background='#fef2f2'} onMouseLeave={e=>e.currentTarget.style.background='none'}>
-          <i className="fi fi-sr-user-logout" style={{fontSize:14,width:18,textAlign:'center',flexShrink:0}}/>Logout
+          <i className="fa-solid fa-user-logout" style={{fontSize:14,width:18,textAlign:'center',flexShrink:0}}/>Logout
         </button>
       </div>
     </div>
@@ -483,7 +483,7 @@ export default function ChatLobby(){
       <div style={{background:tObj.bg_header,borderBottom:`1px solid ${tObj.default_color}`,padding:'10px 16px',position:'relative',zIndex:1}}>
         <div style={{maxWidth:860,margin:'0 auto',display:'flex',gap:8,alignItems:'center'}}>
           <div style={{flex:1,position:'relative'}}>
-            <i className="fi fi-sr-search" style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'#9ca3af',fontSize:13,pointerEvents:'none'}}/>
+            <i className="fa-solid fa-search" style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'#9ca3af',fontSize:13,pointerEvents:'none'}}/>
             <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search rooms..."
               style={{width:'100%',padding:'8px 12px 8px 34px',background:'rgba(255,255,255,0.08)',border:`1.5px solid ${tObj.default_color}`,borderRadius:10,color:tObj.text,fontSize:'0.875rem',outline:'none',boxSizing:'border-box',fontFamily:'Nunito,sans-serif'}}
               onFocus={e=>{e.target.style.borderColor=tObj.accent;e.target.style.background='rgba(255,255,255,0.12)'}} onBlur={e=>{e.target.style.borderColor=tObj.default_color;e.target.style.background='rgba(255,255,255,0.08)'}}/>
@@ -491,7 +491,7 @@ export default function ChatLobby(){
           {canAdmin&&(
             <button onClick={()=>{setEditRoom(null);setModal(true)}}
               style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:`linear-gradient(135deg,${tObj.accent},${tObj.accent}cc)`,color:'#fff',border:'none',borderRadius:10,cursor:'pointer',fontFamily:'Outfit,sans-serif',fontWeight:700,fontSize:'0.84rem',flexShrink:0,boxShadow:`0 2px 8px ${tObj.accent}44`,whiteSpace:'nowrap'}}>
-              <i className="fi fi-sr-plus-small" style={{fontSize:14}}/><span>Add Room</span>
+              <i className="fa-solid fa-plus-small" style={{fontSize:14}}/><span>Add Room</span>
             </button>
           )}
         </div>
@@ -515,7 +515,7 @@ export default function ChatLobby(){
             {pinned.length>0&&(
               <section style={{marginBottom:24}}>
                 <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:10}}>
-                  <i className="fi fi-sr-thumbtack" style={{fontSize:12,color:'#f59e0b'}}/>
+                  <i className="fa-solid fa-thumbtack" style={{fontSize:12,color:'#f59e0b'}}/>
                   <span style={{fontSize:'0.7rem',fontWeight:800,color:'#f59e0b',letterSpacing:'1.5px',textTransform:'uppercase'}}>Featured</span>
                 </div>
                 <div style={{display:'flex',flexDirection:'column',gap:7}}>
@@ -525,11 +525,11 @@ export default function ChatLobby(){
             )}
             {regular.length===0&&pinned.length===0?(
               <div style={{textAlign:'center',padding:'60px 20px'}}>
-                <i className="fi fi-sr-search" style={{fontSize:38,color:tObj.default_color,display:'block',marginBottom:10}}/>
+                <i className="fa-solid fa-search" style={{fontSize:38,color:tObj.default_color,display:'block',marginBottom:10}}/>
                 <p style={{color:tObj.text,opacity:0.4,fontWeight:700,fontSize:'0.9rem'}}>{search?'No rooms match your search':'No rooms yet'}</p>
                 {canAdmin&&!search&&(
                   <button onClick={()=>{setEditRoom(null);setModal(true)}} style={{marginTop:14,padding:'10px 20px',borderRadius:10,border:'none',background:tObj.accent,color:'#fff',fontWeight:700,cursor:'pointer',fontFamily:'Outfit,sans-serif'}}>
-                    <i className="fi fi-sr-plus-small" style={{marginRight:6}}/>Create First Room
+                    <i className="fa-solid fa-plus-small" style={{marginRight:6}}/>Create First Room
                   </button>
                 )}
               </div>
@@ -537,7 +537,7 @@ export default function ChatLobby(){
               <section>
                 {pinned.length>0&&(
                   <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:10}}>
-                    <i className="fi fi-sr-apps" style={{fontSize:12,color:tObj.text,opacity:0.4}}/>
+                    <i className="fa-solid fa-apps" style={{fontSize:12,color:tObj.text,opacity:0.4}}/>
                     <span style={{fontSize:'0.7rem',fontWeight:800,color:tObj.text,opacity:0.4,letterSpacing:'1.5px',textTransform:'uppercase'}}>All Rooms</span>
                   </div>
                 )}
