@@ -454,7 +454,7 @@ export default function ChatRoom() {
           </div>
         </div>
 
-        {showRight&&<RightSidebar users={users} myLevel={myLevel} onUserClick={(u,e)=>{if(u._id===me?._id||u.userId===me?._id){setProf(u)}else{handleMiniCard(u,{x:Math.min((e?.clientX||200),window.innerWidth-220),y:Math.min((e?.clientY||100),window.innerHeight-300)})}}} onWhisper={u=>setWhisper(u)} onClose={()=>setRight(false)} tObj={tObj}/>}
+        {showRight&&<RightSidebar users={users} myId={me?._id} myLevel={myLevel} onUserClick={(u,e)=>{if(u._id===me?._id||u.userId===me?._id){setProf(u)}else{handleMiniCard(u,{x:Math.min((e?.clientX||200),window.innerWidth-220),y:Math.min((e?.clientY||100),window.innerHeight-300)})}}} onWhisper={u=>setWhisper(u)} onClose={()=>setRight(false)} tObj={tObj}/>}
       </div>
 
       {/* ── FOOTER ── */}
@@ -477,7 +477,7 @@ export default function ChatRoom() {
       {showDiceAnim&&diceRollVal&&<DiceRoll value={diceRollVal} onDone={()=>{setShowDiceAnim(false);setDiceRollVal(null)}}/>}
       {profUser&&(profUser._id===me?._id
         ? <SelfProfileOverlay user={me} onClose={()=>setProf(null)} onUpdated={u=>{if(u)setMe(p=>({...p,...u}))}}/>
-        : <ProfileModal user={profUser} myId={me?._id} myLevel={myLevel} socket={sockRef.current} roomId={roomId} onClose={()=>setProf(null)} onGift={u=>setGiftTgt(u)} ignoredUsers={ignoredUsers} onIgnore={handleIgnore}/>
+        : <ProfileModal user={profUser} myId={me?._id} myLevel={myLevel} socket={sockRef.current} roomId={roomId} onClose={()=>setProf(null)} onGift={u=>setGiftTgt(u)} ignoredUsers={ignoredUsers} onIgnore={handleIgnore} onWhisper={u=>{setWhisper(u);setProf(null)}}/>
       )}
       {/* MiniCard — shown on avatar click in messages */}
       {miniCardData&&miniCardData.user&&(
@@ -495,6 +495,7 @@ export default function ChatRoom() {
           tObj={tObj}
           liveCamUsers={users.filter(u=>u.isCamHost).map(u=>u._id||u.userId)}
           onGift={u=>{setGiftTgt(u);setMiniCardData(null)}}
+          onWhisper={u=>{setWhisper(u);setMiniCardData(null)}}
         />
       )}
       {giftTarget&&<GiftPanel targetUser={giftTarget} myGold={me?.gold||0} onClose={()=>setGiftTgt(null)} onSent={()=>{setGiftTgt(null)}} socket={sockRef.current} roomId={roomId} onGoldSpent={(price)=>setMe(p=>p?{...p,gold:Math.max(0,(p.gold||0)-price)}:p)}/>}
