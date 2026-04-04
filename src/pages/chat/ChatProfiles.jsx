@@ -75,7 +75,7 @@ function ReportModal({ targetUser, onClose }) {
     <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:2200,background:'rgba(0,0,0,.65)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
       <div onClick={e=>e.stopPropagation()} style={{background:'#fff',borderRadius:16,maxWidth:360,width:'100%',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.3)'}}>
         <div style={{background:'linear-gradient(135deg,#ef4444,#dc2626)',padding:'14px 16px',display:'flex',alignItems:'center',gap:10}}>
-          <i className="fi fi-sr-flag" style={{fontSize:18,color:'#fff'}}/>
+          <i className="fa-sharp fa-solid fa-flag" style={{fontSize:18,color:'#fff'}}/>
           <div style={{flex:1}}>
             <div style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'0.95rem',color:'#fff'}}>Report User</div>
             <div style={{fontSize:'0.7rem',color:'rgba(255,255,255,.8)'}}>{targetUser.username}</div>
@@ -260,13 +260,13 @@ function StaffActionModal({ targetUser, myLevel, myRank, socket, roomId, onClose
   }
 
   const MAINS_SECTIONS = [
-    { id:'rank',       label:'Change Rank',       icon:'fi-sr-diploma',         color:'#6366f1', show:isAdmin },
-    { id:'roomrank',   label:'Room Rank',          icon:'fi-sr-house-chimney',   color:'#0ea5e9', show:isAdmin },
-    { id:'editprofile',label:'Edit Profile',       icon:'fi-sr-user-pen',        color:'#10b981', show:isAdmin },
-    { id:'mute',       label:'Mute',               icon:'fi-sr-volume-mute',     color:'#f59e0b', show:true },
-    { id:'kick',       label:'Kick',               icon:'fi-sr-boot-heeled',     color:'#ef4444', show:true },
-    { id:'ban',        label:'Ban',                icon:'fi-sr-ban',             color:'#dc2626', show:isAdmin },
-    { id:'ipban',      label:'IP Ban',             icon:'fi-sr-network',         color:'#7f1d1d', show:isSuperAdmin },
+    { id:'rank',       label:'Change Rank',       icon:'fa-solid fa-address-card',         color:'#6366f1', show:isAdmin },
+    { id:'roomrank',   label:'Room Rank',          icon:'fa-solid fa-house-chimney-user',   color:'#0ea5e9', show:isAdmin },
+    { id:'editprofile',label:'Edit Profile',       icon:'fa-solid fa-user-pen',        color:'#10b981', show:isAdmin },
+    { id:'mute',       label:'Mute',               icon:'fa-solid fa-microphone-slash',     color:'#f59e0b', show:true },
+    { id:'kick',       label:'Kick',               icon:'fa-solid fa-user-slash',     color:'#ef4444', show:true },
+    { id:'ban',        label:'Ban',                icon:'fa-solid fa-ban',             color:'#dc2626', show:isAdmin },
+    { id:'ipban',      label:'IP Ban',             icon:'fa-solid fa-network-wired',         color:'#7f1d1d', show:isSuperAdmin },
   ].filter(s=>s.show)
 
   const EP_FIELDS = [
@@ -352,7 +352,7 @@ function StaffActionModal({ targetUser, myLevel, myRank, socket, roomId, onClose
                   </button>
                 </div>
                 <div style={{background:D.bg2,borderRadius:8,padding:'7px 11px',fontSize:'0.67rem',color:D.muted,display:'flex',gap:6,alignItems:'flex-start'}}>
-                  <i className="fi fi-sr-info" style={{fontSize:10,color:'#60a5fa',flexShrink:0,marginTop:1}}/>
+                  <i className="fa-solid fa-circle-info" style={{fontSize:10,color:'#60a5fa',flexShrink:0,marginTop:1}}/>
                   Room actions affect <strong style={{color:D.faint}}>only this room</strong>. Mute hides public messages here; kick removes from this room temporarily.
                 </div>
               </div>
@@ -369,7 +369,7 @@ function StaffActionModal({ targetUser, myLevel, myRank, socket, roomId, onClose
                       style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,padding:'10px 6px',border:'none',
                         background:section===s.id?`${s.color}18`:'transparent',cursor:'pointer',
                         borderLeft:`3px solid ${section===s.id?s.color:'transparent'}`,transition:'all .12s'}}>
-                      <i className={`fi ${s.icon}`} style={{fontSize:15,color:section===s.id?s.color:D.muted}}/>
+                      <i className={`${s.icon}`} style={{fontSize:15,color:section===s.id?s.color:D.muted}}/>
                       <span style={{fontSize:'0.6rem',fontWeight:700,color:section===s.id?s.color:D.muted,textAlign:'center',lineHeight:1.2}}>{s.label}</span>
                     </button>
                   ))}
@@ -592,14 +592,14 @@ function MiniCard({ user, myLevel, myId, pos, onClose, onFull, onGift, socket, r
   }
 
   const buttons = [
-    { icon:'fi-ss-user',       label:'Profile',  color:'#1a73e8', show:true,             fn:()=>{onFull?.();onClose()} },
-    { icon:'fi-sr-comments',   label:'PM',       color:'#7c3aed', show:!isMe,            fn:()=>{} },
-    { icon:'fi-sr-phone-call', label:'Call',     color:'#059669', show:!isMe,            fn:()=>{socket?.emit('callUser',{toUserId:uid,callType:'video',callId:`c_${Date.now()}`});onClose()} },
-    { icon:'fi-sr-gift',       label:'Gift',     color:'#ec4899', show:!isMe,            fn:()=>{onGift?.(user);onClose()} },
-    { icon:'fi-sr-user-add',   label:'Friend',   color:'#22c55e', show:!isMe&&myLevel>=2,fn:()=>{fetch(`${API}/api/users/friend/${uid}`,{method:'POST',headers:{Authorization:`Bearer ${token}`}}).catch(()=>{});onClose()} },
-    { icon:'fi-sr-user-block', label:ignored?'✓ Ignored':'Ignore', color:'#6b7280', show:!isMe&&myLevel>=2, fn:handleIgnore, dim:ignored },
-    { icon:'fi-sr-flag',       label:'Report',   color:'#ef4444', show:!isMe,            fn:()=>setShowReport(true) },
-    { icon:'fi-sr-shield-exclamation', label:'Actions', color:'#f59e0b', show:canAct,   fn:()=>setShowStaff(true) },
+    { icon:'fa-solid fa-circle-user',       label:'Profile',  color:'#1a73e8', show:true,             fn:()=>{onFull?.();onClose()} },
+    { icon:'fa-solid fa-comments',   label:'PM',       color:'#7c3aed', show:!isMe,            fn:()=>{} },
+    { icon:'fa-solid fa-phone', label:'Call',     color:'#059669', show:!isMe,            fn:()=>{socket?.emit('callUser',{toUserId:uid,callType:'video',callId:`c_${Date.now()}`});onClose()} },
+    { icon:'fa-solid fa-gift',       label:'Gift',     color:'#ec4899', show:!isMe,            fn:()=>{onGift?.(user);onClose()} },
+    { icon:'fa-solid fa-user-plus',   label:'Friend',   color:'#22c55e', show:!isMe&&myLevel>=2,fn:()=>{fetch(`${API}/api/users/friend/${uid}`,{method:'POST',headers:{Authorization:`Bearer ${token}`}}).catch(()=>{});onClose()} },
+    { icon:'fa-solid fa-user-slash', label:ignored?'✓ Ignored':'Ignore', color:'#6b7280', show:!isMe&&myLevel>=2, fn:handleIgnore, dim:ignored },
+    { icon:'fa-sharp fa-solid fa-flag',       label:'Report',   color:'#ef4444', show:!isMe,            fn:()=>setShowReport(true) },
+    { icon:'fa-solid fa-user-shield', label:'Actions', color:'#f59e0b', show:canAct,   fn:()=>setShowStaff(true) },
   ].filter(b=>b.show)
 
   return (
@@ -625,7 +625,7 @@ function MiniCard({ user, myLevel, myId, pos, onClose, onFull, onGift, socket, r
               style={{display:'flex',alignItems:'center',gap:6,padding:'7px 8px',background:'#f9fafb',border:'1px solid #e4e6ea',borderRadius:8,cursor:b.dim?'not-allowed':'pointer',fontSize:'0.72rem',fontWeight:700,color:b.color||'#374151',transition:'all .12s',opacity:b.dim?.5:1}}
               onMouseEnter={e=>{if(!b.dim){e.currentTarget.style.background=`${b.color}15`;e.currentTarget.style.borderColor=b.color}}}
               onMouseLeave={e=>{e.currentTarget.style.background='#f9fafb';e.currentTarget.style.borderColor='#e4e6ea'}}>
-              <i className={`fi ${b.icon}`} style={{fontSize:11,flexShrink:0}}/>{b.label}
+              <i className={`${b.icon}`} style={{fontSize:11,flexShrink:0}}/>{b.label}
             </button>
           ))}
         </div>
@@ -673,14 +673,14 @@ function SelfProfileOverlay({ user, onClose, onUpdated }) {
       <div onClick={e=>e.stopPropagation()} style={{background:'#fff',borderRadius:18,maxWidth:360,width:'100%',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.25)',maxHeight:'90vh',display:'flex',flexDirection:'column'}}>
         <div style={{height:80,background:`linear-gradient(135deg,${ri.color}66,#e8f0fe)`,position:'relative',flexShrink:0}}>
           <button onClick={onClose} style={{position:'absolute',top:10,right:10,background:'rgba(255,255,255,.85)',border:'none',width:28,height:28,borderRadius:'50%',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13}}>
-            <i className="fi fi-sr-cross-small"/>
+            <i className="fa-solid fa-xmark"/>
           </button>
         </div>
         <div style={{display:'flex',flexDirection:'column',alignItems:'center',marginTop:-40,padding:'0 18px',flexShrink:0}}>
           <label style={{cursor:'pointer',position:'relative'}}>
             <img src={user?.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{width:80,height:80,borderRadius:'50%',border:`3px solid ${bdr}`,objectFit:'cover',background:'#fff'}} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
             <div style={{position:'absolute',bottom:2,right:2,width:22,height:22,borderRadius:'50%',background:'#1a73e8',display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid #fff'}}>
-              <i className="fi fi-sr-camera" style={{fontSize:9,color:'#fff'}}/>
+              <i className="fa-solid fa-camera" style={{fontSize:9,color:'#fff'}}/>
             </div>
             <input type="file" accept="image/*" style={{display:'none'}} onChange={e=>{const f=e.target.files[0];if(f)uploadAvatar(f);e.target.value=''}}/>
           </label>
@@ -741,7 +741,7 @@ function ProfileModal({ user, myLevel, myId, socket, roomId, onClose, onGift, ig
       <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:1000,background:'rgba(0,0,0,.45)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
         <div onClick={e=>e.stopPropagation()} style={{background:'#fff',borderRadius:18,maxWidth:340,width:'100%',overflow:'hidden',boxShadow:'0 16px 48px rgba(0,0,0,.18)',maxHeight:'90vh',display:'flex',flexDirection:'column'}}>
           <div style={{height:88,background:`linear-gradient(135deg,${ri.color}44,#e8f0fe)`,position:'relative',flexShrink:0}}>
-            <button onClick={onClose} style={{position:'absolute',top:10,right:10,background:'rgba(255,255,255,.8)',border:'none',width:28,height:28,borderRadius:'50%',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13}}><i className="fi fi-sr-cross-small"/></button>
+            <button onClick={onClose} style={{position:'absolute',top:10,right:10,background:'rgba(255,255,255,.8)',border:'none',width:28,height:28,borderRadius:'50%',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13}}><i className="fa-solid fa-xmark"/></button>
             {user.countryCode&&user.countryCode!=='ZZ'&&<img src={`/icons/flags/${user.countryCode.toUpperCase()}.png`} alt="" style={{position:'absolute',bottom:10,right:12,width:22,height:14,borderRadius:2}} onError={e=>e.target.style.display='none'}/>}
           </div>
           <div style={{display:'flex',justifyContent:'center',marginTop:-36,flexShrink:0}}>
@@ -762,19 +762,19 @@ function ProfileModal({ user, myLevel, myId, socket, roomId, onClose, onGift, ig
             </div>
             <div style={{display:'flex',flexWrap:'wrap',gap:6,justifyContent:'center'}}>
               {[
-                {icon:'fi-sr-comments',label:'Private',color:'#7c3aed',show:!isMe,fn:()=>{}},
-                {icon:'fi-sr-phone-call',label:'Call',color:'#059669',show:!isMe,fn:()=>{socket?.emit('callUser',{toUserId:uid,callType:'video',callId:`c_${Date.now()}`});onClose()}},
-                {icon:'fi-sr-gift',label:'Gift',color:'#ec4899',show:!isMe,fn:()=>{onGift(user);onClose()}},
-                {icon:'fi-sr-user-add',label:'Friend',color:'#22c55e',show:!isMe&&myLevel>=2,fn:()=>{fetch(`${API}/api/users/friend/${uid}`,{method:'POST',headers:{Authorization:`Bearer ${token}`}}).catch(()=>{});onClose()}},
-                {icon:'fi-sr-user-block',label:ignored?'✓ Ignored':'Ignore',color:'#6b7280',show:!isMe&&myLevel>=2,fn:handleIgnore,dim:ignored},
-                {icon:'fi-sr-flag',label:'Report',color:'#ef4444',show:!isMe,fn:()=>setShowReport(true)},
-                {icon:'fi-sr-shield-exclamation',label:'Staff Actions',color:'#f59e0b',show:canAct,fn:()=>setShowStaff(true)},
+                {icon:'fa-solid fa-comments',label:'Private',color:'#7c3aed',show:!isMe,fn:()=>{}},
+                {icon:'fa-solid fa-phone',label:'Call',color:'#059669',show:!isMe,fn:()=>{socket?.emit('callUser',{toUserId:uid,callType:'video',callId:`c_${Date.now()}`});onClose()}},
+                {icon:'fa-solid fa-gift',label:'Gift',color:'#ec4899',show:!isMe,fn:()=>{onGift(user);onClose()}},
+                {icon:'fa-solid fa-user-plus',label:'Friend',color:'#22c55e',show:!isMe&&myLevel>=2,fn:()=>{fetch(`${API}/api/users/friend/${uid}`,{method:'POST',headers:{Authorization:`Bearer ${token}`}}).catch(()=>{});onClose()}},
+                {icon:'fa-solid fa-user-slash',label:ignored?'✓ Ignored':'Ignore',color:'#6b7280',show:!isMe&&myLevel>=2,fn:handleIgnore,dim:ignored},
+                {icon:'fa-sharp fa-solid fa-flag',label:'Report',color:'#ef4444',show:!isMe,fn:()=>setShowReport(true)},
+                {icon:'fa-solid fa-user-shield',label:'Staff Actions',color:'#f59e0b',show:canAct,fn:()=>setShowStaff(true)},
               ].filter(b=>b.show).map((b,i)=>(
                 <button key={i} onClick={b.fn}
                   style={{display:'flex',alignItems:'center',gap:5,padding:'7px 10px',background:'#f9fafb',border:'1.5px solid #e4e6ea',borderRadius:8,cursor:b.dim?'not-allowed':'pointer',fontSize:'0.78rem',fontWeight:600,color:b.color||'#374151',transition:'all .12s',opacity:b.dim?.5:1}}
                   onMouseEnter={e=>{if(!b.dim){e.currentTarget.style.background=`${b.color}15`;e.currentTarget.style.borderColor=b.color}}}
                   onMouseLeave={e=>{e.currentTarget.style.background='#f9fafb';e.currentTarget.style.borderColor='#e4e6ea'}}>
-                  <i className={`fi ${b.icon}`} style={{fontSize:12}}/>{b.label}
+                  <i className={`${b.icon}`} style={{fontSize:12}}/>{b.label}
                 </button>
               ))}
             </div>
