@@ -25,8 +25,6 @@ const SOLID_COLORS=['#ff3333','#ff6633','#ff9933','#ffcc33','#cccc00','#99cc00',
 const BUB_GRADS=['linear-gradient(135deg,#ff0000,#ff6600)','linear-gradient(135deg,#ff6600,#ffcc00)','linear-gradient(135deg,#ffcc00,#00cc00)','linear-gradient(135deg,#00cc00,#00ccff)','linear-gradient(135deg,#00ccff,#0066ff)','linear-gradient(135deg,#0066ff,#9900ff)','linear-gradient(135deg,#9900ff,#ff0099)','linear-gradient(135deg,#ff0099,#ff6600)','linear-gradient(135deg,#e040fb,#3f51b5)','linear-gradient(135deg,#43e97b,#38f9d7)','linear-gradient(135deg,#f093fb,#f5576c)','linear-gradient(135deg,#4facfe,#00f2fe)','linear-gradient(135deg,#fa709a,#fee140)','linear-gradient(135deg,#a18cd1,#fbc2eb)','linear-gradient(135deg,#ffecd2,#fcb69f)','linear-gradient(135deg,#ff9a9e,#fecfef)']
 
 function resolveNameStyle(u) {
-  const ri = R(u.rank)
-  const base = resolveNameColor(u.nameColor, ri.color)
   const font = u.nameFont ? FONT_MAP[u.nameFont] : undefined
   if (u.nameColor?.startsWith('bgrad')) {
     const idx = parseInt(u.nameColor.replace('bgrad',''))-1
@@ -35,36 +33,40 @@ function resolveNameStyle(u) {
   }
   if (u.nameColor?.startsWith('bcolor')) {
     const idx = parseInt(u.nameColor.replace('bcolor',''))-1
-    return { color: SOLID_COLORS[idx]||ri.color, fontFamily:font||'inherit' }
+    const c = SOLID_COLORS[idx]
+    if (c) return { color: c, fontFamily:font||'inherit' }
   }
-  return { color: base||ri.color, fontFamily:font||'inherit' }
+  if (u.nameColor?.startsWith('#')||u.nameColor?.startsWith('rgb')) {
+    return { color: u.nameColor, fontFamily:font||'inherit' }
+  }
+  // No nameColor set — inherit from theme (no rank color)
+  return { fontFamily:font||'inherit' }
 }
 
 // ─────────────────────────────────────────────────────────────
 // USER ITEM (used in all lists)
 // ─────────────────────────────────────────────────────────────
-function UserItem({u, onClick, showMood=true, th}) {
+function UserItem({u, onClick, onWhisper, showMood=true, th, myId}) {
   const [hov,setHov]=useState(false)
   const nameStyle = resolveNameStyle(u)
   const status = u.status||'online'
   const thB = th || { bg_header:'#fff', text:'#111827', default_color:'#e4e6ea', accent:'#1a73e8' }
+  const isMe = String(u._id||u.userId)===String(myId)
 
   return (
     <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      onClick={(e)=>onClick?.(u,e)}
       style={{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',cursor:'pointer',
-        background:hov?`${thB.accent||'#1a73e8'}12`:'transparent',transition:'background .12s'}}>
+        background:hov?`${thB.accent||'#1a73e8'}12`:'transparent',transition:'background .12s',position:'relative'}}>
       {/* Avatar + status dot */}
-      <div style={{position:'relative',flexShrink:0}}>
+      <div style={{position:'relative',flexShrink:0}} onClick={(e)=>onClick?.(u,e)}>
         <img src={u.avatar||'/default_images/avatar/default_guest.png'} alt=""
           style={{width:30,height:30,borderRadius:'50%',objectFit:'cover',border:`1.5px solid ${GBR(u.gender,u.rank)}`,display:'block'}}
           onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
-        {/* Status dot */}
         <span style={{position:'absolute',bottom:0,right:0,width:8,height:8,
           background:ST_COLOR[status]||'#22c55e',borderRadius:'50%',border:'1.5px solid #fff'}}/>
       </div>
       {/* Name + mood */}
-      <div style={{flex:1,minWidth:0}}>
+      <div style={{flex:1,minWidth:0}} onClick={(e)=>onClick?.(u,e)}>
         <div style={{display:'flex',alignItems:'center',gap:4}}>
           {u.isCamHost&&<i className="fa-solid fa-video" style={{fontSize:9,color:'#ef4444',flexShrink:0}}/>}
           <span style={{fontSize:'0.8rem',fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:100,...nameStyle}}>
@@ -77,10 +79,23 @@ function UserItem({u, onClick, showMood=true, th}) {
           </div>
         )}
       </div>
+      {/* Right side: rank icon + flag + whisper (on hover, not self) */}
       <RIcon rank={u.rank} size={14}/>
       {u.countryCode&&u.countryCode!=='ZZ'&&(
         <img src={`/icons/flags/${u.countryCode.toUpperCase()}.png`} alt=""
           style={{width:14,height:10,flexShrink:0,borderRadius:1}} onError={e=>e.target.style.display='none'}/>
+      )}
+      {/* Whisper button — visible on hover, not for self */}
+      {hov&&!isMe&&onWhisper&&(
+        <button
+          onClick={e=>{e.stopPropagation();onWhisper({...u,userId:u._id||u.userId})}}
+          title="Whisper"
+          style={{position:'absolute',right:6,background:'rgba(124,58,237,.15)',
+            border:'1px solid rgba(124,58,237,.35)',borderRadius:6,
+            color:'#a78bfa',cursor:'pointer',fontSize:10,padding:'3px 6px',
+            display:'flex',alignItems:'center',gap:3,flexShrink:0,zIndex:1}}>
+          <i className="fa-solid fa-hand-lizard" style={{fontSize:10}}/>
+        </button>
       )}
     </div>
   )
@@ -89,7 +104,7 @@ function UserItem({u, onClick, showMood=true, th}) {
 // ─────────────────────────────────────────────────────────────
 // RIGHT SIDEBAR — full spec implementation
 // ─────────────────────────────────────────────────────────────
-function RightSidebar({users, myLevel, onUserClick, onWhisper, onClose, tObj}) {
+function RightSidebar({users, myLevel, myId, onUserClick, onWhisper, onClose, tObj}) {
   const [tab,setTab]      = useState('users')
   const [search,setSearch]= useState('')
   const [genderF,setGF]   = useState('all')   // all|male|female
@@ -166,7 +181,7 @@ function RightSidebar({users, myLevel, onUserClick, onWhisper, onClose, tObj}) {
   function renderList(list, fallback) {
     if(!list.length) return <p style={{textAlign:'center',color:th.text+'55',fontSize:'0.76rem',padding:'16px 10px'}}>{fallback}</p>
     return list.map((u,i)=>(
-      <UserItem key={u.userId||u._id||i} u={u} onClick={onUserClick} th={th}/>
+      <UserItem key={u.userId||u._id||i} u={u} onClick={onUserClick} onWhisper={onWhisper} myId={myId} th={th}/>
     ))
   }
 
