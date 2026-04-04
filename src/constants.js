@@ -1,80 +1,127 @@
 // ============================================================
-// chatConstants.js — Shared constants and helpers for ChatRoom
+// constants.js — Global frontend constants
+// Single source of truth for ranks, helpers, and API URL.
+//
+// Consumers:
+//   src/pages/admin/AdminPanel.jsx   — RANKS, RANKS_LIST, helpers, API_URL
+//   src/pages/Profile.jsx            — API_URL
+//   src/pages/Leaderboard.jsx        — API_URL, RANKS
+//   src/pages/Gifts.jsx              — API_URL
+//   src/utils/chatHelpers.js         — RANKS
+//
+// NOTE: Chat-room components use src/pages/chat/chatConstants.js
+// which defines its own lean copies of API + RANKS for bundle splitting.
+// Keep both files in sync if RANKS change.
 // ============================================================
 
-// API URL sourced from siteConfig — single source of truth
-export { API_URL as API } from './siteConfig'
+// ── API URL ────────────────────────────────────────────────
+// Sourced from siteConfig.js — change the URL there, not here.
+export { API_URL } from './siteConfig'
 
+// ── RANKS ─────────────────────────────────────────────────
+// key = exact value stored in user.rank in the DB
+// Must stay in sync with backend/models/User.js
 export const RANKS = {
-  guest:      { label:'Guest',      color:'#888888', icon:'guest.svg',       level:1  },
-  user:       { label:'User',       color:'#aaaaaa', icon:'user.svg',        level:2  },
-  vipfemale:  { label:'VIP Female', color:'#FF4488', icon:'vip_female.svg',  level:3  },
-  vipmale:    { label:'VIP Male',   color:'#4488FF', icon:'vip_male.svg',    level:4  },
-  butterfly:  { label:'Butterfly',  color:'#FF66AA', icon:'butterfly.svg',   level:5  },
-  ninja:      { label:'Ninja',      color:'#777777', icon:'ninja.svg',       level:6  },
-  fairy:      { label:'Fairy',      color:'#FF88CC', icon:'fairy.svg',       level:7  },
-  legend:     { label:'Legend',     color:'#FF8800', icon:'legend.png',      level:8  },
-  bot:        { label:'Bot',        color:'#00cc88', icon:'bot.svg',         level:9  },
-  premium:    { label:'Premium',    color:'#aa44ff', icon:'premium.svg',     level:10 },
-  moderator:  { label:'Moderator',  color:'#00AAFF', icon:'mod.svg',         level:11 },
-  admin:      { label:'Admin',      color:'#FF4444', icon:'admin.svg',       level:12 },
-  superadmin: { label:'Superadmin', color:'#FF00FF', icon:'super_admin.svg', level:13 },
-  owner:      { label:'Owner',      color:'#FFD700', icon:'owner.svg',       level:14 },
+  guest:      { level:  1, label: 'Guest',      icon: 'guest.svg',       color: '#888888' },
+  user:       { level:  2, label: 'User',        icon: 'user.svg',        color: '#aaaaaa' },
+  vipfemale:  { level:  3, label: 'VIP Female',  icon: 'vip_female.svg',  color: '#FF4488' },
+  vipmale:    { level:  4, label: 'VIP Male',    icon: 'vip_male.svg',    color: '#4488FF' },
+  butterfly:  { level:  5, label: 'Butterfly',   icon: 'butterfly.svg',   color: '#FF66AA' },
+  ninja:      { level:  6, label: 'Ninja',       icon: 'ninja.svg',       color: '#777777' },
+  fairy:      { level:  7, label: 'Fairy',       icon: 'fairy.svg',       color: '#FF88CC' },
+  legend:     { level:  8, label: 'Legend',      icon: 'legend.png',      color: '#FF8800' },
+  bot:        { level:  9, label: 'Bot',         icon: 'bot.svg',         color: '#00cc88' },
+  premium:    { level: 10, label: 'Premium',     icon: 'premium.svg',     color: '#aa44ff' },
+  moderator:  { level: 11, label: 'Moderator',   icon: 'mod.svg',         color: '#00AAFF' },
+  admin:      { level: 12, label: 'Admin',       icon: 'admin.svg',       color: '#FF4444' },
+  superadmin: { level: 13, label: 'Superadmin',  icon: 'super_admin.svg', color: '#FF00FF' },
+  owner:      { level: 14, label: 'Owner',       icon: 'owner.svg',       color: '#FFD700' },
 }
 
-export const STATUSES = [
-  { id:'online',    label:'Online',    color:'#22c55e' },
-  { id:'away',      label:'Away',      color:'#f59e0b' },
-  { id:'busy',      label:'Busy',      color:'#ef4444' },
-  { id:'invisible', label:'Invisible', color:'#9ca3af' },
-]
+// Sorted array highest-first — used by AdminPanel dropdowns
+export const RANKS_LIST = Object.entries(RANKS)
+  .map(([key, val]) => ({ key, ...val }))
+  .sort((a, b) => b.level - a.level)
 
-export const SYS_CFG = {
-  join:    { accent:'#22c55e', icon:'fa-solid fa-right-to-bracket' },
-  leave:   { accent:'#9ca3af', icon:'fa-solid fa-right-from-bracket' },
-  kick:    { accent:'#f59e0b', icon:'fa-solid fa-user-slash' },
-  ban:     { accent:'#ef4444', icon:'fa-solid fa-ban' },
-  mute:    { accent:'#f59e0b', icon:'fa-solid fa-microphone-slash' },
-  mod:     { accent:'#6366f1', icon:'fa-solid fa-user-shield' },
-  dice:    { accent:'#7c3aed', icon:'fa-solid fa-dice' },
-  gift:    { accent:'#ec4899', icon:'fa-solid fa-gift' },
-  system:  { accent:'#1a73e8', icon:'fa-solid fa-circle-info' },
-  warning: { accent:'#f59e0b', icon:'fa-solid fa-triangle-exclamation' },
-  error:   { accent:'#ef4444', icon:'fa-solid fa-circle-xmark' },
-  success: { accent:'#22c55e', icon:'fa-solid fa-circle-check' },
+// ── RANK HELPERS ───────────────────────────────────────────
+export const getRankInfo  = (rankKey) => RANKS[rankKey] || RANKS.guest
+export const getRankIcon  = (rankKey) => `/icons/ranks/${RANKS[rankKey]?.icon || 'guest.svg'}`
+export const getRankColor = (rankKey) => RANKS[rankKey]?.color || '#888888'
+export const getRankLabel = (rankKey) => RANKS[rankKey]?.label || 'Guest'
+export const getRankLevel = (rankKey) => RANKS[rankKey]?.level || 1
+
+// ── ROLE GUARDS ────────────────────────────────────────────
+export const isStaff      = (rank) => ['moderator', 'admin', 'superadmin', 'owner'].includes(rank)
+export const isAdmin      = (rank) => ['admin', 'superadmin', 'owner'].includes(rank)
+export const isSuperAdmin = (rank) => ['superadmin', 'owner'].includes(rank)
+export const isOwner      = (rank) => rank === 'owner'
+export const isBot        = (rank) => rank === 'bot'
+export const isVIP        = (rank) => [
+  'vipmale', 'vipfemale', 'butterfly', 'ninja', 'fairy', 'legend',
+  'premium', 'moderator', 'admin', 'superadmin', 'owner',
+].includes(rank)
+
+// Can rank A moderate rank B? (higher level = can mod lower)
+export const canModerate = (actorRank, targetRank) =>
+  (RANKS[actorRank]?.level || 0) > (RANKS[targetRank]?.level || 0)
+
+// ── XP / LEVEL SYSTEM ─────────────────────────────────────
+// server.js: newLevel = Math.floor(xp / 100) + 1
+export const XP_PER_LEVEL     = 100
+export const GOLD_PER_LEVELUP = (level) => level * 20  // e.g. level 5 → 100 gold
+
+export const XP_GAINS = {
+  sendMessage: 1,
+  dailyBonus:  10,
+  spinWheel:   5,
+  diceLose:    1,
+  diceWin:     5,
+  wheelWin:    5,
+  quizEasy:    10,
+  quizMedium:  20,
+  quizHard:    40,
+  quizWrong:   2,
 }
 
-export const SYSTEM_SENDER = {
-  username: 'System',
-  rank:     'bot',
-  avatar:   '/default_images/avatar/default_system.png',
-  _id:      'system',
+// ── ROOM ROLES (per-room, not global rank) ─────────────────
+export const ROOM_ROLES = {
+  0: { label: 'Member',         icon: 'user.svg'       },
+  4: { label: 'Room Moderator', icon: 'room_mod.svg'   },
+  5: { label: 'Room Admin',     icon: 'room_admin.svg' },
+  6: { label: 'Room Owner',     icon: 'room_owner.svg' },
 }
 
-export const NAME_HEX = [
-  '#ff3333','#ff6633','#ff9933','#ffcc33','#cccc00','#99cc00','#59b300','#829356',
-  '#008000','#00e639','#00e673','#00e6ac','#00cccc','#03add8','#3366ff','#107896',
-  '#004d99','#6633ff','#9933ff','#cc33ff','#ff33ff','#ff33cc','#ff3399','#ff3366',
-  '#604439','#795548','#a97f70','#bc9b8f','#9E9E9E','#879fab','#698796','#495f69',
-]
+// ── PREMIUM TYPES ──────────────────────────────────────────
+export const PREMIUM_TYPES = ['none', 'silver', 'gold', 'diamond']
 
-// Gender-based border color for avatars
-export const GBR = (g, r) =>
-  r === 'bot' ? 'transparent' :
-  ({ male:'#03add8', female:'#ff99ff', couple:'#9c6fde', other:'#cccccc' }[g] || '#cccccc')
-
-// Rank helpers
-export const R  = r => RANKS[r] || RANKS.guest
-export const RL = r => RANKS[r]?.level || 0
-
-export const isStaff = rank => ['moderator','admin','superadmin','owner'].includes(rank)
-export const isAdmin = rank => ['admin','superadmin','owner'].includes(rank)
-
-// Resolve stored name-color key → CSS color
-export function resolveNameColor(nc, fallback = '') {
-  if (!nc) return fallback
-  if (nc.startsWith('bcolor')) return NAME_HEX[parseInt(nc.replace('bcolor', '')) - 1] || fallback
-  if (nc.startsWith('bgrad') || nc.startsWith('bneon')) return fallback
-  if (nc.startsWith('#') || nc.startsWith('rgb')) return nc
-  return fallback
+// ── STATUS TYPES ───────────────────────────────────────────
+export const STATUS_TYPES = {
+  online:    { label: 'Online',    icon: 'online.svg',    color: '#34a853' },
+  away:      { label: 'Away',      icon: 'away.svg',      color: '#fbbc04' },
+  busy:      { label: 'Busy',      icon: 'busy.svg',      color: '#ea4335' },
+  invisible: { label: 'Invisible', icon: 'invisible.svg', color: '#999999' },
 }
+
+// ── GENDER TYPES ───────────────────────────────────────────
+export const GENDER_TYPES = ['male', 'female', 'other']
+
+// ── AVATAR HELPERS ─────────────────────────────────────────
+// Backend stores two avatar formats:
+//   1. Relative path: '/default_images/avatar/default_avatar.png'
+//   2. Full ImgBB URL: 'https://i.ibb.co/...'
+export const getAvatarUrl = (avatar) => {
+  if (!avatar) return '/default_images/avatar/default_avatar.png'
+  if (avatar.startsWith('http')) return avatar   // ImgBB full URL
+  return avatar                                   // relative /default_images/... path
+}
+
+export const getGenderAvatar = (gender) => {
+  if (gender === 'male')   return '/default_images/avatar/default_male.png'
+  if (gender === 'female') return '/default_images/avatar/default_female.png'
+  return '/default_images/avatar/default_avatar.png'
+}
+
+// ── GIFT / BADGE ICON HELPERS ──────────────────────────────
+// Backend stores just the filename, e.g. 'rose.svg'
+export const getGiftIcon  = (iconFile) => `/gifts/${iconFile}`
+export const getBadgeIcon = (iconFile) => `/icons/badges/${iconFile}`
