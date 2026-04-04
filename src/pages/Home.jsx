@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
+import { SITE_NAME, SITE_SLOGAN, AD_BANNER_ZONE, AD_BANNER_CLASS, AD_VAST_ZONE_1, AD_VAST_ZONE_2, AD_IFRAME_SRC } from '../siteConfig'
 import { useEffect, useRef, useState } from 'react'
 import PageLayout from '../components/PageLayout.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -59,7 +60,7 @@ function IframePromoAd() {
               Join thousands chatting live. Real people, real connections. 18+ only.
             </p>
             <iframe 
-              src="https://www.profitablecpmratenetwork.com/i9zvju0s?key=a0c9b72757ee0470a77cb3dfb7e652fa"
+              src={AD_IFRAME_SRC}
               style={{ 
                 width: '100%',
                 height: 50,
@@ -212,7 +213,7 @@ export default function Home() {
             </p>
 
             {/* VAST Video Ad between paragraphs */}
-            <VastVideoAd zoneId="5885566" />
+            <VastVideoAd zoneId={AD_VAST_ZONE_1} />
 
             <p style={{ fontSize: 'clamp(0.9rem,2vw,1rem)', color: '#3c4043', lineHeight: 1.9, marginBottom: 20 }}>
               ChatsGenZ is not just another chat website — it is a fully-featured, <strong>next-generation live chatting platform</strong> trusted by users from over 50 countries. Whether you're looking for a <strong>free chat room</strong>, a <strong>stranger chatting site</strong>, or a community of like-minded people, ChatsGenZ has everything you need. This is a <strong>secured chat</strong> environment monitored 24/7.
@@ -227,7 +228,7 @@ export default function Home() {
                 textDecoration: 'none', boxShadow: '0 4px 16px rgba(26,115,232,.35)',
                 fontFamily: 'Outfit,sans-serif',
               }}>
-                <i className="fi fi-sr-comment-alt" /> Start Chatting Free
+                <i className="fa-solid fa-comment-alt" /> Start Chatting Free
               </Link>
             </div>
 
@@ -237,7 +238,7 @@ export default function Home() {
 
           {/* Right: Banner Ad */}
           <div style={{ width: 300, flexShrink: 0 }}>
-            <BannerAd zoneId="5884718" className="eas6a97888e17" />
+            <BannerAd zoneId={AD_BANNER_ZONE} className={AD_BANNER_CLASS} />
           </div>
         </div>
 
@@ -264,7 +265,7 @@ export default function Home() {
 
         {/* Footer VAST Video Ad */}
         <div style={{ maxWidth: 1100, margin: '0 auto 32px', padding: '0 18px' }}>
-          <VastVideoAd zoneId="5885250" />
+          <VastVideoAd zoneId={AD_VAST_ZONE_2} />
         </div>
       </section>
 
