@@ -454,7 +454,7 @@ export default function ChatRoom() {
           </div>
         </div>
 
-        {showRight&&<RightSidebar users={users} myLevel={myLevel} onUserClick={(u,pos)=>{setProf(u)}} onWhisper={u=>setWhisper(u)} onClose={()=>setRight(false)} tObj={tObj}/>}
+        {showRight&&<RightSidebar users={users} myLevel={myLevel} onUserClick={(u,e)=>{if(u._id===me?._id||u.userId===me?._id){setProf(u)}else{handleMiniCard(u,{x:Math.min((e?.clientX||200),window.innerWidth-220),y:Math.min((e?.clientY||100),window.innerHeight-300)})}}} onWhisper={u=>setWhisper(u)} onClose={()=>setRight(false)} tObj={tObj}/>}
       </div>
 
       {/* ── FOOTER ── */}
@@ -480,7 +480,7 @@ export default function ChatRoom() {
         : <ProfileModal user={profUser} myId={me?._id} myLevel={myLevel} socket={sockRef.current} roomId={roomId} onClose={()=>setProf(null)} onGift={u=>setGiftTgt(u)} ignoredUsers={ignoredUsers} onIgnore={handleIgnore}/>
       )}
       {/* MiniCard — shown on avatar click in messages */}
-      {miniCardData&&miniCardData.user&&miniCardData.user._id!==me?._id&&(
+      {miniCardData&&miniCardData.user&&(
         <MiniCard
           user={miniCardData.user}
           myId={me?._id}
@@ -492,6 +492,8 @@ export default function ChatRoom() {
           onIgnore={handleIgnore}
           onClose={()=>setMiniCardData(null)}
           onFull={()=>{setProf(miniCardData.user);setMiniCardData(null)}}
+          tObj={tObj}
+          liveCamUsers={users.filter(u=>u.isCamHost).map(u=>u._id||u.userId)}
           onGift={u=>{setGiftTgt(u);setMiniCardData(null)}}
         />
       )}
