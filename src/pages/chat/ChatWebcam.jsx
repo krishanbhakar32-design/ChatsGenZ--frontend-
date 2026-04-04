@@ -317,13 +317,14 @@ function WebcamPanel({ socket, roomId, me, onClose }) {
         onClick={e => e.stopPropagation()}
         style={{
           position: 'fixed',
-          top: 54, left: 0,
-          width: 'min(460px, 100vw)',
-          maxHeight: 'calc(100dvh - 100px)',
+          top: '50%', left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 'min(460px, 96vw)',
+          maxHeight: 'calc(100dvh - 80px)',
           zIndex: 701,
           background: BG,
-          borderRadius: '0 0 14px 0',
-          boxShadow: '4px 4px 32px rgba(0,0,0,0.6)',
+          borderRadius: 14,
+          boxShadow: '0 8px 48px rgba(0,0,0,0.7)',
           display: 'flex', flexDirection: 'column',
           overflow: 'hidden',
         }}
