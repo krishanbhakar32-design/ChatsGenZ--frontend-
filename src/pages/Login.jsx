@@ -3,7 +3,7 @@ import Header from '../components/Header.jsx'
 import Footer from '../components/Footer.jsx'
 import ScrollToTop from '../components/ScrollToTop.jsx'
 
-const API = import.meta.env.VITE_API_URL || 'https://chatsgenz-backend-production.up.railway.app'
+import { API_URL as API } from '../siteConfig'
 
 /* ─── Shared UI primitives ───────────────────────────────────────────────── */
 function Overlay({ onClose, children }) {
@@ -27,7 +27,7 @@ const Spin = () => <span style={{ width:14,height:14,border:'2px solid rgba(255,
 function FW({ icon, children }) {
   return (
     <div style={{ position:'relative' }}>
-      <i className={`fi ${icon}`} style={{ position:'absolute',left:13,top:'50%',transform:'translateY(-50%)',color:'#9ca3af',fontSize:14,pointerEvents:'none',zIndex:1 }} />
+      <i className={icon} style={{ position:'absolute',left:13,top:'50%',transform:'translateY(-50%)',color:'#9ca3af',fontSize:14,pointerEvents:'none',zIndex:1 }} />
       {children}
     </div>
   )
@@ -37,12 +37,12 @@ function PwdField({ value, onChange, placeholder }) {
   const [show, setShow] = useState(false)
   return (
     <div style={{ position:'relative' }}>
-      <i className="fi fi-sr-lock" style={{ position:'absolute',left:13,top:'50%',transform:'translateY(-50%)',color:'#9ca3af',fontSize:14,pointerEvents:'none',zIndex:1 }} />
+      <i className="fa-solid fa-lock" style={{ position:'absolute',left:13,top:'50%',transform:'translateY(-50%)',color:'#9ca3af',fontSize:14,pointerEvents:'none',zIndex:1 }} />
       <input type={show?'text':'password'} value={value} onChange={onChange} placeholder={placeholder}
         style={{ ...IS, paddingRight:44 }} onFocus={onF} onBlur={onB} required />
       <button type="button" onClick={()=>setShow(s=>!s)}
         style={{ position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:15,display:'flex',alignItems:'center',padding:2 }}>
-        <i className={`fi ${show?'fi-sr-eye-crossed':'fi-sr-eye'}`} />
+        <i className={`${show?'fa-solid fa-eye-slash':'fa-regular fa-eye'}`} />
       </button>
     </div>
   )
@@ -52,9 +52,9 @@ function Head({ bg, icon, title, sub, onClose, onBack }) {
   return (
     <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:22 }}>
       <div style={{ display:'flex',alignItems:'center',gap:11 }}>
-        {onBack && <button onClick={onBack} style={{ background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:15,padding:'0 6px 0 0',display:'flex',alignItems:'center' }}><i className="fi fi-sr-angle-left" /></button>}
+        {onBack && <button onClick={onBack} style={{ background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:15,padding:'0 6px 0 0',display:'flex',alignItems:'center' }}><i className="fa-solid fa-angle-left" /></button>}
         <div style={{ width:40,height:40,background:bg,borderRadius:11,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
-          <i className={`fi fi-sr-${icon}`} style={{ color:'#fff',fontSize:17 }} />
+          <i className={icon} style={{ color:'#fff',fontSize:17 }} />
         </div>
         <div>
           <div style={{ fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1.05rem',color:'#111827' }}>{title}</div>
@@ -62,7 +62,7 @@ function Head({ bg, icon, title, sub, onClose, onBack }) {
         </div>
       </div>
       <button onClick={onClose} style={{ background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:20,padding:4,lineHeight:1,display:'flex',alignItems:'center' }}>
-        <i className="fi fi-sr-cross-small" />
+        <i className="fa-solid fa-xmark" />
       </button>
     </div>
   )
@@ -97,7 +97,7 @@ function OTPStep({ userId, email, username, onClose }) {
   }
   return (
     <>
-      <Head bg="linear-gradient(135deg,#1a73e8,#1464cc)" icon="shield-check" title="Verify Email" sub={`Code sent to ${email}`} onClose={onClose} />
+      <Head bg="linear-gradient(135deg,#1a73e8,#1464cc)" icon="fa-solid fa-user-shield" title="Verify Email" sub={`Code sent to ${email}`} onClose={onClose} />
       <div style={{ textAlign:'center',marginBottom:20 }}>
         <div style={{ fontSize:44,marginBottom:10 }}>📧</div>
         <p style={{ fontSize:'0.9rem',color:'#6b7280',lineHeight:1.75 }}>Hi <strong style={{ color:'#111827' }}>{username}</strong>! Enter the <strong style={{ color:'#1a73e8' }}>6-digit code</strong> sent to <strong>{email}</strong>.</p>
@@ -138,10 +138,10 @@ function LoginModal({ onClose }) {
     <Overlay onClose={onClose}>
       <div style={{ padding:'24px 22px' }}>
         {step==='login'&&<>
-          <Head bg="linear-gradient(135deg,#1a73e8,#1464cc)" icon="sign-in" title="Welcome Back" sub="Login to your ChatsGenZ account" onClose={onClose}/>
+          <Head bg="linear-gradient(135deg,#1a73e8,#1464cc)" icon="fa-solid fa-right-to-bracket" title="Welcome Back" sub="Login to your ChatsGenZ account" onClose={onClose}/>
           <Err m={err}/>
           <form onSubmit={doLogin} style={{ display:'flex',flexDirection:'column',gap:14 }}>
-            <div><Lbl c="Username or Email"/><FW icon="fi-sr-user"><input style={IS} placeholder="Enter username or email" value={form.login} onChange={e=>setForm(f=>({...f,login:e.target.value}))} onFocus={onF} onBlur={onB} required/></FW></div>
+            <div><Lbl c="Username or Email"/><FW icon="fa-solid fa-address-card"><input style={IS} placeholder="Enter username or email" value={form.login} onChange={e=>setForm(f=>({...f,login:e.target.value}))} onFocus={onF} onBlur={onB} required/></FW></div>
             <div>
               <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5 }}>
                 <Lbl c="Password"/>
@@ -149,15 +149,15 @@ function LoginModal({ onClose }) {
               </div>
               <PwdField value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))} placeholder="Your password"/>
             </div>
-            <Btn loading={load} text={<><i className="fi fi-sr-sign-in"/> Login to ChatsGenZ</>} loadText="Logging in..." bg="linear-gradient(135deg,#1a73e8,#1464cc)"/>
+            <Btn loading={load} text={<><i className="fa-solid fa-sign-in"/> Login to ChatsGenZ</>} loadText="Logging in..." bg="linear-gradient(135deg,#1a73e8,#1464cc)"/>
           </form>
         </>}
         {step==='forgot'&&<>
-          <Head bg="linear-gradient(135deg,#f59e0b,#d97706)" icon="lock" title="Forgot Password" sub="We'll email you a reset link" onClose={onClose} onBack={()=>{setStep('login');reset()}}/>
+          <Head bg="linear-gradient(135deg,#f59e0b,#d97706)" icon="fa-solid fa-lock" title="Forgot Password" sub="We'll email you a reset link" onClose={onClose} onBack={()=>{setStep('login');reset()}}/>
           <Err m={err}/>
           <form onSubmit={doForgot} style={{ display:'flex',flexDirection:'column',gap:13 }}>
-            <div><Lbl c="Registered Email"/><FW icon="fi-sr-envelope"><input type="email" style={IS} placeholder="your@email.com" value={fpEmail} onChange={e=>setFpEmail(e.target.value)} onFocus={onF} onBlur={onB} required autoFocus/></FW></div>
-            <Btn loading={load} text={<><i className="fi fi-sr-paper-plane"/> Send Reset Link</>} loadText="Sending..." bg="linear-gradient(135deg,#f59e0b,#d97706)" color="#111827" shadow="0 3px 12px rgba(245,158,11,.3)"/>
+            <div><Lbl c="Registered Email"/><FW icon="fa-solid fa-envelope"><input type="email" style={IS} placeholder="your@email.com" value={fpEmail} onChange={e=>setFpEmail(e.target.value)} onFocus={onF} onBlur={onB} required autoFocus/></FW></div>
+            <Btn loading={load} text={<><i className="fa-solid fa-paper-plane"/> Send Reset Link</>} loadText="Sending..." bg="linear-gradient(135deg,#f59e0b,#d97706)" color="#111827" shadow="0 3px 12px rgba(245,158,11,.3)"/>
           </form>
         </>}
         {step==='forgot_sent'&&<div style={{ textAlign:'center',padding:'12px 0' }}>
@@ -193,13 +193,13 @@ function GuestModal({ onClose }) {
   return (
     <Overlay onClose={onClose}>
       <div style={{ padding:'24px 22px' }}>
-        <Head bg="linear-gradient(135deg,#16a34a,#15803d)" icon="bolt" title="Guest Entry" sub="Chat instantly — no registration needed" onClose={onClose}/>
+        <Head bg="linear-gradient(135deg,#16a34a,#15803d)" icon="fa-solid fa-bolt" title="Guest Entry" sub="Chat instantly — no registration needed" onClose={onClose}/>
         <Err m={err}/>
         <form onSubmit={submit} style={{ display:'flex',flexDirection:'column',gap:13 }}>
-          <div><Lbl c="Choose a Username"/><FW icon="fi-sr-user"><input style={IS} placeholder="2-20 chars, letters/numbers only" value={form.username} onChange={e=>setForm(f=>({...f,username:e.target.value}))} onFocus={onF} onBlur={onB} required/></FW></div>
+          <div><Lbl c="Choose a Username"/><FW icon="fa-solid fa-address-card"><input style={IS} placeholder="2-20 chars, letters/numbers only" value={form.username} onChange={e=>setForm(f=>({...f,username:e.target.value}))} onFocus={onF} onBlur={onB} required/></FW></div>
           <div>
             <Lbl c="Gender"/>
-            <FW icon="fi-sr-venus-mars">
+            <FW icon="fa-solid fa-venus-mars">
               <select style={{...IS,appearance:'none',cursor:'pointer'}} value={form.gender} onChange={e=>setForm(f=>({...f,gender:e.target.value}))} onFocus={onF} onBlur={onB} required>
                 <option value="">Select gender...</option>
                 <option value="male">♂ Male</option><option value="female">♀ Female</option><option value="other">⚧ Other</option><option value="couple">💑 Couple</option>
@@ -215,7 +215,7 @@ function GuestModal({ onClose }) {
               <select style={ss} value={form.year}  onChange={e=>setForm(f=>({...f,year:e.target.value}))}  onFocus={onF} onBlur={onB} required><option value="">Year</option>{years.map(y=><option key={y}>{y}</option>)}</select>
             </div>
           </div>
-          <Btn loading={load} text={<><i className="fi fi-sr-bolt"/> Enter ChatsGenZ as Guest</>} loadText="Entering..." bg="linear-gradient(135deg,#16a34a,#15803d)" shadow="0 3px 12px rgba(22,163,74,.28)"/>
+          <Btn loading={load} text={<><i className="fa-solid fa-bolt"/> Enter ChatsGenZ as Guest</>} loadText="Entering..." bg="linear-gradient(135deg,#16a34a,#15803d)" shadow="0 3px 12px rgba(22,163,74,.28)"/>
         </form>
         <p style={{ textAlign:'center',fontSize:'0.78rem',color:'#9ca3af',marginTop:14,lineHeight:1.6 }}>Guest sessions are temporary. <strong style={{ color:'#7c3aed' }}>Register free</strong> to save profile, earn ranks &amp; unlock all features.</p>
       </div>
@@ -247,11 +247,11 @@ function RegisterModal({ onClose }) {
   return (
     <Overlay onClose={onClose}>
       <div style={{ padding:'24px 22px' }}>
-        <Head bg="linear-gradient(135deg,#7c3aed,#6d28d9)" icon="user-add" title="Create Free Account" sub="Join ChatsGenZ — free forever" onClose={onClose}/>
+        <Head bg="linear-gradient(135deg,#7c3aed,#6d28d9)" icon="fa-solid fa-user-plus" title="Create Free Account" sub="Join ChatsGenZ — free forever" onClose={onClose}/>
         <Err m={err}/>
         <form onSubmit={submit} style={{ display:'flex',flexDirection:'column',gap:11 }}>
-          <div><Lbl c="Username"/><FW icon="fi-sr-user"><input style={IS} placeholder="3-20 chars, letters/numbers/underscore" value={form.username} onChange={e=>setForm(f=>({...f,username:e.target.value}))} onFocus={onF} onBlur={onB} required/></FW></div>
-          <div><Lbl c="Email Address"/><FW icon="fi-sr-envelope"><input type="email" style={IS} placeholder="your@email.com" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} onFocus={onF} onBlur={onB} required/></FW></div>
+          <div><Lbl c="Username"/><FW icon="fa-solid fa-address-card"><input style={IS} placeholder="3-20 chars, letters/numbers/underscore" value={form.username} onChange={e=>setForm(f=>({...f,username:e.target.value}))} onFocus={onF} onBlur={onB} required/></FW></div>
+          <div><Lbl c="Email Address"/><FW icon="fa-solid fa-envelope"><input type="email" style={IS} placeholder="your@email.com" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} onFocus={onF} onBlur={onB} required/></FW></div>
           <div><Lbl c="Password"/><PwdField value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))} placeholder="Minimum 6 characters"/></div>
           <div><Lbl c="Confirm Password"/><PwdField value={form.confirm} onChange={e=>setForm(f=>({...f,confirm:e.target.value}))} placeholder="Repeat your password"/></div>
           <div>
@@ -264,7 +264,7 @@ function RegisterModal({ onClose }) {
           </div>
           <div>
             <Lbl c="Gender"/>
-            <FW icon="fi-sr-venus-mars">
+            <FW icon="fa-solid fa-venus-mars">
               <select style={{...IS,appearance:'none',cursor:'pointer'}} value={form.gender} onChange={e=>setForm(f=>({...f,gender:e.target.value}))} onFocus={onF} onBlur={onB} required>
                 <option value="">Select gender...</option>
                 <option value="male">♂ Male</option><option value="female">♀ Female</option><option value="other">⚧ Other</option><option value="couple">💑 Couple</option>
@@ -275,7 +275,7 @@ function RegisterModal({ onClose }) {
               <p style={{ fontSize:'0.75rem',color:'#92400e',margin:0,lineHeight:1.6,fontWeight:600 }}><strong>Gender cannot be changed after registration.</strong> It permanently affects rank eligibility, profile, and room access.</p>
             </div>
           </div>
-          <Btn loading={load} text={<><i className="fi fi-sr-user-add"/> Create Free Account</>} loadText="Creating account..." bg="linear-gradient(135deg,#7c3aed,#6d28d9)" shadow="0 3px 12px rgba(124,58,237,.28)"/>
+          <Btn loading={load} text={<><i className="fa-solid fa-user-add"/> Create Free Account</>} loadText="Creating account..." bg="linear-gradient(135deg,#7c3aed,#6d28d9)" shadow="0 3px 12px rgba(124,58,237,.28)"/>
         </form>
         <p style={{ textAlign:'center',fontSize:'0.78rem',color:'#9ca3af',marginTop:12 }}>Already have an account? <button onClick={onClose} style={{ background:'none',border:'none',color:'#1a73e8',fontWeight:700,fontSize:'0.78rem',cursor:'pointer',padding:0 }}>Login →</button></p>
       </div>
@@ -306,19 +306,19 @@ export default function Login() {
           </p>
           <div style={{ display:'flex',flexDirection:'column',gap:12,maxWidth:300,margin:'0 auto' }}>
             <button onClick={()=>setModal('login')} style={{ display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'15px 20px',borderRadius:13,border:'none',cursor:'pointer',background:'linear-gradient(135deg,#1a73e8,#1464cc)',color:'#fff',fontWeight:800,fontSize:'1rem',fontFamily:'Outfit,sans-serif',boxShadow:'0 8px 24px rgba(26,115,232,.5)',transition:'all .15s' }} onMouseEnter={e=>e.currentTarget.style.transform='translateY(-2px)'} onMouseLeave={e=>e.currentTarget.style.transform='translateY(0)'}>
-              <i className="fi fi-sr-sign-in" style={{ fontSize:17 }}/> Login to ChatsGenZ
+              <i className="fa-solid fa-sign-in" style={{ fontSize:17 }}/> Login to ChatsGenZ
             </button>
             <button onClick={()=>setModal('guest')} style={{ display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'15px 20px',borderRadius:13,border:'1.5px solid rgba(255,255,255,.3)',cursor:'pointer',background:'rgba(255,255,255,.1)',color:'#fff',fontWeight:700,fontSize:'0.95rem',fontFamily:'Outfit,sans-serif',backdropFilter:'blur(6px)',transition:'all .15s' }} onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,.2)'} onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,.1)'}>
-              <i className="fi fi-sr-bolt" style={{ fontSize:17 }}/> Enter as Guest — Instant
+              <i className="fa-solid fa-bolt" style={{ fontSize:17 }}/> Enter as Guest — Instant
             </button>
             <button onClick={()=>setModal('register')} style={{ display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'15px 20px',borderRadius:13,border:'1.5px solid rgba(167,139,250,.5)',cursor:'pointer',background:'rgba(124,58,237,.18)',color:'rgba(255,255,255,.92)',fontWeight:700,fontSize:'0.95rem',fontFamily:'Outfit,sans-serif',transition:'all .15s' }} onMouseEnter={e=>e.currentTarget.style.background='rgba(124,58,237,.35)'} onMouseLeave={e=>e.currentTarget.style.background='rgba(124,58,237,.18)'}>
-              <i className="fi fi-sr-user-add" style={{ fontSize:17 }}/> New Here? Register Free
+              <i className="fa-solid fa-user-add" style={{ fontSize:17 }}/> New Here? Register Free
             </button>
           </div>
           <div style={{ display:'flex',gap:20,justifyContent:'center',marginTop:32,flexWrap:'wrap' }}>
-            {[['fi-sr-gift','Free Gifts'],['fi-sr-shield-check','Safe & Secure'],['fi-sr-video-camera','Video Calls'],['fi-sr-medal','Earn Ranks']].map(([ic,lb])=>(
+            {[['fa-solid fa-gift','Free Gifts'],['fa-solid fa-user-shield','Safe & Secure'],['fa-solid fa-video','Video Calls'],['fa-sharp fa-solid fa-medal','Earn Ranks']].map(([ic,lb])=>(
               <div key={lb} style={{ display:'flex',alignItems:'center',gap:6,color:'rgba(255,255,255,.65)',fontSize:'0.78rem',fontWeight:600 }}>
-                <i className={`fi ${ic}`} style={{ fontSize:13 }}/>{lb}
+                <i className={ic} style={{ fontSize:13 }}/>{lb}
               </div>
             ))}
           </div>
@@ -339,7 +339,7 @@ export default function Login() {
 
             <div style={{ background:'linear-gradient(135deg,#f0f9ff,#e0f2fe)',border:'2px solid #bae6fd',borderRadius:14,padding:'20px 22px',marginBottom:20 }}>
               <div style={{ display:'flex',alignItems:'center',gap:10,marginBottom:14 }}>
-                <div style={{ width:34,height:34,background:'linear-gradient(135deg,#7c3aed,#6d28d9)',borderRadius:9,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}><i className="fi fi-sr-user-add" style={{ color:'#fff',fontSize:15 }}/></div>
+                <div style={{ width:34,height:34,background:'linear-gradient(135deg,#7c3aed,#6d28d9)',borderRadius:9,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}><i className="fa-solid fa-user-add" style={{ color:'#fff',fontSize:15 }}/></div>
                 <strong style={{ color:'#1e40af',fontSize:'0.95rem',fontFamily:'Outfit,sans-serif',fontWeight:900 }}>Why Register? Unlock Everything — Free Forever</strong>
               </div>
               <p style={{ color:'#1e3a5f',fontSize:'0.875rem',lineHeight:1.9,margin:0 }}>Creating a free account unlocks your <strong>full profile</strong>, <strong>friends list</strong>, <strong>private messaging</strong>, <strong>gold coins</strong>, <strong>XP levels</strong>, <strong>rank eligibility</strong>, <strong>badges</strong>, <strong>32 virtual gifts</strong>, <strong>video &amp; audio calls</strong>, <strong>webcam chat</strong>, <strong>daily login bonuses</strong>, access to <strong>VIP rooms</strong>, ability to <strong>create your own rooms</strong>, <strong>24 themes</strong>, <strong>30 custom fonts</strong>, <strong>neon &amp; gradient bubble colors</strong>, <strong>daily spin wheel</strong>, <strong>dice &amp; keno games</strong>, <strong>quiz rooms</strong>, and an <strong>AI chat bot</strong>. Registration takes under 30 seconds. No credit card. No subscription. No catch — ever.</p>
