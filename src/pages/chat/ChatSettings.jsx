@@ -36,6 +36,7 @@ const BUB_NEONS = [
   {bg:'#111',shadow:'0 0 8px #ff00cc',border:'#ff00cc',color:'#ff00cc'},
 ]
 const FONT_LIST = [
+  {id:'',      name:"Default (Regular)", f:"'Nunito',sans-serif"},
   {id:'font1', name:"Kalam",         f:"'Kalam',cursive"},
   {id:'font2', name:"Signika",        f:"'Signika',sans-serif"},
   {id:'font3', name:"Grandstander",   f:"'Grandstander',cursive"},
@@ -424,8 +425,11 @@ function ChatSettingsOverlay({me,onClose,onSaved}){
 // ─────────────────────────────────────────────────────────────
 // AVATAR DROPDOWN
 // ─────────────────────────────────────────────────────────────
-function AvatarDropdown({me,status,setStatus,onLeave,socket,onOpenSettings,onOpenProfile}){
-  const [open,setOpen]=useState(false)
+// AVATAR DROPDOWN — CodyChatPHP chat_main_menu style
+// Cover banner + avatar + rank icon + username + edit_profile link
+// Sections: wallet/level, settings, room options, admin, leave/logout
+// ─────────────────────────────────────────────────────────────
+function AvatarDropdown({me,status,setStatus,onLeave,socket,onOpenSettings,onOpenProfile}){\n  const [open,setOpen]=useState(false)
   const ref=useRef(null)
   const nav=useNavigate()
 
@@ -439,102 +443,151 @@ function AvatarDropdown({me,status,setStatus,onLeave,socket,onOpenSettings,onOpe
   const border=GBR(me?.gender,me?.rank)
   const curSt=STATUSES.find(s=>s.id===status)||STATUSES[0]
   const isStaffRole=['moderator','admin','superadmin','owner'].includes(me?.rank)
+  const isAdminRole=['admin','superadmin','owner'].includes(me?.rank)
+
+  function MenuItem({icon,label,color,chevron,fn,danger}){
+    return(
+      <button onClick={fn}
+        style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'9px 14px',
+          background:'none',border:'none',borderBottom:'1px solid #2d3555',
+          cursor:'pointer',textAlign:'left',transition:'background .12s'}}
+        onMouseEnter={e=>e.currentTarget.style.background=danger?'rgba(239,68,68,.1)':'#2d3555'}
+        onMouseLeave={e=>e.currentTarget.style.background='none'}>
+        <i className={icon} style={{fontSize:14,color:color||'#9ca3af',width:18,textAlign:'center',flexShrink:0}}/>
+        <span style={{fontSize:'0.84rem',fontWeight:600,color:danger?'#f87171':'#e2e8f0',flex:1}}>{label}</span>
+        {chevron&&<i className="fa-solid fa-angle-right" style={{fontSize:11,color:'#6b7280',flexShrink:0}}/>}
+      </button>
+    )
+  }
 
   return(
     <div ref={ref} style={{position:'relative',flexShrink:0}}>
-      <button onClick={()=>setOpen(o=>!o)} style={{background:'none',border:'none',cursor:'pointer',padding:'2px 3px',display:'flex',alignItems:'center'}}>
+      {/* Trigger button — avatar + status dot */}
+      <button onClick={()=>setOpen(o=>!o)}
+        style={{background:'none',border:'none',cursor:'pointer',padding:'2px 3px',display:'flex',alignItems:'center'}}>
         <div style={{position:'relative'}}>
           <img src={me?.avatar||'/default_images/avatar/default_guest.png'} alt=""
             style={{width:28,height:28,borderRadius:'50%',objectFit:'cover',border:`2px solid ${border}`,display:'block'}}
             onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
-          <span style={{position:'absolute',bottom:0,right:0,width:7,height:7,background:curSt.color,borderRadius:'50%',border:'1.5px solid #fff'}}/>
+          <span style={{position:'absolute',bottom:0,right:0,width:7,height:7,
+            background:curSt.color,borderRadius:'50%',border:'1.5px solid #fff'}}/>
         </div>
       </button>
+
       {open&&(
-        <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',background:'#1a1f2e',border:'1px solid #2d3555',borderRadius:12,minWidth:240,boxShadow:'0 8px 32px rgba(0,0,0,.5)',zIndex:999,overflow:'hidden'}} onClick={e=>e.stopPropagation()}>
-          {/* Profile header */}
-          <div style={{padding:'14px 14px 12px',borderBottom:'1px solid #2d3555',display:'flex',alignItems:'center',gap:12,position:'relative'}}>
-            <img src={me?.avatar||'/default_images/avatar/default_guest.png'} alt=""
-              style={{width:52,height:52,borderRadius:'50%',objectFit:'cover',border:`2.5px solid ${border}`,flexShrink:0}}
-              onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:2}}>
-                <RIcon rank={me?.rank} size={12}/>
-                <span style={{fontSize:'0.65rem',fontWeight:700,color:ri.color}}>{ri.label}</span>
-              </div>
-              <div style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'0.95rem',color:'#fff',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{me?.username}</div>
-              <div style={{fontSize:'0.68rem',color:'rgba(255,255,255,.4)',marginTop:2}}>{curSt.label}</div>
+        <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',
+          background:'#1a1f2e',border:'1px solid #2d3555',borderRadius:12,
+          minWidth:250,maxWidth:280,boxShadow:'0 8px 40px rgba(0,0,0,.6)',
+          zIndex:999,overflow:'hidden'}}
+          onClick={e=>e.stopPropagation()}>
+
+          {/* ── TOP BANNER with cover background (CodyChatPHP: float_ctop) ── */}
+          <div style={{
+            background:`linear-gradient(135deg, ${ri.color}55 0%, #0f172a 100%)`,
+            padding:'14px 14px 10px',borderBottom:'1px solid #2d3555',position:'relative',
+          }}>
+            {/* Rank icon top-right (CodyChatPHP style) */}
+            <div style={{position:'absolute',top:10,right:12,opacity:0.6}}>
+              <RIcon rank={me?.rank} size={28}/>
             </div>
-            <div style={{position:'absolute',top:10,right:10,width:30,height:30,borderRadius:'50%',background:'#2d3555',display:'flex',alignItems:'center',justifyContent:'center'}}>
-              <RIcon rank={me?.rank} size={18}/>
+
+            {/* Avatar row */}
+            <div style={{display:'flex',alignItems:'flex-end',gap:10}}>
+              <div style={{position:'relative',flexShrink:0}}>
+                <img src={me?.avatar||'/default_images/avatar/default_guest.png'} alt=""
+                  style={{width:54,height:54,borderRadius:'50%',objectFit:'cover',
+                    border:`2.5px solid ${border}`,display:'block',
+                    boxShadow:'0 2px 12px rgba(0,0,0,.4)'}}
+                  onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
+                {/* Status dot */}
+                <span style={{position:'absolute',bottom:2,right:2,width:10,height:10,
+                  background:curSt.color,borderRadius:'50%',border:'2px solid #1a1f2e'}}/>
+              </div>
+              <div style={{flex:1,minWidth:0,paddingBottom:2}}>
+                {/* Rank label */}
+                <div style={{display:'flex',alignItems:'center',gap:4,marginBottom:3}}>
+                  <RIcon rank={me?.rank} size={11}/>
+                  <span style={{fontSize:'0.6rem',fontWeight:700,color:ri.color,textTransform:'uppercase',letterSpacing:.5}}>{ri.label}</span>
+                </div>
+                {/* Username */}
+                <div style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1rem',
+                  color:'#fff',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                  {me?.username}
+                </div>
+                {/* Edit profile link */}
+                <div onClick={()=>{onOpenProfile?.();setOpen(false)}}
+                  style={{fontSize:'0.65rem',color:'rgba(255,255,255,.45)',marginTop:1,cursor:'pointer'}}
+                  onMouseEnter={e=>e.currentTarget.style.color='rgba(255,255,255,.8)'}
+                  onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,.45)'}>
+                  Edit Profile
+                </div>
+              </div>
+            </div>
+
+            {/* Status row */}
+            <div style={{display:'flex',gap:4,marginTop:10,flexWrap:'wrap'}}>
+              {STATUSES.map(s=>(
+                <button key={s.id}
+                  onClick={()=>{setStatus(s.id);socket?.emit('updateStatus',{status:s.id})}}
+                  style={{flex:'1 1 auto',minWidth:56,padding:'4px 6px',borderRadius:6,
+                    border:`1.5px solid ${status===s.id?s.color:'rgba(255,255,255,.15)'}`,
+                    background:status===s.id?s.color+'33':'rgba(255,255,255,.05)',
+                    cursor:'pointer',display:'flex',alignItems:'center',gap:4,justifyContent:'center',
+                    transition:'all .12s'}}>
+                  <span style={{width:6,height:6,borderRadius:'50%',background:s.color,
+                    display:'inline-block',flexShrink:0}}/>
+                  <span style={{fontSize:'0.62rem',fontWeight:700,
+                    color:status===s.id?s.color:'rgba(255,255,255,.5)'}}>{s.label}</span>
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Wallet + Level/XP row */}
+          {/* ── WALLET + LEVEL row ── */}
           {!me?.isGuest&&(
-            <div style={{display:'flex',gap:6,padding:'8px 12px',borderBottom:'1px solid #2d3555'}}>
-              <div style={{flex:1,background:'#111827',borderRadius:8,padding:'6px 10px',display:'flex',alignItems:'center',gap:6}}>
-                <img src="/default_images/icons/gold.svg" alt="" style={{width:18,height:18,objectFit:'contain',flexShrink:0}} onError={e=>{e.target.outerHTML="<span style='font-size:16px'>🪙</span>"}}/>
+            <div style={{display:'flex',gap:0,borderBottom:'1px solid #2d3555'}}>
+              <div style={{flex:1,padding:'8px 12px',display:'flex',alignItems:'center',gap:7,
+                borderRight:'1px solid #2d3555'}}>
+                <img src="/default_images/icons/gold.svg" alt=""
+                  style={{width:18,height:18,objectFit:'contain',flexShrink:0}}
+                  onError={e=>{e.target.outerHTML="<span style='font-size:15px'>🪙</span>"}}/>
                 <div>
-                  <div style={{fontSize:'0.52rem',color:'#9ca3af',fontWeight:700,textTransform:'uppercase',letterSpacing:.3}}>Wallet</div>
-                  <div style={{fontSize:'0.8rem',fontWeight:800,color:'#fbbf24'}}>{me?.gold||0} Gold</div>
+                  <div style={{fontSize:'0.5rem',color:'#9ca3af',fontWeight:700,textTransform:'uppercase',letterSpacing:.3}}>Gold</div>
+                  <div style={{fontSize:'0.82rem',fontWeight:800,color:'#fbbf24'}}>{me?.gold||0}</div>
                 </div>
               </div>
-              <div style={{flex:1,background:'#111827',borderRadius:8,padding:'6px 10px',display:'flex',alignItems:'center',gap:6}}>
-                <div style={{display:'flex',flexDirection:'column',gap:2,alignItems:'center',flexShrink:0}}>
-                  <img src="/default_images/icons/level.svg" alt="" style={{width:14,height:14,objectFit:'contain'}} onError={e=>{e.target.outerHTML="<span style='font-size:12px'>🏆</span>"}}/>
-                  <img src="/default_images/icons/xp.svg" alt="" style={{width:13,height:13,objectFit:'contain'}} onError={e=>{e.target.outerHTML="<span style='font-size:11px'>⭐</span>"}}/>
-                </div>
+              <div style={{flex:1,padding:'8px 12px',display:'flex',alignItems:'center',gap:7}}>
+                <img src="/default_images/icons/level.svg" alt=""
+                  style={{width:18,height:18,objectFit:'contain',flexShrink:0}}
+                  onError={e=>{e.target.outerHTML="<span style='font-size:15px'>🏆</span>"}}/>
                 <div>
-                  <div style={{fontSize:'0.52rem',color:'#9ca3af',fontWeight:700,textTransform:'uppercase',letterSpacing:.3}}>Level {me?.level||1}</div>
-                  <div style={{fontSize:'0.8rem',fontWeight:800,color:'#a78bfa'}}>{me?.xp||0} XP</div>
+                  <div style={{fontSize:'0.5rem',color:'#9ca3af',fontWeight:700,textTransform:'uppercase',letterSpacing:.3}}>Level</div>
+                  <div style={{fontSize:'0.82rem',fontWeight:800,color:'#a78bfa'}}>{me?.level||1}</div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Menu */}
+          {/* ── MENU ITEMS (CodyChatPHP section_tmmenu + section_bmmenu) ── */}
           <div>
-            {[
-              {icon:'fa-solid fa-address-card',            label:'My Profile',   color:'#a78bfa',fn:()=>{onOpenProfile?.();setOpen(false)}},
-              {icon:'fa-solid fa-user-gear', label:'Chat Options', chevron:true, color:'#60a5fa',fn:()=>{onOpenSettings?.();setOpen(false)}},
-              ...(isStaffRole?[{icon:'fa-solid fa-gauge',label:'Admin Panel',color:'#f59e0b',fn:()=>{window.location.href='/admin'}}]:[]),
-            ].map(item=>(
-              <button key={item.label} onClick={item.fn}
-                style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'10px 14px',background:'none',border:'none',borderBottom:'1px solid #2d3555',cursor:'pointer',textAlign:'left',transition:'background .12s'}}
-                onMouseEnter={e=>e.currentTarget.style.background='#2d3555'}
-                onMouseLeave={e=>e.currentTarget.style.background='none'}>
-                <i className={`${item.icon}`} style={{fontSize:14,color:item.color,width:18,textAlign:'center',flexShrink:0}}/>
-                <span style={{fontSize:'0.84rem',fontWeight:600,color:'#e2e8f0',flex:1}}>{item.label}</span>
-                {item.chevron&&<i className="fa-solid fa-angle-right" style={{fontSize:11,color:'#6b7280',flexShrink:0}}/>}
-              </button>
-            ))}
-          </div>
-
-          {/* Status */}
-          <div style={{padding:'8px 10px',borderTop:'1px solid #2d3555',borderBottom:'1px solid #2d3555',display:'flex',gap:5,flexWrap:'wrap'}}>
-            {STATUSES.map(s=>(
-              <button key={s.id} onClick={()=>{setStatus(s.id);socket?.emit('updateStatus',{status:s.id});setOpen(false)}}
-                style={{flex:'1 1 auto',minWidth:60,padding:'5px 8px',borderRadius:6,border:`1.5px solid ${status===s.id?s.color:'#2d3555'}`,background:status===s.id?s.color+'22':'none',cursor:'pointer',display:'flex',alignItems:'center',gap:5,justifyContent:'center'}}>
-                <span style={{width:7,height:7,borderRadius:'50%',background:s.color,display:'inline-block',flexShrink:0}}/>
-                <span style={{fontSize:'0.65rem',fontWeight:700,color:status===s.id?s.color:'#9ca3af'}}>{s.label}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Leave + Logout */}
-          <div>
-            <button onClick={()=>{onLeave();setOpen(false)}}
-              style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'10px 14px',background:'none',border:'none',borderBottom:'1px solid #2d3555',cursor:'pointer',textAlign:'left'}}
-              onMouseEnter={e=>e.currentTarget.style.background='#2d3555'} onMouseLeave={e=>e.currentTarget.style.background='none'}>
-              <i className="fa-solid fa-circle-left" style={{fontSize:14,color:'#60a5fa',width:18,textAlign:'center'}}/>
-              <span style={{fontSize:'0.84rem',fontWeight:600,color:'#e2e8f0'}}>Leave Room</span>
-            </button>
-            <button onClick={()=>{const t=localStorage.getItem('cgz_token');if(t)fetch(`${API}/api/auth/logout`,{method:'POST',headers:{Authorization:`Bearer ${t}`}}).catch(()=>{});localStorage.removeItem('cgz_token');nav('/login')}}
-              style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'10px 14px',background:'none',border:'none',cursor:'pointer',textAlign:'left'}}
-              onMouseEnter={e=>e.currentTarget.style.background='rgba(239,68,68,.12)'} onMouseLeave={e=>e.currentTarget.style.background='none'}>
-              <i className="fa-solid fa-right-from-bracket" style={{fontSize:14,color:'#f87171',width:18,textAlign:'center'}}/>
-              <span style={{fontSize:'0.84rem',fontWeight:600,color:'#f87171'}}>Logout</span>
+            <MenuItem icon="fa-solid fa-address-card"    label="My Profile"   color="#a78bfa" fn={()=>{onOpenProfile?.();setOpen(false)}}/>
+            <MenuItem icon="fa-solid fa-user-gear"        label="Chat Options" color="#60a5fa" chevron fn={()=>{onOpenSettings?.();setOpen(false)}}/>
+            {isAdminRole&&(
+              <MenuItem icon="fa-solid fa-gauge-high" label="Admin Panel" color="#f59e0b" fn={()=>{nav('/admin');setOpen(false)}}/>
+            )}
+            <MenuItem icon="fa-solid fa-circle-left"  label="Leave Room"  color="#64748b" fn={()=>{onLeave();setOpen(false)}}/>
+            <button
+              onClick={()=>{
+                const t=localStorage.getItem('cgz_token')
+                if(t)fetch(`${API}/api/auth/logout`,{method:'POST',headers:{Authorization:`Bearer ${t}`}}).catch(()=>{})
+                localStorage.removeItem('cgz_token');nav('/login')
+              }}
+              style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'9px 14px',
+                background:'none',border:'none',cursor:'pointer',textAlign:'left',transition:'background .12s'}}
+              onMouseEnter={e=>e.currentTarget.style.background='rgba(239,68,68,.12)'}
+              onMouseLeave={e=>e.currentTarget.style.background='none'}>
+              <i className="fa-solid fa-right-from-bracket" style={{fontSize:14,color:'#f87171',width:18,textAlign:'center',flexShrink:0}}/>
+              <span style={{fontSize:'0.84rem',fontWeight:600,color:'#f87171',flex:1}}>Logout</span>
             </button>
           </div>
         </div>
