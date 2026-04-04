@@ -4,7 +4,7 @@ import Header from '../components/Header.jsx'
 import Footer from '../components/Footer.jsx'
 import ScrollToTop from '../components/ScrollToTop.jsx'
 
-const API = import.meta.env.VITE_API_URL || 'https://chatsgenz-backend-production.up.railway.app'
+import { API_URL as API } from '../siteConfig'
 
 export default function VerifyEmail() {
   const [params] = useSearchParams()
@@ -46,7 +46,7 @@ export default function VerifyEmail() {
                 Your ChatsGenZ account is now fully activated. You can now login and start chatting, earning ranks, and enjoying all features.
               </p>
               <Link to="/login" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 28px', borderRadius: 10, background: 'linear-gradient(135deg,#1a73e8,#1557b0)', color: '#fff', fontWeight: 800, fontSize: '0.95rem', fontFamily: 'Outfit,sans-serif', textDecoration: 'none', boxShadow: '0 3px 14px rgba(26,115,232,.35)' }}>
-                <i className="fi fi-sr-sign-in" /> Login Now
+                <i className="fa-solid fa-sign-in" /> Login Now
               </Link>
             </>
           )}
@@ -61,10 +61,10 @@ export default function VerifyEmail() {
               </p>
               <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
                 <Link to="/login" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 22px', borderRadius: 9, background: 'linear-gradient(135deg,#1a73e8,#1557b0)', color: '#fff', fontWeight: 700, fontSize: '0.875rem', fontFamily: 'Outfit,sans-serif', textDecoration: 'none' }}>
-                  <i className="fi fi-sr-sign-in" /> Go to Login
+                  <i className="fa-solid fa-sign-in" /> Go to Login
                 </Link>
                 <Link to="/contact" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 22px', borderRadius: 9, border: '1.5px solid #dadce0', color: '#5f6368', fontWeight: 700, fontSize: '0.875rem', textDecoration: 'none' }}>
-                  <i className="fi fi-sr-envelope" /> Contact Support
+                  <i className="fa-solid fa-envelope" /> Contact Support
                 </Link>
               </div>
             </>
