@@ -7,14 +7,14 @@ export function useToast() {
 }
 
 const ICONS = {
-  success: 'fi-sr-check-circle',
-  error:   'fi-sr-circle-xmark',
-  info:    'fi-sc-bell-ring',
-  warn:    'fi-sr-triangle-warning',
-  gift:    'fi-sr-gift',
-  mention: 'fi-sr-at',
-  join:    'fi-sr-user-add',
-  kick:    'fi-sr-user-slash',
+  success: 'fa-solid fa-circle-check',
+  error:   'fa-solid fa-circle-xmark',
+  info:    'fa-solid fa-bell',
+  warn:    'fa-solid fa-triangle-exclamation',
+  gift:    'fa-solid fa-gift',
+  mention: 'fa-solid fa-at',
+  join:    'fa-solid fa-user-plus',
+  kick:    'fa-solid fa-user-slash',
 }
 
 export function ToastProvider({ children }) {
@@ -40,9 +40,9 @@ export function ToastProvider({ children }) {
             onClick={()=>dismiss(t.id)}
             style={{ cursor:'pointer' }}
           >
-            <i className={`fi ${ICONS[t.type]||ICONS.info}`} style={{ fontSize:16, flexShrink:0 }}/>
+            <i className={`${ICONS[t.type]||ICONS.info}`} style={{ fontSize:16, flexShrink:0 }}/>
             <span style={{ flex:1 }}>{t.msg}</span>
-            <i className="fi fi-sr-cross-small" style={{ fontSize:12, opacity:0.7, flexShrink:0 }}/>
+            <i className="fa-solid fa-xmark" style={{ fontSize:12, opacity:0.7, flexShrink:0 }}/>
           </div>
         ))}
       </div>
