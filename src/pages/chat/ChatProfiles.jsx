@@ -569,7 +569,7 @@ function StaffActionModal({ targetUser, myLevel, myRank, socket, roomId, onClose
 // Appears near the username/avatar — NOT center screen
 // Position: below the element that was clicked (pos.x, pos.y)
 // ─────────────────────────────────────────────────────────────
-function MiniCard({ user, myId, myLevel, pos, socket, roomId, ignoredUsers, onIgnore, onClose, onFull, onGift, tObj, liveCamUsers }) {
+function MiniCard({ user, myId, myLevel, pos, socket, roomId, ignoredUsers, onIgnore, onClose, onFull, onGift, tObj, liveCamUsers, onWhisper }) {
   const [showReport, setShowReport]       = useState(false)
   const [showStaff,  setShowStaff]        = useState(false)
   const [showWallet, setShowWallet]       = useState(false)
@@ -672,7 +672,7 @@ function MiniCard({ user, myId, myLevel, pos, socket, roomId, ignoredUsers, onIg
               <MCBtn icon="fa-solid fa-circle-user" label="View Profile" color={ACC} onClick={()=>{onFull?.();onClose()}} />
               <MCBtn icon="fa-solid fa-user-plus" label="Add Friend" color="#22c55e" onClick={doAddFriend} />
               {isLive && <MCBtn icon="fa-solid fa-video" label="View Cam" color="#ef4444" onClick={onClose} badge="LIVE" />}
-              <MCBtn icon="fa-solid fa-hand-lizard" label="Whisper" color="#7c3aed" onClick={onClose} />
+              <MCBtn icon="fa-solid fa-hand-lizard" label="Whisper" color="#7c3aed" onClick={()=>{onWhisper?.({...user,userId:user._id||user.userId});onClose()}} />
               {/* Actions — red, staff only */}
               {canAct && (
                 <button
@@ -815,7 +815,7 @@ function SelfProfileOverlay({ user, onClose, onUpdated }) {
 // ─────────────────────────────────────────────────────────────
 // PROFILE MODAL (full view of another user)
 // ─────────────────────────────────────────────────────────────
-function ProfileModal({ user, myLevel, myId, socket, roomId, onClose, onGift, ignoredUsers, onIgnore }) {
+function ProfileModal({ user, myLevel, myId, socket, roomId, onClose, onGift, ignoredUsers, onIgnore, onWhisper }) {
   if (!user) return null
   const ri  = R(user.rank)
   const bdr = GBR(user.gender, user.rank)
@@ -842,6 +842,9 @@ function ProfileModal({ user, myLevel, myId, socket, roomId, onClose, onGift, ig
     setIgnored(true); onIgnore?.(uid); onClose()
   }
 
+  // Username color: only from nameColor setting, NOT rank color
+  const usernameColor = resolveNameColor(user.nameColor, '')
+
   return (
     <>
       <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:1000,background:'rgba(0,0,0,.45)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
@@ -856,7 +859,8 @@ function ProfileModal({ user, myLevel, myId, socket, roomId, onClose, onGift, ig
             <img src={user.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{width:72,height:72,borderRadius:'50%',border:`3px solid ${bdr}`,objectFit:'cover',background:'#fff'}} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
           </div>
           <div style={{flex:1,overflowY:'auto',padding:'10px 18px 18px',textAlign:'center'}}>
-            <div style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1.05rem',color:resolveNameColor(user.nameColor,ri.color)||'#111827'}}>{user.username}</div>
+            {/* Username: default text color unless user has set nameColor */}
+            <div style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1.05rem',color:usernameColor||'#111827'}}>{user.username}</div>
             <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:5,margin:'4px 0 12px'}}><RIcon rank={user.rank} size={14}/><span style={{fontSize:'0.75rem',color:ri.color,fontWeight:700}}>{ri.label}</span></div>
             {user.mood&&<p style={{fontSize:'0.8rem',color:'#6b7280',marginBottom:8,fontStyle:'italic'}}>"{user.mood}"</p>}
             {user.about&&<p style={{fontSize:'0.8rem',color:'#6b7280',marginBottom:12,lineHeight:1.5,textAlign:'left'}}>{user.about}</p>}
@@ -871,7 +875,7 @@ function ProfileModal({ user, myLevel, myId, socket, roomId, onClose, onGift, ig
             {!isMe && (
               <div style={{display:'flex',flexWrap:'wrap',gap:6,justifyContent:'center'}}>
                 {[
-                  {icon:'fa-solid fa-envelope',     label:'DM',      color:'#7c3aed', fn:()=>{}},
+                  {icon:'fa-solid fa-hand-lizard',   label:'Whisper',  color:'#7c3aed', fn:()=>{onWhisper?.({...user,userId:user._id||user.userId});onClose()}},
                   {icon:'fa-solid fa-gift',          label:'Gift',    color:'#ec4899', fn:()=>{onGift?.(user);onClose()}},
                   {icon:'fa-solid fa-user-plus',     label:'Friend',  color:'#22c55e', fn:()=>{fetch(`${API}/api/users/friend/${uid}`,{method:'POST',headers:{Authorization:`Bearer ${token}`}}).catch(()=>{});onClose()}},
                   {icon:'fa-solid fa-wallet',        label:'Wallet',  color:'#fbbf24', fn:()=>setShowWallet(true)},
