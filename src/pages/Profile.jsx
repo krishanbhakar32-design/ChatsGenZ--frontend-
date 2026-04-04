@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { API_URL } from '../siteConfig.js'
+import { API_URL } from '../constants.js'
 
 const API = API_URL
 
@@ -88,7 +88,7 @@ export default function Profile() {
       {/* Nav */}
       <div style={{ background: '#fff', borderBottom: '1px solid #e4e6ea', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
         <button onClick={() => nav(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', fontSize: 20, display: 'flex', alignItems: 'center' }}>
-          <i className="fi fi-sr-angle-left" />
+          <i className="fa-solid fa-angle-left" />
         </button>
         <span style={{ fontWeight: 700, color: '#111827', fontFamily: 'Outfit,sans-serif' }}>Profile</span>
       </div>
