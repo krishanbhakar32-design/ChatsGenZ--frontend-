@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 // FIX: trim trailing slash; fall back safely if env var is missing
-const API   = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+const API   = (import.meta.env.VITE_API_URL || 'https://chatsgenz-backend-production.up.railway.app').replace(/\/$/, '');
 // FIX: never returns null — always returns empty string so "Bearer null" is never sent
 const token = () => localStorage.getItem('cgz_token') || '';
 
