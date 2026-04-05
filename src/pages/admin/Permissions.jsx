@@ -21,7 +21,7 @@ import { useState, useEffect, useCallback } from 'react';
 // FIX: Safely read VITE_API_URL — fall back to localhost if env var missing
 const API = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 // FIX: token() always returns a string (never passes "Bearer null" to backend)
-const token = () => localStorage.getItem('token') || '';
+const token = () => localStorage.getItem('cgz_token') || '';
 
 // FIX: apiFetch now handles network errors AND token-missing cases gracefully
 const apiFetch = async (path, opts = {}) => {
