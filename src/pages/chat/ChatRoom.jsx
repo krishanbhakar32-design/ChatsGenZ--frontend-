@@ -38,7 +38,7 @@ import { RadioPanel }                                                    from '.
 import { FriendReqPanel, NotifPanel, DMPanel }                           from './ChatSocial.jsx'
 import { GiftPanel }                                                     from './ChatGifts.jsx'
 import { ChatSettingsOverlay, AvatarDropdown, Footer }                   from './ChatSettings.jsx'
-import { WebcamPanel }                                                   from './ChatWebcam.jsx'
+import { WebcamPanel, LiveCamBar }                                       from './ChatWebcam.jsx'
 import { WhisperBox, WhisperMessage }                                    from './ChatWhisper.jsx'
 
 
@@ -65,6 +65,7 @@ export default function ChatRoom() {
   const [showPaint, setShowPaint]=useState(false)
   const [miniYT, setMiniYT]=useState(null)  // {id,url} minimized YouTube
   const [showCam,   setShowCam]  =useState(false)
+  const [liveCams,  setLiveCams] =useState([])  // [{userId,username,rank}] — users currently live
   const [showDiceAnim,setShowDiceAnim]=useState(false)
   const [diceRollVal, setDiceRollVal] =useState(null)
   const [whisperTarget,setWhisper]=useState(null)
@@ -168,6 +169,10 @@ export default function ChatRoom() {
     s.on('gamePlayed',     ({game,player,won})=>{}) // already handled via systemMessage
     s.on('dailyBonusClaimed',({gold,xp})=>{})
     s.on('onlineCount',    n=>setOnlineCount(n))
+    // ── Webcam events (room-level awareness) ───────────────
+    s.on('camStarted',     ({userId,username,rank})=>setLiveCams(p=>p.find(c=>c.userId===userId)?p:[...p,{userId,username,rank:rank||'user'}]))
+    s.on('camStopped',     ({userId})=>setLiveCams(p=>p.filter(c=>c.userId!==userId)))
+    s.on('camOffer',       ({from,username,hostRank,offer})=>{if(offer==='live')setLiveCams(p=>p.find(c=>c.userId===from)?p:[...p,{userId:from,username,rank:hostRank||'user'}])})
     s.on('privateMessage', m=>{setNotif(p=>({...p,dm:p.dm+1}));Sounds.privateMsg()})
     s.on('giftSent',       ({gift,to})=>{})
     s.on('pmError',        ({error})=>toast?.show(error,'error',4000))
@@ -330,7 +335,18 @@ export default function ChatRoom() {
             </div>
           )}
 
-          {showCam&&<WebcamPanel socket={sockRef.current} roomId={roomId} me={me} onClose={()=>setShowCam(false)}/>}
+          {showCam&&<WebcamPanel socket={sockRef.current} roomId={roomId} me={me} onClose={()=>setShowCam(false)}
+            onStarted={cam=>setLiveCams(p=>p.find(c=>c.userId===cam.userId)?p:[...p,cam])}
+            onStopped={()=>setLiveCams(p=>p.filter(c=>c.userId!==me?._id))}
+          />}
+          <LiveCamBar
+            socket={sockRef.current}
+            roomId={roomId}
+            me={me}
+            liveCams={liveCams}
+            setLiveCams={setLiveCams}
+            onOpenHostPanel={()=>setShowCam(true)}
+          />
           <div style={{flex:1,overflowY:'auto',padding:'6px 0'}}>
             {messages.map((m,i)=>(
               !hiddenMsgs.has(m._id)&&!m._ignored&&!(ignoredUsers.has(m.sender?._id)||ignoredUsers.has(m.sender?.userId))&&<Msg key={m._id||i} msg={m} myId={me?._id} myLevel={myLevel}
