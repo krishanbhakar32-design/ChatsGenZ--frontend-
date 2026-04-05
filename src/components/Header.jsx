@@ -40,6 +40,7 @@ export default function Header() {
       background: '#0f1923',
       borderBottom: '1px solid #1e2d3d',
       boxShadow: '0 2px 12px rgba(0,0,0,.3)',
+      willChange: 'transform', // prevents sticky from breaking inside flex containers
     }}>
 
       {/* ── MOBILE HEADER ─────────────────────────────── */}
