@@ -3,7 +3,7 @@ import { Suspense, lazy } from 'react'
 import ScrollToTop from './components/ScrollToTop.jsx'
 import { ToastProvider } from './components/Toast.jsx'
 
-// Pages
+// ── Core pages ─────────────────────────────────────────────────
 const Home          = lazy(() => import('./pages/Home.jsx'))
 const Login         = lazy(() => import('./pages/Login.jsx'))
 const VerifyEmail   = lazy(() => import('./pages/VerifyEmail.jsx'))
@@ -12,10 +12,16 @@ const ChatLobby     = lazy(() => import('./pages/chat/ChatLobby.jsx'))
 const ChatRoom      = lazy(() => import('./pages/chat/ChatRoom.jsx'))
 const NotFound      = lazy(() => import('./pages/NotFound.jsx'))
 const Kicked        = lazy(() => import('./pages/Kicked.jsx'))
-// Leaderboard and Gifts are embedded inside ChatRoom's left sidebar panel
-// No standalone pages needed
 
-// Info pages
+// ── User pages ─────────────────────────────────────────────────
+// AdminPage wraps AdminPanel — always import AdminPage (not AdminPanel directly)
+const AdminPage     = lazy(() => import('./pages/AdminPage.jsx'))
+const Profile       = lazy(() => import('./pages/Profile.jsx'))
+const Premium       = lazy(() => import('./pages/Premium.jsx'))
+const Gifts         = lazy(() => import('./pages/Gifts.jsx'))
+const Leaderboard   = lazy(() => import('./pages/Leaderboard.jsx'))
+
+// ── Info pages ─────────────────────────────────────────────────
 const About         = lazy(() => import('./pages/info/About.jsx'))
 const Blog          = lazy(() => import('./pages/info/Blog.jsx'))
 const ChatDirectory = lazy(() => import('./pages/info/ChatDirectory.jsx'))
@@ -30,14 +36,7 @@ const Ranks         = lazy(() => import('./pages/info/Ranks.jsx'))
 const RTI           = lazy(() => import('./pages/info/RTI.jsx'))
 const Sitemap       = lazy(() => import('./pages/info/Sitemap.jsx'))
 
-// Admin Panel
-const AdminPanel    = lazy(() => import('./pages/admin/AdminPanel.jsx'))
-const Profile       = lazy(() => import('./pages/Profile.jsx'))
-const Premium       = lazy(() => import('./pages/Premium.jsx'))
-const Gifts         = lazy(() => import('./pages/Gifts.jsx'))
-const Leaderboard   = lazy(() => import('./pages/Leaderboard.jsx'))
-
-// Legal pages
+// ── Legal pages ────────────────────────────────────────────────
 const ChatRules     = lazy(() => import('./pages/legal/ChatRules.jsx'))
 const CookiePolicy  = lazy(() => import('./pages/legal/CookiePolicy.jsx'))
 const DMCA          = lazy(() => import('./pages/legal/DMCA.jsx'))
@@ -48,9 +47,9 @@ const Terms         = lazy(() => import('./pages/legal/Terms.jsx'))
 
 function Loader() {
   return (
-    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#fff' }}>
-      <div style={{ width:36, height:36, border:'3px solid #e8eaed', borderTop:'3px solid #1a73e8', borderRadius:'50%', animation:'spin .8s linear infinite' }} />
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
+      <div style={{ width: 36, height: 36, border: '3px solid #e8eaed', borderTop: '3px solid #1a73e8', borderRadius: '50%', animation: 'spin .8s linear infinite' }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
   )
 }
@@ -61,13 +60,20 @@ export default function App() {
       <ScrollToTop />
       <Suspense fallback={<Loader />}>
         <Routes>
-          {/* Main */}
+          {/* Core */}
           <Route path="/"               element={<Home />} />
           <Route path="/login"          element={<Login />} />
           <Route path="/verify-email"   element={<VerifyEmail />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/chat"           element={<ChatLobby />} />
-          <Route path="/chat/:roomSlug"     element={<ChatRoom />} />
+          <Route path="/chat/:roomSlug" element={<ChatRoom />} />
+
+          {/* User */}
+          <Route path="/admin"              element={<AdminPage />} />
+          <Route path="/profile/:username"  element={<Profile />} />
+          <Route path="/premium"            element={<Premium />} />
+          <Route path="/gifts"              element={<Gifts />} />
+          <Route path="/leaderboard"        element={<Leaderboard />} />
 
           {/* Info */}
           <Route path="/about"          element={<About />} />
@@ -92,15 +98,10 @@ export default function App() {
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/safety"         element={<SafetyTerms />} />
           <Route path="/terms"          element={<Terms />} />
-          <Route path="/admin"              element={<AdminPanel />} />
-          <Route path="/profile/:username" element={<Profile />} />
-          <Route path="/premium"           element={<Premium />} />
-          <Route path="/gifts"             element={<Gifts />} />
-          <Route path="/leaderboard"       element={<Leaderboard />} />
-          {/* 404 */}
-          {/* Leaderboard and Gifts are inside ChatRoom left sidebar */}
-          <Route path="/kicked"         element={<Kicked />} />
-          <Route path="*"               element={<NotFound />} />
+
+          {/* Fallbacks */}
+          <Route path="/kicked" element={<Kicked />} />
+          <Route path="*"       element={<NotFound />} />
         </Routes>
       </Suspense>
     </ToastProvider>
