@@ -429,7 +429,8 @@ function ChatSettingsOverlay({me,onClose,onSaved}){
 // Cover banner + avatar + rank icon + username + edit_profile link
 // Sections: wallet/level, settings, room options, admin, leave/logout
 // ─────────────────────────────────────────────────────────────
-function AvatarDropdown({me,status,setStatus,onLeave,socket,onOpenSettings,onOpenProfile}){\n  const [open,setOpen]=useState(false)
+function AvatarDropdown({me,status,setStatus,onLeave,socket,onOpenSettings,onOpenProfile}){
+  const [open,setOpen]=useState(false)
   const ref=useRef(null)
   const nav=useNavigate()
 
