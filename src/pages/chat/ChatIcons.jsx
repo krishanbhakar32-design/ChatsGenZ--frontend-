@@ -56,7 +56,9 @@ export function HBtn({ icon, faIcon, img, title, badge, active, onClick }) {
 }
 
 // Footer bar button — FontAwesome
-export function FBtn({ icon, faIcon, active, onClick, title, badge }) {
+export function FBtn({ icon, faIcon, active, onClick, title, badge, tObj }) {
+  const accent  = tObj?.accent || '#1a73e8'
+  const inactive = tObj?.text ? tObj.text + '66' : '#9ca3af'
   return (
     <button
       onClick={onClick}
@@ -64,7 +66,7 @@ export function FBtn({ icon, faIcon, active, onClick, title, badge }) {
       style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         gap: 2, padding: '4px 10px', background: 'none', border: 'none', cursor: 'pointer',
-        color: active ? '#1a73e8' : '#9ca3af', position: 'relative', borderRadius: 7,
+        color: active ? accent : inactive, position: 'relative', borderRadius: 7,
         transition: 'color .15s', minWidth: 44,
       }}
     >
