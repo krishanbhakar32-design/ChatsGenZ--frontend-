@@ -1791,8 +1791,16 @@ function MemberProfile({ u, onClose, onAction, setConfirmDialog, onSelectUser })
     }, [u._id, u.ipAddress]);
 
     const doEdit = async (field, val, msg) => {
-      // FIX: uses onAction prop instead of closing over parent's onAction()
-      await onAction(`/users/${u._id}/${field}`, 'PUT', { [field]: val }, msg);
+      // FIX: per-field routes (/users/:id/username, /users/:id/password etc) don't exist → 404
+      // Use PATCH /users/:id for all profile field edits; fall back to PUT if backend needs it.
+      const path = `/users/${u._id}`;
+      const body = { [field]: val };
+      try {
+        await onAction(path, 'PATCH', body, msg);
+      } catch {
+        // onAction swallows errors internally (toast + return), so this catch is a safety net.
+        // If PATCH fails the user already saw the error toast from onAction.
+      }
       setEditField(null);
     };
 
@@ -2051,7 +2059,10 @@ function MemberProfile({ u, onClose, onAction, setConfirmDialog, onSelectUser })
                     <select className="ap-select" value={newGender} onChange={e => setNewGender(e.target.value)}>
                       {['male','female','other','couple'].map(g => <option key={g} value={g}>{g}</option>)}
                     </select>
-                    <button className="ap-btn ap-btn--sm ap-btn--primary" onClick={() => onAction(`/users/${u._id}/gender`, 'PUT', { gender: newGender }, 'Gender updated ✓')}>
+                    <button className="ap-btn ap-btn--sm ap-btn--primary" onClick={() => {
+                      // FIX: /users/:id/gender doesn't exist → PATCH /users/:id
+                      onAction(`/users/${u._id}`, 'PATCH', { gender: newGender }, 'Gender updated ✓');
+                    }}>
                       <i className="fa-solid fa-check" /> Set
                     </button>
                   </div>
