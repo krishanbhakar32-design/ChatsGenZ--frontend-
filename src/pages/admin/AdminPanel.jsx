@@ -8,20 +8,36 @@ import { io } from 'socket.io-client';
 import Permissions, { PERMISSIONS_CSS } from './Permissions.jsx';
 import { PremiumSection, RevenueSection, ThemePermissionsSection, EXTRA_SECTIONS_CSS } from './PremiumRevenue.jsx';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-const token = () => localStorage.getItem('cgz_token');
+const API = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+// FIX: token() never returns null — avoids "Bearer null" being sent to the backend
+const token = () => localStorage.getItem('token') || '';
 
+// FIX: api() now handles network failures and missing token gracefully
 const api = async (path, opts = {}) => {
-  const r = await fetch(`${API}/api/admin${path}`, {
-    headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json', ...opts.headers },
-    ...opts,
-  });
+  const tok = token();
+  if (!tok) throw new Error('Not authenticated — please log in.');
+  let r;
+  try {
+    r = await fetch(`${API}/api/admin${path}`, {
+      headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json', ...opts.headers },
+      ...opts,
+    });
+  } catch {
+    throw new Error('Network error — cannot reach server.');
+  }
   if (!r.ok) {
     const e = await r.json().catch(() => ({}));
-    throw new Error(e.error || 'Request failed');
+    throw new Error(e.error || `Request failed (${r.status})`);
   }
   return r.json();
 };
+
+// ── Safe date formatters ───────────────────────────────────────
+// Prevents crashes from new Date(null) or new Date(undefined) → "Invalid Date"
+const fmtDate = (d, locale = 'en-GB', opts = { day: '2-digit', month: 'short', year: 'numeric' }) =>
+  d ? new Date(d).toLocaleDateString(locale, opts) : '—';
+const fmtDateTime = (d, locale = 'en-GB') =>
+  d ? new Date(d).toLocaleString(locale, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 
 // ── Helpers ────────────────────────────────────────────────────
 const toast = (msg, type = 'success') => {
@@ -125,6 +141,98 @@ function Dashboard({ socket }) {
 }
 
 // ── Users ──────────────────────────────────────────────────────
+// FIX: UserDetail extracted to module level — was previously defined inside Users()
+// which caused it to remount on every render, resetting rank/goldAmt/muteMin/banReason state.
+function UserDetail({ u, onClose, onAction, setConfirmDialog }) {
+  const [rank, setRank] = useState(u.rank);
+  const [goldAmt, setGoldAmt] = useState('');
+  const [muteMin, setMuteMin] = useState(30);
+  const [banReason, setBanReason] = useState('');
+
+  return (
+    <div className="ap-overlay" onClick={onClose}>
+      <div className="ap-drawer" onClick={e => e.stopPropagation()}>
+        <div className="ap-drawer-header">
+          <img src={u.avatar || '/default_images/avatar/default_avatar.png'} className="ap-user-avatar" alt="" />
+          <div>
+            <div className="ap-user-name" style={{ color: rankColor(u.rank) }}>{u.username}</div>
+            <div className="ap-user-meta">{u.email}</div>
+            <div className="ap-badge" style={{ background: rankColor(u.rank) }}>{u.rank}</div>
+          </div>
+          <button className="ap-close-btn" onClick={onClose}><i className="fa-solid fa-xmark" /></button>
+        </div>
+
+        <div className="ap-drawer-body">
+          <div className="ap-detail-grid">
+            <div className="ap-detail-item"><span>Gold</span><strong>{u.gold}</strong></div>
+            <div className="ap-detail-item"><span>Ruby</span><strong>{u.ruby}</strong></div>
+            <div className="ap-detail-item"><span>Level</span><strong>{u.level}</strong></div>
+            <div className="ap-detail-item"><span>XP</span><strong>{u.xp}</strong></div>
+            <div className="ap-detail-item"><span>Gender</span><strong>{u.gender}</strong></div>
+            <div className="ap-detail-item"><span>Country</span><strong>{u.countryCode || '—'}</strong></div>
+            <div className="ap-detail-item"><span>Banned</span><strong style={{ color: u.isBanned ? '#ef4444' : '#22c55e' }}>{u.isBanned ? 'Yes' : 'No'}</strong></div>
+            <div className="ap-detail-item"><span>Online</span><strong style={{ color: u.isOnline ? '#22c55e' : '#888' }}>{u.isOnline ? 'Yes' : 'No'}</strong></div>
+          </div>
+
+          <div className="ap-action-group">
+            <label className="ap-label">Change Rank</label>
+            <div className="ap-row">
+              <select className="ap-select" value={rank} onChange={e => setRank(e.target.value)}>
+                {RANKS.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+              <button className="ap-btn ap-btn--primary ap-btn--sm" onClick={() => onAction(`/users/${u._id}/rank`, 'PUT', { rank }, 'Rank updated')}>Set</button>
+            </div>
+          </div>
+
+          <div className="ap-action-group">
+            <label className="ap-label">Gold Management</label>
+            <div className="ap-row">
+              {/* FIX: goldAmt is now controlled React state — was previously document.getElementById() */}
+              <input className="ap-input" type="number" placeholder="Amount" value={goldAmt} onChange={e => setGoldAmt(e.target.value)} />
+              <button className="ap-btn ap-btn--sm ap-btn--success" onClick={() => onAction(`/users/${u._id}/gold`, 'PUT', { amount: goldAmt, action: 'add' }, 'Gold added')}>+Add</button>
+              <button className="ap-btn ap-btn--sm ap-btn--danger" onClick={() => onAction(`/users/${u._id}/gold`, 'PUT', { amount: goldAmt, action: 'remove' }, 'Gold removed')}>−Remove</button>
+            </div>
+          </div>
+
+          <div className="ap-action-group">
+            <label className="ap-label">Mute User</label>
+            <div className="ap-row">
+              <input className="ap-input" type="number" placeholder="Minutes" value={muteMin} onChange={e => setMuteMin(e.target.value)} />
+              {u.isMuted
+                ? <button className="ap-btn ap-btn--sm ap-btn--success" onClick={() => onAction(`/users/${u._id}/unmute`, 'PUT', {}, 'Unmuted')}>Unmute</button>
+                : <button className="ap-btn ap-btn--sm ap-btn--warning" onClick={() => onAction(`/users/${u._id}/mute`, 'PUT', { minutes: muteMin }, `Muted ${muteMin}min`)}>Mute</button>
+              }
+            </div>
+          </div>
+
+          <div className="ap-action-group">
+            <label className="ap-label">Ban User</label>
+            <div className="ap-row">
+              <input className="ap-input" placeholder="Reason" value={banReason} onChange={e => setBanReason(e.target.value)} />
+              {u.isBanned
+                ? <button className="ap-btn ap-btn--sm ap-btn--success" onClick={() => onAction(`/users/${u._id}/unban`, 'PUT', {}, 'Unbanned')}>Unban</button>
+                : <button className="ap-btn ap-btn--sm ap-btn--danger" onClick={() => setConfirmDialog({ msg: `Ban ${u.username}?`, cb: () => onAction(`/users/${u._id}/ban`, 'PUT', { reason: banReason || 'Rule violation' }, 'Banned') })}>Ban</button>
+              }
+            </div>
+          </div>
+
+          <div className="ap-action-row">
+            <button className="ap-btn ap-btn--sm ap-btn--ghost" onClick={() => onAction(`/users/${u._id}/kick`, 'POST', { reason: 'Kicked by admin' }, 'Kicked')}>
+              <i className="fa-solid fa-person-walking-arrow-right" /> Kick
+            </button>
+            <button className="ap-btn ap-btn--sm ap-btn--ghost" onClick={() => onAction(`/users/${u._id}/warn`, 'POST', { message: 'Warning from admin' }, 'Warned')}>
+              <i className="fa-solid fa-triangle-exclamation" /> Warn
+            </button>
+            <button className="ap-btn ap-btn--sm ap-btn--ghost" onClick={() => onAction(`/users/${u._id}/ghost`, 'PUT', {}, 'Ghost toggled')}>
+              <i className="fa-solid fa-ghost" /> {u.isGhosted ? 'Unghost' : 'Ghost'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Users() {
   const [users, setUsers] = useState([]);
   const [total, setTotal] = useState(0);
@@ -135,11 +243,25 @@ function Users() {
   const [bannedFilter, setBannedFilter] = useState('');
   const [selected, setSelected] = useState(null);
   const [confirm, setConfirm] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const searchRef = useRef();
 
-  const load = useCallback(() => {
-    const p = new URLSearchParams({ page, limit: 30, search, rank: rankFilter, banned: bannedFilter });
-    api(`/users?${p}`).then(d => { setUsers(d.users); setTotal(d.total); setPages(d.pages); }).catch(() => {});
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const p = new URLSearchParams({ page, limit: 30, search, rank: rankFilter, banned: bannedFilter });
+      const d = await api(`/users?${p}`);
+      setUsers(d.users || []);
+      setTotal(d.total || 0);
+      setPages(d.pages || 1);
+    } catch (e) {
+      setError(e.message);
+      toast(e.message, 'error');
+    } finally {
+      setLoading(false);
+    }
   }, [page, search, rankFilter, bannedFilter]);
 
   useEffect(() => { load(); }, [load]);
@@ -147,95 +269,6 @@ function Users() {
   const action = async (url, method, body, msg) => {
     try { await api(url, { method, body: JSON.stringify(body) }); toast(msg); load(); if (selected) setSelected(null); }
     catch (e) { toast(e.message, 'error'); }
-  };
-
-  const UserDetail = ({ u }) => {
-    const [rank, setRank] = useState(u.rank);
-    const [goldAmt, setGoldAmt] = useState('');
-    const [muteMin, setMuteMin] = useState(30);
-    const [banReason, setBanReason] = useState('');
-
-    return (
-      <div className="ap-overlay" onClick={() => setSelected(null)}>
-        <div className="ap-drawer" onClick={e => e.stopPropagation()}>
-          <div className="ap-drawer-header">
-            <img src={u.avatar || '/default_images/avatar/default_avatar.png'} className="ap-user-avatar" alt="" />
-            <div>
-              <div className="ap-user-name" style={{ color: rankColor(u.rank) }}>{u.username}</div>
-              <div className="ap-user-meta">{u.email}</div>
-              <div className="ap-badge" style={{ background: rankColor(u.rank) }}>{u.rank}</div>
-            </div>
-            <button className="ap-close-btn" onClick={() => setSelected(null)}><i className="fa-solid fa-xmark" /></button>
-          </div>
-
-          <div className="ap-drawer-body">
-            <div className="ap-detail-grid">
-              <div className="ap-detail-item"><span>Gold</span><strong>{u.gold}</strong></div>
-              <div className="ap-detail-item"><span>Ruby</span><strong>{u.ruby}</strong></div>
-              <div className="ap-detail-item"><span>Level</span><strong>{u.level}</strong></div>
-              <div className="ap-detail-item"><span>XP</span><strong>{u.xp}</strong></div>
-              <div className="ap-detail-item"><span>Gender</span><strong>{u.gender}</strong></div>
-              <div className="ap-detail-item"><span>Country</span><strong>{u.countryCode || '—'}</strong></div>
-              <div className="ap-detail-item"><span>Banned</span><strong style={{ color: u.isBanned ? '#ef4444' : '#22c55e' }}>{u.isBanned ? 'Yes' : 'No'}</strong></div>
-              <div className="ap-detail-item"><span>Online</span><strong style={{ color: u.isOnline ? '#22c55e' : '#888' }}>{u.isOnline ? 'Yes' : 'No'}</strong></div>
-            </div>
-
-            <div className="ap-action-group">
-              <label className="ap-label">Change Rank</label>
-              <div className="ap-row">
-                <select className="ap-select" value={rank} onChange={e => setRank(e.target.value)}>
-                  {RANKS.map(r => <option key={r} value={r}>{r}</option>)}
-                </select>
-                <button className="ap-btn ap-btn--primary ap-btn--sm" onClick={() => action(`/users/${u._id}/rank`, 'PUT', { rank }, 'Rank updated')}>Set</button>
-              </div>
-            </div>
-
-            <div className="ap-action-group">
-              <label className="ap-label">Gold Management</label>
-              <div className="ap-row">
-                <input className="ap-input" type="number" placeholder="Amount" value={goldAmt} onChange={e => setGoldAmt(e.target.value)} />
-                <button className="ap-btn ap-btn--sm ap-btn--success" onClick={() => action(`/users/${u._id}/gold`, 'PUT', { amount: goldAmt, action: 'add' }, 'Gold added')}>+Add</button>
-                <button className="ap-btn ap-btn--sm ap-btn--danger" onClick={() => action(`/users/${u._id}/gold`, 'PUT', { amount: goldAmt, action: 'remove' }, 'Gold removed')}>−Remove</button>
-              </div>
-            </div>
-
-            <div className="ap-action-group">
-              <label className="ap-label">Mute User</label>
-              <div className="ap-row">
-                <input className="ap-input" type="number" placeholder="Minutes" value={muteMin} onChange={e => setMuteMin(e.target.value)} />
-                {u.isMuted
-                  ? <button className="ap-btn ap-btn--sm ap-btn--success" onClick={() => action(`/users/${u._id}/unmute`, 'PUT', {}, 'Unmuted')}>Unmute</button>
-                  : <button className="ap-btn ap-btn--sm ap-btn--warning" onClick={() => action(`/users/${u._id}/mute`, 'PUT', { minutes: muteMin }, `Muted ${muteMin}min`)}>Mute</button>
-                }
-              </div>
-            </div>
-
-            <div className="ap-action-group">
-              <label className="ap-label">Ban User</label>
-              <div className="ap-row">
-                <input className="ap-input" placeholder="Reason" value={banReason} onChange={e => setBanReason(e.target.value)} />
-                {u.isBanned
-                  ? <button className="ap-btn ap-btn--sm ap-btn--success" onClick={() => action(`/users/${u._id}/unban`, 'PUT', {}, 'Unbanned')}>Unban</button>
-                  : <button className="ap-btn ap-btn--sm ap-btn--danger" onClick={() => setConfirm({ msg: `Ban ${u.username}?`, cb: () => action(`/users/${u._id}/ban`, 'PUT', { reason: banReason || 'Rule violation' }, 'Banned') })}>Ban</button>
-                }
-              </div>
-            </div>
-
-            <div className="ap-action-row">
-              <button className="ap-btn ap-btn--sm ap-btn--ghost" onClick={() => action(`/users/${u._id}/kick`, 'POST', { reason: 'Kicked by admin' }, 'Kicked')}>
-                <i className="fa-solid fa-person-walking-arrow-right" /> Kick
-              </button>
-              <button className="ap-btn ap-btn--sm ap-btn--ghost" onClick={() => action(`/users/${u._id}/warn`, 'POST', { message: 'Warning from admin' }, 'Warned')}>
-                <i className="fa-solid fa-triangle-exclamation" /> Warn
-              </button>
-              <button className="ap-btn ap-btn--sm ap-btn--ghost" onClick={() => action(`/users/${u._id}/ghost`, 'PUT', {}, 'Ghost toggled')}>
-                <i className="fa-solid fa-ghost" /> {u.isGhosted ? 'Unghost' : 'Ghost'}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
   };
 
   return (
@@ -263,7 +296,7 @@ function Users() {
               <tr key={u._id} className={u.isBanned ? 'ap-row--banned' : ''}>
                 <td>
                   <div className="ap-user-cell">
-                    <img src={u.avatar || '/default_images/avatar/default_avatar.png'} className="ap-table-avatar" alt="" />
+                    <img src={u.avatar || '/default_images/avatar/default_avatar.png'} className="ap-table-avatar" alt="" onError={e => { e.target.src='/default_images/avatar/default_avatar.png'; }} />
                     <div>
                       <div className="ap-user-cell-name">{u.username}</div>
                       <div className="ap-user-cell-email">{u.email}</div>
@@ -279,6 +312,9 @@ function Users() {
                 <td><button className="ap-btn ap-btn--xs ap-btn--ghost" onClick={() => setSelected(u)}><i className="fa-solid fa-pen-to-square" /></button></td>
               </tr>
             ))}
+            {users.length === 0 && (
+              <tr><td colSpan={4} className="ap-empty">No users found</td></tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -289,7 +325,7 @@ function Users() {
         <button className="ap-btn ap-btn--xs ap-btn--ghost" disabled={page >= pages} onClick={() => setPage(p => p + 1)}><i className="fa-solid fa-chevron-right" /></button>
       </div>
 
-      {selected && <UserDetail u={selected} />}
+      {selected && <UserDetail u={selected} onClose={() => setSelected(null)} onAction={action} setConfirmDialog={setConfirm} />}
       {confirm && <Confirm msg={confirm.msg} onYes={() => { confirm.cb(); setConfirm(null); }} onNo={() => setConfirm(null)} />}
     </div>
   );
@@ -424,7 +460,7 @@ function ReportCard({ r, onAction, onExpand, expanded }) {
 
         {/* Date */}
         <span className="rpt-date">
-          <i className="fa-regular fa-clock" /> {new Date(r.createdAt).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })}
+          <i className="fa-regular fa-clock" /> {fmtDate(r.createdAt)}
         </span>
 
         <i className={`fa-solid fa-chevron-${expanded ? 'up' : 'down'} rpt-chevron`} />
@@ -482,7 +518,7 @@ function ReportCard({ r, onAction, onExpand, expanded }) {
               <span style={{ color: sm.color, fontWeight: 700 }}>Action taken: {sm.label}</span>
               {r.resolvedAt && (
                 <span className="rpt-res-date">
-                  {new Date(r.resolvedAt).toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })}
+                  {fmtDateTime(r.resolvedAt)}
                 </span>
               )}
             </div>
@@ -530,10 +566,10 @@ function Reports() {
       ]);
       setPending(pRes.reports  || []);
       setPTotal(pRes.total     || 0);
-      // "actioned" = everything except pending
+      // "actioned" = everything except pending — count from filtered results directly
       const done = (aRes.reports || []).filter(r => r.status !== 'pending');
       setActioned(done);
-      setATotal(aRes.total - (pRes.total || 0));
+      setATotal(done.length); // use actual filtered count, not unreliable subtraction
     } catch { toast('Failed to load reports', 'error'); }
     finally { setLoading(false); }
   }, [pPage, aPage]);
@@ -686,8 +722,8 @@ function Reports() {
             <button className="ap-btn ap-btn--xs ap-btn--ghost" disabled={aPage <= 1} onClick={() => setAPage(p => p - 1)}>
               <i className="fa-solid fa-chevron-left" />
             </button>
-            <span>Page {aPage}</span>
-            <button className="ap-btn ap-btn--xs ap-btn--ghost" onClick={() => setAPage(p => p + 1)}>
+            <span>Page {aPage} of {Math.ceil(aTotal / LIMIT)}</span>
+            <button className="ap-btn ap-btn--xs ap-btn--ghost" disabled={aPage >= Math.ceil(aTotal / LIMIT)} onClick={() => setAPage(p => p + 1)}>
               <i className="fa-solid fa-chevron-right" />
             </button>
           </div>
@@ -1307,7 +1343,7 @@ function WordFilters() {
                       )}
                       {f.isRegex && <span style={{ fontSize:10, background:'#8b5cf622', color:'#8b5cf6', border:'1px solid #8b5cf644', borderRadius:4, padding:'1px 5px' }}>REGEX</span>}
                     </div>
-                    <span className="ap-muted" style={{ fontSize:11 }}>{new Date(f.createdAt).toLocaleString()}</span>
+                    <span className="ap-muted" style={{ fontSize:11 }}>{fmtDateTime(f.createdAt)}</span>
                   </div>
                   <div style={{ display:'flex', gap:6 }}>
                     <button className="ap-btn ap-btn--xs ap-btn--ghost" onClick={() => { setEditingFilter(f._id); setEditForm({ word:f.word, action:f.action, replacement:f.replacement, duration:f.duration||0 }); }}>
@@ -1348,7 +1384,7 @@ function WordFilters() {
                   {f.isRegex && <span style={{ fontSize:10, background:'#8b5cf622', color:'#8b5cf6', border:'1px solid #8b5cf644', borderRadius:4, padding:'1px 5px' }}>REGEX</span>}
                   {f.reason && <span className="ap-muted" style={{ fontSize:11 }}>— {f.reason}</span>}
                 </div>
-                <span className="ap-muted" style={{ fontSize:11 }}>{new Date(f.createdAt).toLocaleString()}</span>
+                <span className="ap-muted" style={{ fontSize:11 }}>{fmtDateTime(f.createdAt)}</span>
               </div>
               <button className="ap-btn ap-btn--xs ap-btn--danger" onClick={() => setConfirm({ msg:`Remove email filter "${f.pattern}"?`, cb: () => delEmail(f._id) })}><i className="fa-solid fa-trash" /></button>
             </div>
@@ -1380,7 +1416,7 @@ function WordFilters() {
                   {f.isRegex && <span style={{ fontSize:10, background:'#8b5cf622', color:'#8b5cf6', border:'1px solid #8b5cf644', borderRadius:4, padding:'1px 5px' }}>REGEX</span>}
                   {f.reason && <span className="ap-muted" style={{ fontSize:11 }}>— {f.reason}</span>}
                 </div>
-                <span className="ap-muted" style={{ fontSize:11 }}>{new Date(f.createdAt).toLocaleString()}</span>
+                <span className="ap-muted" style={{ fontSize:11 }}>{fmtDateTime(f.createdAt)}</span>
               </div>
               <button className="ap-btn ap-btn--xs ap-btn--danger" onClick={() => setConfirm({ msg:`Remove username filter "${f.pattern}"?`, cb: () => delUname(f._id) })}><i className="fa-solid fa-trash" /></button>
             </div>
@@ -1683,8 +1719,8 @@ function ActionLogs() {
 
               {/* Timestamp */}
               <div style={{ fontSize:10, color:'#4b5563', whiteSpace:'nowrap', textAlign:'right', lineHeight:1.4 }}>
-                <div>{new Date(l.createdAt).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })}</div>
-                <div style={{ marginTop:1 }}>{new Date(l.createdAt).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })}</div>
+                <div>{fmtDate(l.createdAt)}</div>
+                <div style={{ marginTop:1 }}>{fmtDate(l.createdAt, 'en-GB', { hour:'2-digit', minute:'2-digit' })}</div>
               </div>
             </div>
           );
@@ -1712,64 +1748,34 @@ function ActionLogs() {
 // action fields, and complete profile drawer
 // ══════════════════════════════════════════════════════════════
 
-function Members() {
-  const [users, setUsers] = React.useState([]);
-  const [total, setTotal] = React.useState(0);
-  const [pages, setPages] = React.useState(1);
-  const [page, setPage] = React.useState(1);
-  const [search, setSearch] = React.useState('');
-  const [rankFilter, setRankFilter] = React.useState('');
-  const [genderFilter, setGenderFilter] = React.useState('');
-  const [actionFilter, setActionFilter] = React.useState('');
-  const [selected, setSelected] = React.useState(null);
-  const [confirm, setConfirm] = React.useState(null);
-  const searchRef = React.useRef();
+// ── Helpers shared between Members() and MemberProfile ────────
+const _genderIcon = g => {
+  if (g === 'male') return 'fa-mars';
+  if (g === 'female') return 'fa-venus';
+  if (g === 'couple') return 'fa-heart';
+  return 'fa-genderless';
+};
+const _genderColor = g => {
+  if (g === 'male') return '#4488FF';
+  if (g === 'female') return '#FF4488';
+  if (g === 'couple') return '#FF88CC';
+  return '#888';
+};
 
-  const load = React.useCallback(() => {
-    const p = new URLSearchParams({ page, limit: 30, search, rank: rankFilter, gender: genderFilter });
-    if (actionFilter === 'banned') p.set('banned', 'true');
-    else if (actionFilter === 'muted') p.set('muted', 'true');
-    else if (actionFilter === 'ghosted') p.set('ghosted', 'true');
-    api(`/users?${p}`).then(d => { setUsers(d.users); setTotal(d.total); setPages(d.pages); }).catch(() => {});
-  }, [page, search, rankFilter, genderFilter, actionFilter]);
-
-  React.useEffect(() => { load(); }, [load]);
-
-  const action = async (url, method, body, msg) => {
-    try {
-      await api(url, { method, body: JSON.stringify(body) });
-      toast(msg);
-      load();
-      if (selected) setSelected(s => ({ ...s, ...body }));
-    } catch (e) { toast(e.message, 'error'); }
-  };
-
-  const genderIcon = g => {
-    if (g === 'male') return 'fa-mars';
-    if (g === 'female') return 'fa-venus';
-    if (g === 'couple') return 'fa-heart';
-    return 'fa-genderless';
-  };
-  const genderColor = g => {
-    if (g === 'male') return '#4488FF';
-    if (g === 'female') return '#FF4488';
-    if (g === 'couple') return '#FF88CC';
-    return '#888';
-  };
-
-  // ── PROFILE DRAWER ─────────────────────────────────────────
-  const MemberProfile = ({ u, onClose }) => {
-    const [tab, setTab] = React.useState('bio');
-    const [editField, setEditField] = React.useState(null);
-    const [editVal, setEditVal] = React.useState('');
-    const [newRank, setNewRank] = React.useState(u.rank);
-    const [newGender, setNewGender] = React.useState(u.gender || 'other');
-    const [muteMin, setMuteMin] = React.useState(30);
-    const [banReason, setBanReason] = React.useState('');
-    const [ipDetails, setIpDetails] = React.useState(null);
-    const [sameIpUsers, setSameIpUsers] = React.useState([]);
-    const [oldNames, setOldNames] = React.useState([]);
-    const [loadingIp, setLoadingIp] = React.useState(false);
+// FIX: MemberProfile extracted to module level — was defined inside Members() as a const arrow,
+// causing full remount + state reset every time Members() re-rendered (e.g. on every data fetch).
+function MemberProfile({ u, onClose, onAction, setConfirmDialog, onSelectUser }) {
+  const [tab, setTab] = React.useState('bio');
+  const [editField, setEditField] = React.useState(null);
+  const [editVal, setEditVal] = React.useState('');
+  const [newRank, setNewRank] = React.useState(u.rank);
+  const [newGender, setNewGender] = React.useState(u.gender || 'other');
+  const [muteMin, setMuteMin] = React.useState(30);
+  const [banReason, setBanReason] = React.useState('');
+  const [ipDetails, setIpDetails] = React.useState(null);
+  const [sameIpUsers, setSameIpUsers] = React.useState([]);
+  const [oldNames, setOldNames] = React.useState([]);
+  const [loadingIp, setLoadingIp] = React.useState(false);
 
     React.useEffect(() => {
       // Load same-IP accounts
@@ -1785,7 +1791,8 @@ function Members() {
     }, [u._id, u.ipAddress]);
 
     const doEdit = async (field, val, msg) => {
-      await action(`/users/${u._id}/${field}`, 'PUT', { [field]: val }, msg);
+      // FIX: uses onAction prop instead of closing over parent's onAction()
+      await onAction(`/users/${u._id}/${field}`, 'PUT', { [field]: val }, msg);
       setEditField(null);
     };
 
@@ -1833,8 +1840,8 @@ function Members() {
                 <span className="mem-badge" style={{ background: rankColor(u.rank) + '22', color: rankColor(u.rank), border: `1px solid ${rankColor(u.rank)}44` }}>
                   {u.rank}
                 </span>
-                <span className="mem-badge" style={{ background: genderColor(u.gender) + '22', color: genderColor(u.gender) }}>
-                  <i className={`fa-solid ${genderIcon(u.gender)}`} /> {u.gender || 'other'}
+                <span className="mem-badge" style={{ background: _genderColor(u.gender) + '22', color: _genderColor(u.gender) }}>
+                  <i className={`fa-solid ${_genderIcon(u.gender)}`} /> {u.gender || 'other'}
                 </span>
                 {u.isBanned && <span className="mem-badge mem-badge--danger"><i className="fa-solid fa-ban" /> Banned</span>}
                 {u.isMuted  && <span className="mem-badge mem-badge--warn"><i className="fa-solid fa-microphone-slash" /> Muted</span>}
@@ -1860,13 +1867,13 @@ function Members() {
                 {[
                   { icon: 'fa-envelope',      label: 'Email',       val: u.email },
                   { icon: 'fa-id-badge',       label: 'User ID',     val: u._id },
-                  { icon: 'fa-venus-mars',     label: 'Gender',      val: u.gender || 'other', color: genderColor(u.gender) },
-                  { icon: 'fa-cake-candles',   label: 'Age / DOB',   val: u.dob ? new Date(u.dob).toLocaleDateString() : '—' },
+                  { icon: 'fa-venus-mars',     label: 'Gender',      val: u.gender || 'other', color: _genderColor(u.gender) },
+                  { icon: 'fa-cake-candles',   label: 'Age / DOB',   val: fmtDate(u.dob) },
                   { icon: 'fa-globe',          label: 'Country',     val: u.country || '—' },
                   { icon: 'fa-language',       label: 'Language',    val: u.language || '—' },
                   { icon: 'fa-house',          label: 'Current Room',val: u.currentRoom || '—' },
-                  { icon: 'fa-calendar-plus',  label: 'Joined',      val: u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '—' },
-                  { icon: 'fa-clock-rotate-left', label: 'Last Seen',val: u.lastSeen ? new Date(u.lastSeen).toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—' },
+                  { icon: 'fa-calendar-plus',  label: 'Joined',      val: fmtDate(u.createdAt) },
+                  { icon: 'fa-clock-rotate-left', label: 'Last Seen',val: fmtDateTime(u.lastSeen) },
                 ].map(row => (
                   <div className="mem-info-row" key={row.label}>
                     <span className="mem-info-label"><i className={`fa-solid ${row.icon}`} /> {row.label}</span>
@@ -1929,8 +1936,8 @@ function Members() {
                     <div className="mem-action-row">
                       <input className="ap-input ap-input--sm" type="number" placeholder="Minutes" value={muteMin} onChange={e => setMuteMin(e.target.value)} style={{ width: 80 }} />
                       {u.isMuted
-                        ? <button className="ap-btn ap-btn--sm ap-btn--success" onClick={() => action(`/users/${u._id}/unmute`, 'PUT', { isMuted: false }, 'Unmuted ✓')}><i className="fa-solid fa-microphone" /> Unmute</button>
-                        : <button className="ap-btn ap-btn--sm ap-btn--warning" onClick={() => action(`/users/${u._id}/mute`, 'PUT', { minutes: muteMin }, `Muted ${muteMin}min ✓`)}><i className="fa-solid fa-microphone-slash" /> Mute</button>
+                        ? <button className="ap-btn ap-btn--sm ap-btn--success" onClick={() => onAction(`/users/${u._id}/unmute`, 'PUT', { isMuted: false }, 'Unmuted ✓')}><i className="fa-solid fa-microphone" /> Unmute</button>
+                        : <button className="ap-btn ap-btn--sm ap-btn--warning" onClick={() => onAction(`/users/${u._id}/mute`, 'PUT', { minutes: muteMin }, `Muted ${muteMin}min ✓`)}><i className="fa-solid fa-microphone-slash" /> Mute</button>
                       }
                     </div>
                   </div>
@@ -1938,7 +1945,7 @@ function Members() {
                   {/* KICK */}
                   <div className="mem-action-card">
                     <div className="mem-action-title"><i className="fa-solid fa-person-walking-arrow-right" style={{ color:'#f97316' }} /> Kick</div>
-                    <button className="ap-btn ap-btn--sm ap-btn--warn" onClick={() => setConfirm({ msg: `Kick ${u.username}?`, cb: () => action(`/users/${u._id}/kick`, 'POST', { reason: 'Kicked by admin' }, 'Kicked ✓') })}>
+                    <button className="ap-btn ap-btn--sm ap-btn--warn" onClick={() => setConfirmDialog({ msg: `Kick ${u.username}?`, cb: () => onAction(`/users/${u._id}/kick`, 'POST', { reason: 'Kicked by admin' }, 'Kicked ✓') })}>
                       <i className="fa-solid fa-person-walking-arrow-right" /> Kick User
                     </button>
                   </div>
@@ -1946,7 +1953,7 @@ function Members() {
                   {/* GHOST */}
                   <div className="mem-action-card">
                     <div className="mem-action-title"><i className="fa-solid fa-ghost" style={{ color:'#a78bfa' }} /> Ghost</div>
-                    <button className={`ap-btn ap-btn--sm ${u.isGhosted ? 'ap-btn--success' : 'ap-btn--ghost'}`} onClick={() => action(`/users/${u._id}/ghost`, 'PUT', { isGhosted: !u.isGhosted }, u.isGhosted ? 'Unghosted ✓' : 'Ghosted ✓')}>
+                    <button className={`ap-btn ap-btn--sm ${u.isGhosted ? 'ap-btn--success' : 'ap-btn--ghost'}`} onClick={() => onAction(`/users/${u._id}/ghost`, 'PUT', { isGhosted: !u.isGhosted }, u.isGhosted ? 'Unghosted ✓' : 'Ghosted ✓')}>
                       <i className={`fa-solid ${u.isGhosted ? 'fa-eye' : 'fa-ghost'}`} /> {u.isGhosted ? 'Unghost' : 'Ghost'}
                     </button>
                   </div>
@@ -1957,8 +1964,8 @@ function Members() {
                     <div className="mem-action-row">
                       <input className="ap-input" placeholder="Ban reason…" value={banReason} onChange={e => setBanReason(e.target.value)} />
                       {u.isBanned
-                        ? <button className="ap-btn ap-btn--sm ap-btn--success" onClick={() => action(`/users/${u._id}/unban`, 'PUT', { isBanned: false }, 'Unbanned ✓')}><i className="fa-solid fa-circle-check" /> Unban</button>
-                        : <button className="ap-btn ap-btn--sm ap-btn--danger" onClick={() => setConfirm({ msg: `Ban ${u.username}?`, cb: () => action(`/users/${u._id}/ban`, 'PUT', { reason: banReason || 'Rule violation' }, 'Banned ✓') })}><i className="fa-solid fa-ban" /> Ban</button>
+                        ? <button className="ap-btn ap-btn--sm ap-btn--success" onClick={() => onAction(`/users/${u._id}/unban`, 'PUT', { isBanned: false }, 'Unbanned ✓')}><i className="fa-solid fa-circle-check" /> Unban</button>
+                        : <button className="ap-btn ap-btn--sm ap-btn--danger" onClick={() => setConfirmDialog({ msg: `Ban ${u.username}?`, cb: () => onAction(`/users/${u._id}/ban`, 'PUT', { reason: banReason || 'Rule violation' }, 'Banned ✓') })}><i className="fa-solid fa-ban" /> Ban</button>
                       }
                     </div>
                     {u.isBanned && u.banReason && (
@@ -1971,19 +1978,19 @@ function Members() {
                 <div className="mem-action-grid">
                   <div className="mem-action-card">
                     <div className="mem-action-title"><i className="fa-solid fa-volume-xmark" style={{ color:'#f59e0b' }} /> Room Mute</div>
-                    <button className="ap-btn ap-btn--sm ap-btn--warning" onClick={() => action(`/users/${u._id}/room-mute`, 'POST', {}, 'Room muted ✓')}>
+                    <button className="ap-btn ap-btn--sm ap-btn--warning" onClick={() => onAction(`/users/${u._id}/room-mute`, 'POST', {}, 'Room muted ✓')}>
                       <i className="fa-solid fa-volume-xmark" /> Room Mute
                     </button>
                   </div>
                   <div className="mem-action-card">
                     <div className="mem-action-title"><i className="fa-solid fa-right-from-bracket" style={{ color:'#f97316' }} /> Room Kick</div>
-                    <button className="ap-btn ap-btn--sm ap-btn--warn" onClick={() => action(`/users/${u._id}/room-kick`, 'POST', {}, 'Room kicked ✓')}>
+                    <button className="ap-btn ap-btn--sm ap-btn--warn" onClick={() => onAction(`/users/${u._id}/room-kick`, 'POST', {}, 'Room kicked ✓')}>
                       <i className="fa-solid fa-right-from-bracket" /> Room Kick
                     </button>
                   </div>
                   <div className="mem-action-card">
                     <div className="mem-action-title"><i className="fa-solid fa-shield-halved" style={{ color:'#ef4444' }} /> Room Ban</div>
-                    <button className="ap-btn ap-btn--sm ap-btn--danger" onClick={() => setConfirm({ msg: `Room ban ${u.username}?`, cb: () => action(`/users/${u._id}/room-ban`, 'POST', {}, 'Room banned ✓') })}>
+                    <button className="ap-btn ap-btn--sm ap-btn--danger" onClick={() => setConfirmDialog({ msg: `Room ban ${u.username}?`, cb: () => onAction(`/users/${u._id}/room-ban`, 'POST', {}, 'Room banned ✓') })}>
                       <i className="fa-solid fa-shield-halved" /> Room Ban
                     </button>
                   </div>
@@ -1996,10 +2003,10 @@ function Members() {
                 </div>
                 {u.warningLog && u.warningLog.length > 0 && u.warningLog.slice(-3).map((w, i) => (
                   <div key={i} className="mem-warn-entry">
-                    <i className="fa-solid fa-exclamation-circle" style={{ color:'#f59e0b' }} /> {w.reason || 'No reason'} <span style={{ color:'#6b7280', fontSize:11 }}>· {w.date ? new Date(w.date).toLocaleDateString() : ''}</span>
+                    <i className="fa-solid fa-exclamation-circle" style={{ color:'#f59e0b' }} /> {w.reason || 'No reason'} <span style={{ color:'#6b7280', fontSize:11 }}>· {fmtDate(w.date)}</span>
                   </div>
                 ))}
-                <button className="ap-btn ap-btn--sm ap-btn--ghost" style={{ marginTop: 8 }} onClick={() => action(`/users/${u._id}/warn`, 'POST', { message: 'Admin warning' }, 'Warning issued ✓')}>
+                <button className="ap-btn ap-btn--sm ap-btn--ghost" style={{ marginTop: 8 }} onClick={() => onAction(`/users/${u._id}/warn`, 'POST', { message: 'Admin warning' }, 'Warning issued ✓')}>
                   <i className="fa-solid fa-triangle-exclamation" /> Issue Warning
                 </button>
               </div>
@@ -2016,7 +2023,7 @@ function Members() {
                     <select className="ap-select" value={newRank} onChange={e => setNewRank(e.target.value)}>
                       {RANKS.map(r => <option key={r} value={r} style={{ color: rankColor(r) }}>{r}</option>)}
                     </select>
-                    <button className="ap-btn ap-btn--sm ap-btn--primary" onClick={() => action(`/users/${u._id}/rank`, 'PUT', { rank: newRank }, 'Rank updated ✓')}>
+                    <button className="ap-btn ap-btn--sm ap-btn--primary" onClick={() => onAction(`/users/${u._id}/rank`, 'PUT', { rank: newRank }, 'Rank updated ✓')}>
                       <i className="fa-solid fa-check" /> Set Rank
                     </button>
                   </div>
@@ -2029,7 +2036,7 @@ function Members() {
                     <select className="ap-select" value={newGender} onChange={e => setNewGender(e.target.value)}>
                       {['male','female','other','couple'].map(g => <option key={g} value={g}>{g}</option>)}
                     </select>
-                    <button className="ap-btn ap-btn--sm ap-btn--primary" onClick={() => action(`/users/${u._id}/gender`, 'PUT', { gender: newGender }, 'Gender updated ✓')}>
+                    <button className="ap-btn ap-btn--sm ap-btn--primary" onClick={() => onAction(`/users/${u._id}/gender`, 'PUT', { gender: newGender }, 'Gender updated ✓')}>
                       <i className="fa-solid fa-check" /> Set
                     </button>
                   </div>
@@ -2072,39 +2079,49 @@ function Members() {
                     <div className="mem-action-title"><i className="fa-solid fa-camera" /> Avatar</div>
                     <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
                       <img src={u.avatar || '/default_images/avatar/default_avatar.png'} style={{ width:40, height:40, borderRadius:'50%', objectFit:'cover', border:'2px solid #1e2436' }} alt="" />
-                      <button className="ap-btn ap-btn--xs ap-btn--danger" onClick={() => setConfirm({ msg: `Remove avatar of ${u.username}?`, cb: () => action(`/users/${u._id}/avatar`, 'DELETE', {}, 'Avatar removed ✓') })}>
+                      <button className="ap-btn ap-btn--xs ap-btn--danger" onClick={() => setConfirmDialog({ msg: `Remove avatar of ${u.username}?`, cb: () => onAction(`/users/${u._id}/avatar`, 'DELETE', {}, 'Avatar removed ✓') })}>
                         <i className="fa-solid fa-trash" /> Remove
                       </button>
                     </div>
                   </div>
                   <div className="mem-action-card">
                     <div className="mem-action-title"><i className="fa-solid fa-image" /> Cover / BG</div>
-                    <button className="ap-btn ap-btn--xs ap-btn--danger" onClick={() => setConfirm({ msg: `Remove cover of ${u.username}?`, cb: () => action(`/users/${u._id}/cover`, 'DELETE', {}, 'Cover removed ✓') })}>
+                    <button className="ap-btn ap-btn--xs ap-btn--danger" onClick={() => setConfirmDialog({ msg: `Remove cover of ${u.username}?`, cb: () => onAction(`/users/${u._id}/cover`, 'DELETE', {}, 'Cover removed ✓') })}>
                       <i className="fa-solid fa-trash" /> Remove Cover
                     </button>
                   </div>
                 </div>
 
                 {/* Gold management */}
+                {/* FIX: Replaced document.getElementById() with React state (editGoldAmt) */}
                 <div className="mem-divider">Gold / Currency</div>
                 <div className="mem-edit-block">
                   <div className="mem-edit-label"><i className="fa-solid fa-coins" /> Gold (Current: {u.gold ?? 0})</div>
                   <div className="mem-action-row">
-                    <input className="ap-input" type="number" placeholder="Amount" id={`gold-amt-${u._id}`} style={{ width:100 }} />
+                    <input
+                      className="ap-input"
+                      type="number"
+                      placeholder="Amount"
+                      value={editVal && editField === '__gold__' ? editVal : ''}
+                      onChange={e => { setEditField('__gold__'); setEditVal(e.target.value); }}
+                      style={{ width:100 }}
+                    />
                     <button className="ap-btn ap-btn--sm ap-btn--success" onClick={() => {
-                      const amt = document.getElementById(`gold-amt-${u._id}`)?.value;
-                      action(`/users/${u._id}/gold`, 'PUT', { amount: amt, action: 'add' }, 'Gold added ✓');
+                      const amt = editField === '__gold__' ? editVal : '';
+                      onAction(`/users/${u._id}/gold`, 'PUT', { amount: amt, action: 'add' }, 'Gold added ✓');
+                      setEditVal(''); setEditField(null);
                     }}><i className="fa-solid fa-plus" /> Add</button>
                     <button className="ap-btn ap-btn--sm ap-btn--danger" onClick={() => {
-                      const amt = document.getElementById(`gold-amt-${u._id}`)?.value;
-                      action(`/users/${u._id}/gold`, 'PUT', { amount: amt, action: 'remove' }, 'Gold removed ✓');
+                      const amt = editField === '__gold__' ? editVal : '';
+                      onAction(`/users/${u._id}/gold`, 'PUT', { amount: amt, action: 'remove' }, 'Gold removed ✓');
+                      setEditVal(''); setEditField(null);
                     }}><i className="fa-solid fa-minus" /> Remove</button>
                   </div>
                 </div>
 
                 {/* Delete Account */}
                 <div className="mem-divider" style={{ color:'#ef4444', borderColor:'#ef444433' }}>Danger Zone</div>
-                <button className="ap-btn ap-btn--danger" style={{ width:'100%' }} onClick={() => setConfirm({ msg: `Permanently delete ${u.username}? This cannot be undone!`, cb: () => { action(`/users/${u._id}`, 'DELETE', {}, 'Account deleted'); onClose(); } })}>
+                <button className="ap-btn ap-btn--danger" style={{ width:'100%' }} onClick={() => setConfirmDialog({ msg: `Permanently delete ${u.username}? This cannot be undone!`, cb: () => { onAction(`/users/${u._id}`, 'DELETE', {}, 'Account deleted'); onClose(); } })}>
                   <i className="fa-solid fa-trash" /> Delete Account
                 </button>
               </div>
@@ -2145,7 +2162,7 @@ function Members() {
                 {sameIpUsers.length === 0
                   ? <div className="ap-empty" style={{ padding:'12px 0' }}><i className="fa-solid fa-circle-check" style={{ color:'#22c55e' }} /> No other accounts found</div>
                   : sameIpUsers.map(su => (
-                    <div key={su._id} className="mem-same-ip-row" onClick={() => setSelected(su)}>
+                    <div key={su._id} className="mem-same-ip-row" onClick={() => onSelectUser && onSelectUser(su)}>
                       <img src={su.avatar || '/default_images/avatar/default_avatar.png'} className="mem-mini-av" alt="" />
                       <span style={{ color: rankColor(su.rank), fontWeight:600 }}>{su.username}</span>
                       <span className="mem-badge" style={{ color: rankColor(su.rank), borderColor: rankColor(su.rank)+'44' }}>{su.rank}</span>
@@ -2168,6 +2185,39 @@ function Members() {
         </div>
       </div>
     );
+  }
+
+// ══════════════════════════════════════════════════════════════
+function Members() {
+  const [users, setUsers] = React.useState([]);
+  const [total, setTotal] = React.useState(0);
+  const [pages, setPages] = React.useState(1);
+  const [page, setPage] = React.useState(1);
+  const [search, setSearch] = React.useState('');
+  const [rankFilter, setRankFilter] = React.useState('');
+  const [genderFilter, setGenderFilter] = React.useState('');
+  const [actionFilter, setActionFilter] = React.useState('');
+  const [selected, setSelected] = React.useState(null);
+  const [confirm, setConfirm] = React.useState(null);
+  const searchRef = React.useRef();
+
+  const load = React.useCallback(() => {
+    const p = new URLSearchParams({ page, limit: 30, search, rank: rankFilter, gender: genderFilter });
+    if (actionFilter === 'banned') p.set('banned', 'true');
+    else if (actionFilter === 'muted') p.set('muted', 'true');
+    else if (actionFilter === 'ghosted') p.set('ghosted', 'true');
+    api(`/users?${p}`).then(d => { setUsers(d.users || []); setTotal(d.total || 0); setPages(d.pages || 1); }).catch(() => {});
+  }, [page, search, rankFilter, genderFilter, actionFilter]);
+
+  React.useEffect(() => { load(); }, [load]);
+
+  const action = async (url, method, body, msg) => {
+    try {
+      await api(url, { method, body: JSON.stringify(body) });
+      toast(msg);
+      load();
+      if (selected) setSelected(s => ({ ...s, ...body }));
+    } catch (e) { toast(e.message, 'error'); }
   };
 
   // ── TABLE ──────────────────────────────────────────────────
@@ -2306,7 +2356,15 @@ function Members() {
         <button className="ap-btn ap-btn--xs ap-btn--ghost" disabled={page >= pages} onClick={() => setPage(p => p + 1)}><i className="fa-solid fa-chevron-right" /></button>
       </div>
 
-      {selected && <MemberProfile u={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <MemberProfile
+          u={selected}
+          onClose={() => setSelected(null)}
+          onAction={action}
+          setConfirmDialog={setConfirm}
+          onSelectUser={setSelected}
+        />
+      )}
       {confirm && <Confirm msg={confirm.msg} onYes={() => { confirm.cb(); setConfirm(null); }} onNo={() => setConfirm(null)} />}
     </div>
   );
@@ -2404,7 +2462,7 @@ function IpBans() {
 
                 <div className="ipban-meta">
                   {b.reason && <span className="ipban-reason"><i className="fa-solid fa-circle-info" /> {b.reason}</span>}
-                  <span className="ipban-date"><i className="fa-regular fa-clock" /> {b.createdAt ? new Date(b.createdAt).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '—'}</span>
+                  <span className="ipban-date"><i className="fa-regular fa-clock" /> {fmtDate(b.createdAt)}</span>
                   {b.accounts?.length > 0 && (
                     <span className="ipban-acct-count"><i className="fa-solid fa-users" /> {b.accounts.length} account{b.accounts.length !== 1 ? 's' : ''}</span>
                   )}
@@ -2461,8 +2519,8 @@ function IpBans() {
                           <div className="ipban-detail-item"><i className="fa-solid fa-gem" style={{ color:'#e879f9' }} /><span>Ruby</span><strong>{u.ruby ?? 0}</strong></div>
                           <div className="ipban-detail-item"><i className="fa-solid fa-trophy" style={{ color:'#22c55e' }} /><span>Level</span><strong>{u.level ?? 1}</strong></div>
                           <div className="ipban-detail-item"><i className="fa-solid fa-globe" /><span>Country</span><strong>{u.country || '—'}</strong></div>
-                          <div className="ipban-detail-item"><i className="fa-solid fa-calendar-plus" /><span>Joined</span><strong>{u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</strong></div>
-                          <div className="ipban-detail-item"><i className="fa-solid fa-clock-rotate-left" /><span>Last Seen</span><strong>{u.lastSeen ? new Date(u.lastSeen).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</strong></div>
+                          <div className="ipban-detail-item"><i className="fa-solid fa-calendar-plus" /><span>Joined</span><strong>{fmtDate(u.createdAt)}</strong></div>
+                          <div className="ipban-detail-item"><i className="fa-solid fa-clock-rotate-left" /><span>Last Seen</span><strong>{fmtDate(u.lastSeen)}</strong></div>
                           <div className="ipban-detail-item"><i className="fa-solid fa-triangle-exclamation" style={{ color:'#f59e0b' }} /><span>Warnings</span><strong style={{ color: u.warnings > 0 ? '#f59e0b' : '#22c55e' }}>{u.warnings ?? 0}</strong></div>
                           <div className="ipban-detail-item"><i className="fa-solid fa-circle-check" style={{ color: u.emailVerified ? '#22c55e' : '#ef4444' }} /><span>Email Verified</span><strong style={{ color: u.emailVerified ? '#22c55e' : '#ef4444' }}>{u.emailVerified ? 'Yes' : 'No'}</strong></div>
                           <div className="ipban-detail-item"><i className="fa-solid fa-star" style={{ color:'#3b82f6' }} /><span>XP</span><strong>{u.xp ?? 0}</strong></div>
@@ -2520,7 +2578,7 @@ function News() {
       <div className="ap-list">
         {news.map(n => (
           <div key={n._id} className="ap-list-item">
-            <div className="ap-list-info"><strong>{n.title}</strong><span className="ap-muted">{n.author?.username} · {new Date(n.createdAt).toLocaleDateString()}</span></div>
+            <div className="ap-list-info"><strong>{n.title}</strong><span className="ap-muted">{n.author?.username} · {fmtDate(n.createdAt)}</span></div>
             <button className="ap-btn ap-btn--xs ap-btn--danger" onClick={() => setConfirm({ msg: `Delete "${n.title}"?`, cb: () => del(n._id) })}><i className="fa-solid fa-trash" /></button>
           </div>
         ))}
@@ -2613,7 +2671,7 @@ function StaffNotes() {
             <div className="ap-list-info">
               <span className="ap-badge" style={{ background: CAT_COLORS[n.category] + '33', color: CAT_COLORS[n.category], border: `1px solid ${CAT_COLORS[n.category]}44` }}>{n.category}</span>
               <p style={{ margin: '4px 0', fontSize: 14 }}>{n.content}</p>
-              <span className="ap-muted">{n.author?.username} · {new Date(n.createdAt).toLocaleDateString()}</span>
+              <span className="ap-muted">{n.author?.username} · {fmtDate(n.createdAt)}</span>
             </div>
             <button className="ap-btn ap-btn--xs ap-btn--danger" onClick={() => setConfirm({ msg: 'Delete this note?', cb: () => del(n._id) })}><i className="fa-solid fa-trash" /></button>
           </div>
@@ -2664,9 +2722,7 @@ function ChatLogs() {
 
   const toggleExpand = id => setExpanded(e => ({ ...e, [id]: !e[id] }));
 
-  const API_URL = typeof window !== 'undefined'
-    ? (window.__VITE_API_URL__ || import.meta?.env?.VITE_API_URL || 'http://localhost:5000')
-    : 'http://localhost:5000';
+  // FIX: removed dead `API_URL` variable — module-level `API` constant is already available
 
   const typeIcon = t => {
     const icons = { text:'fa-message', image:'fa-image', gif:'fa-film', voice:'fa-microphone',
@@ -2820,7 +2876,7 @@ function ChatLogs() {
 
                     {/* Footer: time + reply info */}
                     <div style={{ display:'flex', gap:12, marginTop:5, fontSize:11, color:'#4b5563', flexWrap:'wrap' }}>
-                      <span><i className="fa-solid fa-clock" style={{ marginRight:3 }} />{new Date(l.createdAt).toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })}</span>
+                      <span><i className="fa-solid fa-clock" style={{ marginRight:3 }} />{fmtDateTime(l.createdAt)}</span>
                       {l.replyTo && <span><i className="fa-solid fa-reply" style={{ marginRight:3 }} />Reply to message</span>}
                       {l.isPinned && <span style={{ color:'#f59e0b' }}><i className="fa-solid fa-thumbtack" style={{ marginRight:3 }} />Pinned</span>}
                       {l.isGuest && <span style={{ color:'#6b7280' }}>Guest message</span>}
@@ -3382,6 +3438,8 @@ function BotsSection() {
   const [editBot,   setEditBot]   = useState(null);   // bot being edited
   const [schedBot,  setSchedBot]  = useState(null);   // bot whose schedules we're managing
   const [sendBot,   setSendBot]   = useState(null);   // bot to manual-send
+  // FIX: replace native confirm() with state-driven dialog
+  const [confirmBot, setConfirmBot] = useState(null);
 
   // Create form
   const [form, setForm]   = useState({ username:'', about:'', gender:'other', avatar:'/default_images/avatar/bot.png', nameColor:'' });
@@ -3452,12 +3510,14 @@ function BotsSection() {
   };
 
   const deleteBot = async (bot) => {
-    if (!confirm(`Delete bot "${bot.username}"? This cannot be undone.`)) return;
-    try {
-      await apiBot(`/${bot._id}`, { method:'DELETE' });
-      toast(`Bot deleted`);
-      loadBots();
-    } catch(e) { toast(e.message, 'error'); }
+    // FIX: replaced window.confirm() with state-driven Confirm dialog
+    setConfirmBot({ msg: `Delete bot "${bot.username}"? This cannot be undone.`, cb: async () => {
+      try {
+        await apiBot(`/${bot._id}`, { method:'DELETE' });
+        toast(`Bot deleted`);
+        loadBots();
+      } catch(e) { toast(e.message, 'error'); }
+    }});
   };
 
   const sendManual = async () => {
@@ -3505,6 +3565,7 @@ function BotsSection() {
   const schedBotFull = schedBot ? bots.find(b => b._id === schedBot._id) : null;
 
   return (
+    <>
     <div className="ap-section">
       <h2 className="ap-section-title">
         <i className="fa-solid fa-robot" style={{ color:'#00cc88' }} /> Bot Manager
@@ -3600,7 +3661,7 @@ function BotsSection() {
                           </div>
                           {bot.about && <div style={{ fontSize:12, color:'#6b7280', marginTop:2 }}>{bot.about}</div>}
                           <div style={{ fontSize:11, color:'#4b5563', marginTop:2 }}>
-                            Created {new Date(bot.createdAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}
+                            Created {fmtDate(bot.createdAt)}
                           </div>
                         </div>
                         {/* Schedules count badge */}
@@ -3832,10 +3893,17 @@ function BotsSection() {
         </div>
       )}
     </div>
+    {/* FIX: confirmBot dialog replaces native window.confirm() */}
+    {confirmBot && (
+      <Confirm
+        msg={confirmBot.msg}
+        onYes={() => { confirmBot.cb(); setConfirmBot(null); }}
+        onNo={() => setConfirmBot(null)}
+      />
+    )}
+    </>
   );
 }
-
-// ── Per-addon panels ──────────────────────────────────────────
 
 function QuizBotPanel({ settings, onChange }) {
   const playRanks = ADDON_SYSTEM_RANKS.filter(r => r.id !== 'nobody');
@@ -4326,29 +4394,75 @@ const SECTIONS = [
 ];
 
 export default function AdminPanel() {
-  const [active, setActive]     = useState('dashboard');
-  const [sideOpen, setSideOpen] = useState(false);
-  const [socket, setSocket]     = useState(null);
+  const [active, setActive]       = useState('dashboard');
+  const [sideOpen, setSideOpen]   = useState(false);
+  const [socket, setSocket]       = useState(null);
   const [connected, setConnected] = useState(false);
   const [userRank, setUserRank]   = useState('');
+  // FIX: auth guard — tracks whether the token is valid before rendering the panel
+  const [authState, setAuthState] = useState('loading'); // 'loading' | 'ok' | 'fail'
 
-  // Open in new tab logic — called from ChatRoom
-  // This component IS the new-tab page rendered at /admin route
+  // FIX: Check token existence first — if no token, don't even try to connect socket
+  useEffect(() => {
+    if (!token()) {
+      setAuthState('fail');
+      return;
+    }
+    // Validate token by hitting /api/users/me
+    fetch(`${API}/api/users/me`, {
+      headers: { Authorization: `Bearer ${token()}` }
+    })
+      .then(r => {
+        if (!r.ok) throw new Error('Unauthorized');
+        return r.json();
+      })
+      .then(d => {
+        setUserRank(d?.user?.rank || d?.rank || '');
+        setAuthState('ok');
+      })
+      .catch(() => setAuthState('fail'));
+  }, []);
 
   useEffect(() => {
+    // FIX: Only connect socket once auth is confirmed
+    if (authState !== 'ok') return;
     const s = io(API, { auth: { token: token() }, transports: ['websocket'] });
     s.on('connect', () => setConnected(true));
     s.on('disconnect', () => setConnected(false));
     setSocket(s);
     return () => s.disconnect();
-  }, []);
+  }, [authState]);
 
-  // Fetch current user rank for owner-only gating
-  useEffect(() => {
-    fetch(`${API}/api/users/me`, {
-      headers: { Authorization: `Bearer ${token()}` }
-    }).then(r => r.json()).then(d => setUserRank(d?.user?.rank || d?.rank || '')).catch(() => {});
-  }, []);
+  const navigate = (id) => { setActive(id); setSideOpen(false); };
+
+  // FIX: Auth loading / error screens — prevents the panel crashing with empty API responses
+  if (authState === 'loading') {
+    return (
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'#0a0c16', color:'#94a3b8', flexDirection:'column', gap:16 }}>
+        <i className="fa-solid fa-spinner fa-spin" style={{ fontSize:32, color:'#3b82f6' }} />
+        <span style={{ fontSize:14 }}>Verifying access…</span>
+      </div>
+    );
+  }
+
+  if (authState === 'fail') {
+    return (
+      <>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'#0a0c16', color:'#f1f5f9', flexDirection:'column', gap:16, fontFamily:'sans-serif' }}>
+          <i className="fa-solid fa-lock" style={{ fontSize:48, color:'#ef4444' }} />
+          <p style={{ fontSize:20, fontWeight:700, margin:0 }}>Access Denied</p>
+          <p style={{ fontSize:14, color:'#6b7280', margin:0 }}>No valid session found. Please log in to ChatsGenZ first.</p>
+          <button
+            onClick={() => window.location.href = '/'}
+            style={{ marginTop:8, padding:'10px 24px', background:'#3b82f6', color:'#fff', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer' }}
+          >
+            Go to Login
+          </button>
+        </div>
+      </>
+    );
+  }
 
   const navigate = (id) => { setActive(id); setSideOpen(false); };
 
