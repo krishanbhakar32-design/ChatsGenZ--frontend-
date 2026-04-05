@@ -15,7 +15,7 @@ function MediaModal({ onClose, children, width = 520 }) {
       <div onClick={onClose} style={{ position:'fixed',inset:0,zIndex:900,background:'rgba(0,0,0,0.5)',backdropFilter:'blur(3px)' }} />
       <div onClick={e=>e.stopPropagation()} style={{
         position:'fixed', zIndex:901,
-        left:0, right:0, bottom:0,
+        left:0, right:0, bottom: isDesktop ? 70 : 0,
         maxWidth: isDesktop ? width : '100%',
         margin: '0 auto',
         borderRadius: isDesktop ? 16 : '18px 18px 0 0',
@@ -24,7 +24,6 @@ function MediaModal({ onClose, children, width = 520 }) {
         display:'flex', flexDirection:'column',
         maxHeight: isDesktop ? '82dvh' : '92dvh',
         overflow:'hidden',
-        ...(isDesktop ? { bottom:70 } : {}),
       }}>
         {children}
       </div>
