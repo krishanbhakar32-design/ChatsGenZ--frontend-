@@ -10,7 +10,7 @@ import { PremiumSection, RevenueSection, ThemePermissionsSection, EXTRA_SECTIONS
 
 const API = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 // FIX: token() never returns null — avoids "Bearer null" being sent to the backend
-const token = () => localStorage.getItem('token') || '';
+const token = () => localStorage.getItem('cgz_token') || '';
 
 // FIX: api() now handles network failures and missing token gracefully
 const api = async (path, opts = {}) => {
@@ -3452,7 +3452,7 @@ function BotsSection() {
   const [sendForm, setSendForm] = useState({ roomId:'', content:'' });
 
   const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-  const tok = () => localStorage.getItem('token');
+  const tok = () => localStorage.getItem('cgz_token');
 
   const apiBot = async (path, opts = {}) => {
     const r = await fetch(`${API_BASE}/api/admin/bots${path}`, {
