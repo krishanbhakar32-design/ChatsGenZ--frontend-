@@ -4433,8 +4433,6 @@ export default function AdminPanel() {
     return () => s.disconnect();
   }, [authState]);
 
-  const navigate = (id) => { setActive(id); setSideOpen(false); };
-
   // FIX: Auth loading / error screens — prevents the panel crashing with empty API responses
   if (authState === 'loading') {
     return (
