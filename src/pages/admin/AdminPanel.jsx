@@ -8,7 +8,7 @@ import { io } from 'socket.io-client';
 import Permissions, { PERMISSIONS_CSS } from './Permissions.jsx';
 import { PremiumSection, RevenueSection, ThemePermissionsSection, EXTRA_SECTIONS_CSS } from './PremiumRevenue.jsx';
 
-const API = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+const API = (import.meta.env.VITE_API_URL || 'https://chatsgenz-backend-production.up.railway.app').replace(/\/$/, '');
 // FIX: token() never returns null — avoids "Bearer null" being sent to the backend
 const token = () => localStorage.getItem('cgz_token') || '';
 
@@ -3451,7 +3451,7 @@ function BotsSection() {
   // Manual send form
   const [sendForm, setSendForm] = useState({ roomId:'', content:'' });
 
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const API_BASE = import.meta.env.VITE_API_URL || 'https://chatsgenz-backend-production.up.railway.app';
   const tok = () => localStorage.getItem('cgz_token');
 
   const apiBot = async (path, opts = {}) => {
@@ -4400,16 +4400,16 @@ export default function AdminPanel() {
   const [connected, setConnected] = useState(false);
   const [userRank, setUserRank]   = useState('');
   // FIX: auth guard — tracks whether the token is valid before rendering the panel
-  const [authState, setAuthState] = useState('loading'); // 'loading' | 'ok' | 'fail'
+  const [authState, setAuthState] = useState('loading'); // 'loading' | 'ok' | 'fail' | 'no_token'
 
   // FIX: Check token existence first — if no token, don't even try to connect socket
   useEffect(() => {
     if (!token()) {
-      setAuthState('fail');
+      setAuthState('no_token');
       return;
     }
     // Validate token by hitting /api/users/me
-    fetch(`${API}/api/users/me`, {
+    fetch(`${API}/api/auth/me`, {
       headers: { Authorization: `Bearer ${token()}` }
     })
       .then(r => {
@@ -4417,7 +4417,13 @@ export default function AdminPanel() {
         return r.json();
       })
       .then(d => {
-        setUserRank(d?.user?.rank || d?.rank || '');
+        const rank = d?.user?.rank || d?.rank || '';
+        const adminRanks = ['admin', 'superadmin', 'owner'];
+        if (!adminRanks.includes(rank)) {
+          setAuthState('fail');
+          return;
+        }
+        setUserRank(rank);
         setAuthState('ok');
       })
       .catch(() => setAuthState('fail'));
@@ -4443,19 +4449,24 @@ export default function AdminPanel() {
     );
   }
 
-  if (authState === 'fail') {
+  if (authState === 'no_token' || authState === 'fail') {
+    const noToken = authState === 'no_token';
     return (
       <>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
         <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'#0a0c16', color:'#f1f5f9', flexDirection:'column', gap:16, fontFamily:'sans-serif' }}>
           <i className="fa-solid fa-lock" style={{ fontSize:48, color:'#ef4444' }} />
           <p style={{ fontSize:20, fontWeight:700, margin:0 }}>Access Denied</p>
-          <p style={{ fontSize:14, color:'#6b7280', margin:0 }}>No valid session found. Please log in to ChatsGenZ first.</p>
+          <p style={{ fontSize:14, color:'#6b7280', margin:0 }}>
+            {noToken
+              ? 'No session found. Please log in to ChatsGenZ first, then return to this page.'
+              : 'Your account does not have admin access.'}
+          </p>
           <button
-            onClick={() => window.location.href = '/'}
+            onClick={() => window.location.href = '/login'}
             style={{ marginTop:8, padding:'10px 24px', background:'#3b82f6', color:'#fff', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer' }}
           >
-            Go to Login
+            {noToken ? 'Go to Login' : 'Back to Home'}
           </button>
         </div>
       </>
