@@ -1796,15 +1796,30 @@ function MemberProfile({ u, onClose, onAction, setConfirmDialog, onSelectUser })
       setEditField(null);
     };
 
-    const fetchIpDetails = async () => {
+    const fetchIpDetails = React.useCallback(async () => {
       if (!u.ipAddress) return;
       setLoadingIp(true);
       try {
-        const d = await api(`/users/${u._id}/ip-lookup`);
+        const r = await fetch(`https://ipapi.co/${u.ipAddress}/json/`);
+        if (!r.ok) throw new Error();
+        const d = await r.json();
+        if (d.error) throw new Error(d.reason || 'Lookup failed');
         setIpDetails(d);
-      } catch { setIpDetails({ error: 'Could not fetch IP details' }); }
-      finally { setLoadingIp(false); }
-    };
+      } catch {
+        try {
+          const r2 = await fetch(`https://ip-api.com/json/${u.ipAddress}?fields=status,country,countryCode,regionName,city,isp,org,proxy,hosting,timezone,query`);
+          const d2 = await r2.json();
+          setIpDetails(d2);
+        } catch { setIpDetails({ error: 'Could not fetch IP details' }); }
+      } finally { setLoadingIp(false); }
+    }, [u.ipAddress]);
+
+    // Auto-fetch IP details when Lookup tab is opened
+    React.useEffect(() => {
+      if (tab === 'lookup' && u.ipAddress && !ipDetails && !loadingIp) {
+        fetchIpDetails();
+      }
+    }, [tab, u.ipAddress, ipDetails, loadingIp, fetchIpDetails]);
 
     const TABS = [
       { id: 'bio',     label: 'Bio',     icon: 'fa-user' },
@@ -2130,44 +2145,91 @@ function MemberProfile({ u, onClose, onAction, setConfirmDialog, onSelectUser })
             {/* ════ LOOKUP TAB ════ */}
             {tab === 'lookup' && (
               <div className="mem-section">
-                <div className="mem-divider">IP Address</div>
-                <div className="mem-action-row" style={{ marginBottom: 8 }}>
-                  <span className="mem-ip-tag"><i className="fa-solid fa-network-wired" /> {u.ipAddress || 'Unknown'}</span>
-                  <button className="ap-btn ap-btn--sm ap-btn--ghost" onClick={fetchIpDetails} disabled={loadingIp}>
-                    {loadingIp ? <><i className="fa-solid fa-spinner fa-spin" /> Scanning…</> : <><i className="fa-solid fa-magnifying-glass" /> Scan IP</>}
-                  </button>
-                </div>
-                {ipDetails && (
-                  <div className="mem-ip-card">
-                    {ipDetails.error
-                      ? <span style={{ color:'#ef4444' }}>{ipDetails.error}</span>
-                      : [
-                          ['Country', ipDetails.country || ipDetails.country_name],
-                          ['City', ipDetails.city],
-                          ['Region', ipDetails.region || ipDetails.regionName],
-                          ['ISP', ipDetails.isp || ipDetails.org],
-                          ['Timezone', ipDetails.timezone],
-                          ['Proxy', ipDetails.proxy ? 'Yes' : 'No'],
-                        ].filter(([, v]) => v).map(([k, v]) => (
-                          <div className="mem-info-row" key={k}>
-                            <span className="mem-info-label">{k}</span>
-                            <span className="mem-info-val">{v}</span>
-                          </div>
-                        ))
-                    }
+
+                {/* ── IP Header card ── */}
+                <div style={{ background:'rgba(139,92,246,0.08)', border:'1px solid rgba(139,92,246,0.2)', borderRadius:10, padding:'12px 14px', marginBottom:14 }}>
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, flexWrap:'wrap' }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      <i className="fa-solid fa-network-wired" style={{ color:'#a78bfa', fontSize:14 }} />
+                      <span style={{ fontFamily:'monospace', fontSize:14, color:'#c4b5fd', fontWeight:700, letterSpacing:0.5 }}>
+                        {u.ipAddress || 'No IP recorded'}
+                      </span>
+                    </div>
+                    <div style={{ display:'flex', gap:6 }}>
+                      {u.ipAddress && (
+                        <>
+                          <button className="ap-btn ap-btn--xs ap-btn--ghost" onClick={() => { navigator.clipboard?.writeText(u.ipAddress); toast('IP copied ✓'); }}>
+                            <i className="fa-solid fa-copy" /> Copy
+                          </button>
+                          <button className="ap-btn ap-btn--xs ap-btn--ghost" onClick={fetchIpDetails} disabled={loadingIp}>
+                            {loadingIp ? <><i className="fa-solid fa-spinner fa-spin" /> Scanning…</> : <><i className="fa-solid fa-rotate" /> Rescan</>}
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
+                </div>
+
+                {/* ── Geo Results ── */}
+                {!u.ipAddress ? (
+                  <div className="ap-empty"><i className="fa-solid fa-circle-exclamation" style={{ color:'#f59e0b' }} /> No IP address on record for this user.</div>
+                ) : loadingIp ? (
+                  <div style={{ textAlign:'center', padding:'20px 0', color:'#6b7280' }}>
+                    <i className="fa-solid fa-spinner fa-spin" style={{ fontSize:20, marginBottom:8, display:'block' }} />
+                    Looking up {u.ipAddress}…
+                  </div>
+                ) : ipDetails?.error ? (
+                  <div style={{ background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', borderRadius:8, padding:'10px 14px', color:'#f87171', fontSize:13, marginBottom:14 }}>
+                    <i className="fa-solid fa-triangle-exclamation" style={{ marginRight:6 }} />{ipDetails.error}
+                  </div>
+                ) : ipDetails ? (
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:14 }}>
+                    {[
+                      { icon:'fa-flag',          label:'Country',    val: ipDetails.country_name || ipDetails.country,       color:'#60a5fa' },
+                      { icon:'fa-city',           label:'City',       val: ipDetails.city,                                    color:'#34d399' },
+                      { icon:'fa-map',            label:'Region',     val: ipDetails.region || ipDetails.regionName,          color:'#34d399' },
+                      { icon:'fa-globe',          label:'Country Code',val: ipDetails.country_code || ipDetails.countryCode,  color:'#60a5fa' },
+                      { icon:'fa-building',       label:'ISP',        val: ipDetails.org || ipDetails.isp,                    color:'#94a3b8' },
+                      { icon:'fa-clock',          label:'Timezone',   val: ipDetails.timezone,                                color:'#94a3b8' },
+                      { icon:'fa-mask',           label:'Proxy / VPN',val: ipDetails.proxy === true ? '⚠ Detected' : ipDetails.proxy === false ? '✓ Clean' : String(ipDetails.proxy ?? '—'), color: ipDetails.proxy ? '#fbbf24' : '#22c55e' },
+                      { icon:'fa-server',         label:'Hosting',    val: ipDetails.hosting === true ? '⚠ Datacenter' : ipDetails.hosting === false ? '✓ Residential' : '—', color: ipDetails.hosting ? '#f97316' : '#22c55e' },
+                    ].filter(r => r.val && r.val !== '—').map(r => (
+                      <div key={r.label} style={{ background:'rgba(255,255,255,0.03)', borderRadius:7, padding:'8px 10px', border:'1px solid rgba(255,255,255,0.06)' }}>
+                        <div style={{ fontSize:10, color:'#6b7280', marginBottom:3, display:'flex', alignItems:'center', gap:4 }}>
+                          <i className={`fa-solid ${r.icon}`} style={{ fontSize:9 }} /> {r.label}
+                        </div>
+                        <div style={{ fontSize:12, fontWeight:600, color: r.color }}>{r.val}</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+
+                {/* Quick IP ban */}
+                {u.ipAddress && (
+                  <button
+                    className="ap-btn ap-btn--danger"
+                    style={{ width:'100%', marginBottom:16, fontSize:12 }}
+                    onClick={() => setConfirmDialog({ msg: `IP-ban ${u.username} (${u.ipAddress})?`, cb: () => onAction(`/ip-bans`, 'POST', { ip: u.ipAddress, reason: `Banned via profile — ${u.username}` }, 'IP banned ✓') })}
+                  >
+                    <i className="fa-solid fa-shield-halved" /> Ban This IP Address
+                  </button>
                 )}
 
-                <div className="mem-divider">Other Accounts — Same IP</div>
+                <div className="mem-divider">Other Accounts — Same IP ({sameIpUsers.length})</div>
                 {sameIpUsers.length === 0
-                  ? <div className="ap-empty" style={{ padding:'12px 0' }}><i className="fa-solid fa-circle-check" style={{ color:'#22c55e' }} /> No other accounts found</div>
+                  ? <div className="ap-empty" style={{ padding:'12px 0' }}><i className="fa-solid fa-circle-check" style={{ color:'#22c55e' }} /> No other accounts found on this IP</div>
                   : sameIpUsers.map(su => (
-                    <div key={su._id} className="mem-same-ip-row" onClick={() => onSelectUser && onSelectUser(su)}>
+                    <div key={su._id} className="mem-same-ip-row" onClick={() => onSelectUser && onSelectUser(su)}
+                      style={{ cursor:'pointer' }}
+                    >
                       <img src={su.avatar || '/default_images/avatar/default_avatar.png'} className="mem-mini-av" alt="" />
-                      <span style={{ color: rankColor(su.rank), fontWeight:600 }}>{su.username}</span>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ color: rankColor(su.rank), fontWeight:600, fontSize:13 }}>{su.username}</div>
+                        <div style={{ fontSize:10, color:'#6b7280' }}>{su.email}</div>
+                      </div>
                       <span className="mem-badge" style={{ color: rankColor(su.rank), borderColor: rankColor(su.rank)+'44' }}>{su.rank}</span>
                       {su.isBanned && <span className="mem-badge mem-badge--danger">Banned</span>}
-                      <span className={`ap-status-dot ap-status-dot--${su.isOnline ? 'online' : 'offline'}`} style={{ marginLeft:'auto' }} />
+                      <span className={`ap-status-dot ap-status-dot--${su.isOnline ? 'online' : 'offline'}`} />
                     </div>
                   ))
                 }
@@ -2175,9 +2237,11 @@ function MemberProfile({ u, onClose, onAction, setConfirmDialog, onSelectUser })
                 <div className="mem-divider">Old Usernames</div>
                 {oldNames.length === 0
                   ? <div className="ap-empty" style={{ padding:'12px 0' }}><i className="fa-solid fa-user" style={{ color:'#6b7280' }} /> No name history</div>
-                  : oldNames.map((n, i) => (
-                    <div key={i} className="mem-oldname-pill"><i className="fa-solid fa-clock-rotate-left" style={{ color:'#6b7280', fontSize:11 }} /> {n}</div>
-                  ))
+                  : <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+                      {oldNames.map((n, i) => (
+                        <span key={i} className="mem-oldname-pill"><i className="fa-solid fa-clock-rotate-left" style={{ color:'#6b7280', fontSize:10 }} /> {n}</span>
+                      ))}
+                    </div>
                 }
               </div>
             )}
@@ -2189,16 +2253,22 @@ function MemberProfile({ u, onClose, onAction, setConfirmDialog, onSelectUser })
 
 // ══════════════════════════════════════════════════════════════
 function Members() {
-  const [users, setUsers] = React.useState([]);
-  const [total, setTotal] = React.useState(0);
-  const [pages, setPages] = React.useState(1);
-  const [page, setPage] = React.useState(1);
-  const [search, setSearch] = React.useState('');
-  const [rankFilter, setRankFilter] = React.useState('');
+  const genderIcon  = g => g === 'male' ? 'fa-mars' : g === 'female' ? 'fa-venus' : g === 'couple' ? 'fa-heart' : 'fa-genderless';
+  const genderColor = g => g === 'male' ? '#4488FF' : g === 'female' ? '#FF4488' : g === 'couple' ? '#FF88CC' : '#888';
+
+  const [users, setUsers]             = React.useState([]);
+  const [total, setTotal]             = React.useState(0);
+  const [pages, setPages]             = React.useState(1);
+  const [page, setPage]               = React.useState(1);
+  const [search, setSearch]           = React.useState('');
+  const [rankFilter, setRankFilter]   = React.useState('');
   const [genderFilter, setGenderFilter] = React.useState('');
   const [actionFilter, setActionFilter] = React.useState('');
-  const [selected, setSelected] = React.useState(null);
-  const [confirm, setConfirm] = React.useState(null);
+  const [selected, setSelected]       = React.useState(null);
+  const [confirm, setConfirm]         = React.useState(null);
+  const [autoRefresh, setAutoRefresh] = React.useState(true);
+  const [lastRefresh, setLastRefresh] = React.useState(null);
+  const [ipPopup, setIpPopup]         = React.useState(null); // { userId, ip, x, y, data, loading }
   const searchRef = React.useRef();
 
   const load = React.useCallback(() => {
@@ -2206,10 +2276,37 @@ function Members() {
     if (actionFilter === 'banned') p.set('banned', 'true');
     else if (actionFilter === 'muted') p.set('muted', 'true');
     else if (actionFilter === 'ghosted') p.set('ghosted', 'true');
-    api(`/users?${p}`).then(d => { setUsers(d.users || []); setTotal(d.total || 0); setPages(d.pages || 1); }).catch(() => {});
-  }, [page, search, rankFilter, genderFilter, actionFilter]);
+    api(`/users?${p}`)
+      .then(d => {
+        setUsers(d.users || []);
+        setTotal(d.total || 0);
+        setPages(d.pages || 1);
+        setLastRefresh(new Date());
+        // Keep selected in sync with fresh data
+        if (selected) {
+          const fresh = (d.users || []).find(u => u._id === selected._id);
+          if (fresh) setSelected(fresh);
+        }
+      })
+      .catch(() => {});
+  }, [page, search, rankFilter, genderFilter, actionFilter, selected]);
 
   React.useEffect(() => { load(); }, [load]);
+
+  // Real-time auto-refresh every 10 seconds — paused when profile drawer is open
+  React.useEffect(() => {
+    if (!autoRefresh || selected) return;
+    const interval = setInterval(() => { load(); }, 10000);
+    return () => clearInterval(interval);
+  }, [autoRefresh, load, selected]);
+
+  // Close IP popup on outside click
+  React.useEffect(() => {
+    if (!ipPopup) return;
+    const handler = () => setIpPopup(null);
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, [ipPopup]);
 
   const action = async (url, method, body, msg) => {
     try {
@@ -2220,10 +2317,40 @@ function Members() {
     } catch (e) { toast(e.message, 'error'); }
   };
 
+  // Fetch IP geolocation using a public API
+  const fetchIpGeo = async (ip) => {
+    try {
+      const r = await fetch(`https://ipapi.co/${ip}/json/`);
+      if (!r.ok) throw new Error();
+      return await r.json();
+    } catch {
+      try {
+        const r2 = await fetch(`https://ip-api.com/json/${ip}?fields=status,country,regionName,city,isp,org,proxy,timezone,query`);
+        return await r2.json();
+      } catch { return { error: 'Lookup failed' }; }
+    }
+  };
+
+  const openIpPopup = async (e, u) => {
+    e.stopPropagation();
+    if (!u.ipAddress) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    setIpPopup({ userId: u._id, ip: u.ipAddress, x: rect.left, y: rect.bottom + 6, data: null, loading: true, username: u.username });
+    const data = await fetchIpGeo(u.ipAddress);
+    setIpPopup(prev => prev && prev.userId === u._id ? { ...prev, data, loading: false } : prev);
+  };
+
   // ── TABLE ──────────────────────────────────────────────────
   return (
     <div className="ap-section">
-      <h2 className="ap-section-title"><i className="fa-solid fa-users" /> Members <span className="ap-badge ap-badge--count">{total}</span></h2>
+      <h2 className="ap-section-title">
+        <i className="fa-solid fa-users" /> Members <span className="ap-badge ap-badge--count">{total}</span>
+        {lastRefresh && (
+          <span style={{ fontSize:11, color:'#4b5563', fontWeight:400, marginLeft:8 }}>
+            Updated {lastRefresh.toLocaleTimeString()}
+          </span>
+        )}
+      </h2>
 
       {/* Filter Bar */}
       <div className="ap-filter-bar">
@@ -2232,7 +2359,7 @@ function Members() {
           <input
             ref={searchRef}
             className="ap-input"
-            placeholder="Search username / email…"
+            placeholder="Search username / email / IP…"
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1); }}
             style={{ paddingLeft: 32 }}
@@ -2264,7 +2391,24 @@ function Members() {
           <option value="ghosted">Ghosted</option>
         </select>
 
-        <button className="ap-btn ap-btn--ghost ap-btn--sm" onClick={load}><i className="fa-solid fa-rotate" /></button>
+        <button className="ap-btn ap-btn--ghost ap-btn--sm" onClick={load} title="Refresh now">
+          <i className="fa-solid fa-rotate" />
+        </button>
+        <button
+          className={`ap-btn ap-btn--sm ${autoRefresh ? 'ap-btn--success' : 'ap-btn--ghost'}`}
+          onClick={() => setAutoRefresh(v => !v)}
+          title={autoRefresh ? 'Live ON — click to pause' : 'Live OFF — click to enable'}
+          style={{ fontSize:11, display:'flex', alignItems:'center', gap:5 }}
+        >
+          <span style={{
+            width:7, height:7, borderRadius:'50%',
+            background: autoRefresh ? '#22c55e' : '#6b7280',
+            display:'inline-block',
+            boxShadow: autoRefresh ? '0 0 6px #22c55e' : 'none',
+            animation: autoRefresh ? 'apPulse 1.5s infinite' : 'none',
+          }} />
+          {autoRefresh ? 'Live' : 'Paused'}
+        </button>
       </div>
 
       {/* Table */}
@@ -2275,9 +2419,10 @@ function Members() {
               <th>Member</th>
               <th>Rank</th>
               <th>Gender</th>
+              <th style={{ minWidth:160 }}>IP Address</th>
               <th>Status</th>
-              <th>Action</th>
-              <th>Open</th>
+              <th>Actions</th>
+              <th>View</th>
             </tr>
           </thead>
           <tbody>
@@ -2306,20 +2451,79 @@ function Members() {
                     <i className={`fa-solid ${genderIcon(u.gender)}`} /> {u.gender || '—'}
                   </span>
                 </td>
+
+                {/* ── IP CELL ── */}
+                <td>
+                  {u.ipAddress ? (
+                    <div style={{ display:'flex', flexDirection:'column', gap:3 }}>
+                      {/* IP chip — click to copy, hover button to geo-lookup */}
+                      <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+                        <span
+                          onClick={() => { navigator.clipboard?.writeText(u.ipAddress); toast('IP copied ✓'); }}
+                          title="Click to copy"
+                          style={{
+                            fontFamily:'monospace', fontSize:11, color: u.isOnline ? '#67e8f9' : '#93c5fd',
+                            cursor:'pointer', letterSpacing:0.3,
+                            background: u.isOnline ? 'rgba(6,182,212,0.1)' : 'rgba(59,130,246,0.08)',
+                            padding:'2px 7px', borderRadius:4,
+                            border: `1px solid ${u.isOnline ? 'rgba(6,182,212,0.3)' : 'rgba(59,130,246,0.2)'}`,
+                            display:'inline-flex', alignItems:'center', gap:4, whiteSpace:'nowrap',
+                            transition:'all .15s',
+                          }}
+                        >
+                          <i className="fa-solid fa-network-wired" style={{ fontSize:9, opacity:0.6 }} />
+                          {u.ipAddress}
+                        </span>
+                        {/* Geo lookup button */}
+                        <button
+                          onClick={e => openIpPopup(e, u)}
+                          title="Geo lookup"
+                          style={{ background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.3)',
+                            borderRadius:4, padding:'2px 5px', cursor:'pointer', color:'#a78bfa', fontSize:10,
+                            display:'flex', alignItems:'center', gap:3, flexShrink:0 }}
+                        >
+                          <i className="fa-solid fa-earth-americas" />
+                        </button>
+                        {/* Quick IP ban button */}
+                        <button
+                          onClick={() => setConfirm({ msg: `IP-ban ${u.username} (${u.ipAddress})?`, cb: () => action(`/ip-bans`, 'POST', { ip: u.ipAddress, reason: `Banned via Members panel — ${u.username}` }, 'IP banned ✓') })}
+                          title="Ban this IP"
+                          style={{ background:'rgba(239,68,68,0.12)', border:'1px solid rgba(239,68,68,0.25)',
+                            borderRadius:4, padding:'2px 5px', cursor:'pointer', color:'#f87171', fontSize:10,
+                            display:'flex', alignItems:'center', gap:3, flexShrink:0 }}
+                        >
+                          <i className="fa-solid fa-shield-halved" />
+                        </button>
+                      </div>
+                      {/* Live badge */}
+                      {u.isOnline && (
+                        <span style={{ fontSize:9, color:'#22c55e', fontWeight:700, letterSpacing:0.8,
+                          display:'flex', alignItems:'center', gap:3 }}>
+                          <span style={{ width:5, height:5, borderRadius:'50%', background:'#22c55e',
+                            display:'inline-block', boxShadow:'0 0 4px #22c55e' }} />
+                          ONLINE NOW
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <span style={{ color:'#374151', fontSize:11, fontStyle:'italic' }}>No IP recorded</span>
+                  )}
+                </td>
+
                 <td>
                   <div style={{ display:'flex', gap:4, flexWrap:'wrap', alignItems:'center' }}>
                     <span className={`ap-status-dot ap-status-dot--${u.isOnline ? 'online' : 'offline'}`} title={u.isOnline ? 'Online' : 'Offline'} />
-                    {u.isBanned  && <span className="ap-badge ap-badge--danger"><i className="fa-solid fa-ban" /></span>}
-                    {u.isMuted   && <span className="ap-badge ap-badge--warn"><i className="fa-solid fa-microphone-slash" /></span>}
-                    {u.isGhosted && <span className="mem-badge mem-badge--ghost" style={{ fontSize:10 }}><i className="fa-solid fa-ghost" /></span>}
+                    {u.isBanned  && <span className="ap-badge ap-badge--danger" title="Banned"><i className="fa-solid fa-ban" /></span>}
+                    {u.isMuted   && <span className="ap-badge ap-badge--warn" title="Muted"><i className="fa-solid fa-microphone-slash" /></span>}
+                    {u.isGhosted && <span className="mem-badge mem-badge--ghost" style={{ fontSize:10 }} title="Ghosted"><i className="fa-solid fa-ghost" /></span>}
                   </div>
                 </td>
                 <td>
                   <div style={{ display:'flex', gap:4 }}>
-                    <button className="ap-btn ap-btn--xs ap-btn--warning" title="Mute" onClick={() => action(`/users/${u._id}/mute`, 'PUT', { minutes: 30 }, 'Muted 30min ✓')}>
+                    <button className="ap-btn ap-btn--xs ap-btn--warning" title="Mute 30min" onClick={() => action(`/users/${u._id}/mute`, 'PUT', { minutes: 30 }, 'Muted 30min ✓')}>
                       <i className="fa-solid fa-microphone-slash" />
                     </button>
-                    <button className="ap-btn ap-btn--xs ap-btn--warn" title="Kick" onClick={() => action(`/users/${u._id}/kick`, 'POST', { reason: 'Kicked' }, 'Kicked ✓')}>
+                    <button className="ap-btn ap-btn--xs ap-btn--warning" title="Kick" onClick={() => action(`/users/${u._id}/kick`, 'POST', { reason: 'Kicked' }, 'Kicked ✓')}>
                       <i className="fa-solid fa-person-walking-arrow-right" />
                     </button>
                     <button className="ap-btn ap-btn--xs ap-btn--ghost" title={u.isGhosted ? 'Unghost' : 'Ghost'} onClick={() => action(`/users/${u._id}/ghost`, 'PUT', { isGhosted: !u.isGhosted }, u.isGhosted ? 'Unghosted ✓' : 'Ghosted ✓')}>
@@ -2343,7 +2547,7 @@ function Members() {
               </tr>
             ))}
             {users.length === 0 && (
-              <tr><td colSpan={6} style={{ textAlign:'center', padding:24, color:'#4b5563' }}>No members found</td></tr>
+              <tr><td colSpan={7} style={{ textAlign:'center', padding:24, color:'#4b5563' }}>No members found</td></tr>
             )}
           </tbody>
         </table>
@@ -2355,6 +2559,88 @@ function Members() {
         <span>Page {page} / {pages} &nbsp;·&nbsp; {total} members</span>
         <button className="ap-btn ap-btn--xs ap-btn--ghost" disabled={page >= pages} onClick={() => setPage(p => p + 1)}><i className="fa-solid fa-chevron-right" /></button>
       </div>
+
+      {/* ── IP Geo Popup ── */}
+      {ipPopup && (
+        <div
+          onClick={e => e.stopPropagation()}
+          style={{
+            position:'fixed', zIndex:9999,
+            left: Math.min(ipPopup.x, window.innerWidth - 280),
+            top: Math.min(ipPopup.y, window.innerHeight - 260),
+            width:268, background:'#0f1729',
+            border:'1px solid rgba(139,92,246,0.4)', borderRadius:10,
+            boxShadow:'0 8px 32px rgba(0,0,0,0.6)', padding:14,
+            fontFamily:'sans-serif',
+          }}
+        >
+          {/* Header */}
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:7 }}>
+              <i className="fa-solid fa-earth-americas" style={{ color:'#a78bfa', fontSize:13 }} />
+              <span style={{ fontSize:12, fontWeight:700, color:'#e2e8f0' }}>IP Lookup</span>
+            </div>
+            <button onClick={() => setIpPopup(null)} style={{ background:'none', border:'none', color:'#6b7280', cursor:'pointer', fontSize:13 }}>
+              <i className="fa-solid fa-xmark" />
+            </button>
+          </div>
+
+          {/* IP chip */}
+          <div style={{ background:'rgba(139,92,246,0.12)', borderRadius:6, padding:'5px 9px', marginBottom:10,
+            fontFamily:'monospace', fontSize:12, color:'#c4b5fd', border:'1px solid rgba(139,92,246,0.25)',
+            display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+            <span><i className="fa-solid fa-network-wired" style={{ marginRight:5, opacity:0.7 }} />{ipPopup.ip}</span>
+            <button
+              onClick={() => { navigator.clipboard?.writeText(ipPopup.ip); toast('IP copied ✓'); }}
+              style={{ background:'none', border:'none', color:'#a78bfa', cursor:'pointer', fontSize:11 }}
+              title="Copy"
+            ><i className="fa-solid fa-copy" /></button>
+          </div>
+
+          {ipPopup.loading ? (
+            <div style={{ textAlign:'center', padding:'16px 0', color:'#6b7280' }}>
+              <i className="fa-solid fa-spinner fa-spin" style={{ marginRight:6 }} />Scanning…
+            </div>
+          ) : ipPopup.data?.error ? (
+            <div style={{ color:'#f87171', fontSize:12, textAlign:'center', padding:'10px 0' }}>
+              <i className="fa-solid fa-triangle-exclamation" style={{ marginRight:5 }} />{ipPopup.data.error}
+            </div>
+          ) : ipPopup.data ? (
+            <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+              {[
+                { icon:'fa-flag',         label:'Country',  val: ipPopup.data.country_name || ipPopup.data.country },
+                { icon:'fa-city',         label:'City',     val: ipPopup.data.city },
+                { icon:'fa-map',          label:'Region',   val: ipPopup.data.region || ipPopup.data.regionName },
+                { icon:'fa-building',     label:'ISP',      val: ipPopup.data.org || ipPopup.data.isp },
+                { icon:'fa-clock',        label:'Timezone', val: ipPopup.data.timezone },
+                { icon:'fa-mask',         label:'Proxy/VPN',val: ipPopup.data.proxy === true ? '⚠ Detected' : ipPopup.data.proxy === false ? 'Clean' : ipPopup.data.proxy },
+              ].filter(r => r.val).map(r => (
+                <div key={r.label} style={{ display:'flex', alignItems:'flex-start', gap:8, fontSize:11 }}>
+                  <i className={`fa-solid ${r.icon}`} style={{ color:'#6b7280', width:12, marginTop:1, flexShrink:0 }} />
+                  <span style={{ color:'#9ca3af', flexShrink:0, minWidth:58 }}>{r.label}</span>
+                  <span style={{ color: r.label === 'Proxy/VPN' && r.val.startsWith('⚠') ? '#fbbf24' : '#e2e8f0', fontWeight:500 }}>{r.val}</span>
+                </div>
+              ))}
+              {/* Quick ban from popup */}
+              <div style={{ marginTop:8, borderTop:'1px solid rgba(255,255,255,0.06)', paddingTop:8, display:'flex', gap:6 }}>
+                <button
+                  onClick={() => { navigator.clipboard?.writeText(ipPopup.ip); toast('IP copied ✓'); }}
+                  className="ap-btn ap-btn--xs ap-btn--ghost"
+                  style={{ flex:1, fontSize:10 }}
+                ><i className="fa-solid fa-copy" /> Copy IP</button>
+                <button
+                  onClick={() => {
+                    setIpPopup(null);
+                    setConfirm({ msg: `IP-ban ${ipPopup.username} (${ipPopup.ip})?`, cb: () => action(`/ip-bans`, 'POST', { ip: ipPopup.ip, reason: `Banned via Members panel — ${ipPopup.username}` }, 'IP banned ✓') });
+                  }}
+                  className="ap-btn ap-btn--xs ap-btn--danger"
+                  style={{ flex:1, fontSize:10 }}
+                ><i className="fa-solid fa-shield-halved" /> Ban IP</button>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      )}
 
       {selected && (
         <MemberProfile
@@ -4830,6 +5116,7 @@ const AP_CSS = `
   .ap-toast--success { border-color: #22c55e44; color: #22c55e; }
   .ap-toast--error { border-color: #ef444444; color: #ef4444; }
   @keyframes apSlideUp { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: translateY(0); } }
+  @keyframes apPulse { 0%,100% { opacity:1; box-shadow:0 0 4px #22c55e; } 50% { opacity:0.5; box-shadow:0 0 8px #22c55e; } }
 
   /* ══ MOBILE ══ */
   @media (max-width: 768px) {
