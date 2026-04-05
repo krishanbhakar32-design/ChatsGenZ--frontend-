@@ -1791,16 +1791,10 @@ function MemberProfile({ u, onClose, onAction, setConfirmDialog, onSelectUser })
     }, [u._id, u.ipAddress]);
 
     const doEdit = async (field, val, msg) => {
-      // FIX: per-field routes (/users/:id/username, /users/:id/password etc) don't exist → 404
-      // Use PATCH /users/:id for all profile field edits; fall back to PUT if backend needs it.
-      const path = `/users/${u._id}`;
-      const body = { [field]: val };
-      try {
-        await onAction(path, 'PATCH', body, msg);
-      } catch {
-        // onAction swallows errors internally (toast + return), so this catch is a safety net.
-        // If PATCH fails the user already saw the error toast from onAction.
-      }
+      // FIX: use PUT /users/:id/update — PUT is already in the backend CORS allowlist.
+      // PATCH was blocked by CORS preflight because the server didn't list PATCH in its
+      // allowed methods, causing "Network error — cannot reach server."
+      await onAction(`/users/${u._id}/update`, 'PUT', { [field]: val }, msg);
       setEditField(null);
     };
 
@@ -2060,8 +2054,8 @@ function MemberProfile({ u, onClose, onAction, setConfirmDialog, onSelectUser })
                       {['male','female','other','couple'].map(g => <option key={g} value={g}>{g}</option>)}
                     </select>
                     <button className="ap-btn ap-btn--sm ap-btn--primary" onClick={() => {
-                      // FIX: /users/:id/gender doesn't exist → PATCH /users/:id
-                      onAction(`/users/${u._id}`, 'PATCH', { gender: newGender }, 'Gender updated ✓');
+                      // FIX: use PUT /users/:id/update — PATCH was blocked by CORS
+                      onAction(`/users/${u._id}/update`, 'PUT', { gender: newGender }, 'Gender updated ✓');
                     }}>
                       <i className="fa-solid fa-check" /> Set
                     </button>
@@ -4799,7 +4793,7 @@ export default function AdminPanel() {
       default:                return null;
     }
   };
- 
+
   return (
     <>
       {/* Font Awesome */}
