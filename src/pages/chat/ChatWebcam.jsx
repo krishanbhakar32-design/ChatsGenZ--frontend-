@@ -3,7 +3,7 @@
 // HOST VIEW:
 //   - Small box below camera icon (not full screen)
 //   - Header: username left, close (X) right
-//   - Camera screen with filter applied
+//   - Camera screen with filter applied 
 //   - Below screen: Camera toggle, Mic toggle (single button each)
 //   - Left side: Viewer list with rank icon, cam-block per viewer
 //   - Settings icon: camera change + mic detect + filter icon (8-10 filters)
