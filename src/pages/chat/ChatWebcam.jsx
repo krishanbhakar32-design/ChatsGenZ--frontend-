@@ -44,7 +44,7 @@ const tok = () => localStorage.getItem('cgz_token')
 // ═══════════════════════════════════════════════════════════════
 // LiveCamBar — always rendered above messages, shows live users
 // ═══════════════════════════════════════════════════════════════
-function LiveCamBar({ socket, roomId, me, liveCams, setLiveCams, onOpenHostPanel }) {
+export function LiveCamBar({ socket, roomId, me, liveCams, setLiveCams, onOpenHostPanel }) {
   const [watching,      setWatching]   = useState(null)   // cam object being watched
   const [showWatchModal,setShowWatch]  = useState(false)
   const watchVideoRef   = useRef(null)
@@ -427,7 +427,7 @@ function ConnectingOverlay({ videoRef }) {
 // ═══════════════════════════════════════════════════════════════
 // WebcamPanel — host controls (go live / manage your own cam)
 // ═══════════════════════════════════════════════════════════════
-function WebcamPanel({ socket, roomId, me, onClose, onStarted, onStopped }) {
+export function WebcamPanel({ socket, roomId, me, onClose, onStarted, onStopped }) {
   const hostVideoRef  = useRef(null)
   const streamRef     = useRef(null)
   const peerConns     = useRef({})
@@ -877,4 +877,3 @@ function ViewerReportModal({ targetUser, onClose }) {
   )
 }
 
-export { WebcamPanel, LiveCamBar }
