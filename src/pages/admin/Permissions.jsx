@@ -18,16 +18,38 @@ import { useState, useEffect, useCallback } from 'react';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-const token = () => localStorage.getItem('token');
+// FIX: Safely read VITE_API_URL — fall back to localhost if env var missing
+const API = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+// FIX: token() always returns a string (never passes "Bearer null" to backend)
+const token = () => localStorage.getItem('token') || '';
 
+// FIX: apiFetch now handles network errors AND token-missing cases gracefully
 const apiFetch = async (path, opts = {}) => {
-  const r = await fetch(`${API}/api/admin${path}`, {
-    headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json', ...opts.headers },
-    ...opts,
-  });
-  if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || 'Request failed'); }
+  const tok = token();
+  if (!tok) throw new Error('Not authenticated — please log in again.');
+  let r;
+  try {
+    r = await fetch(`${API}/api/admin${path}`, {
+      headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json', ...opts.headers },
+      ...opts,
+    });
+  } catch (networkErr) {
+    throw new Error('Network error — cannot reach server.');
+  }
+  if (!r.ok) {
+    const e = await r.json().catch(() => ({}));
+    throw new Error(e.error || `Request failed (${r.status})`);
+  }
   return r.json();
+};
+
+// FIX: toast moved to module level so it's not re-created on every render
+const toastMsg = (msg, type = 'success') => {
+  const el = document.createElement('div');
+  el.className = `ap-toast ap-toast--${type}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3200);
 };
 
 // ─── Rank definitions (mirrors CodyChat function_sranking.php) ────────────────
@@ -60,7 +82,7 @@ const ROOM_RANKS = [
 
 // Rank filter helpers (mirrors CodyChat's listRank / listRankStaff / listRankSuper etc.)
 const RANK_SETS = {
-  all:        SYSTEM_RANKS,                                                                   // listRank
+  all:        SYSTEM_RANKS.filter(r => r.id !== 'bot'),                                       // listRank — excludes bot per CodyChat spec
   member:     SYSTEM_RANKS.filter(r => r.id !== 'guest' && r.id !== 'nobody'),               // listRankMember
   staff:      SYSTEM_RANKS.filter(r => ['moderator','admin','superadmin','owner'].includes(r.id)), // listRankStaff
   staffExt:   SYSTEM_RANKS.filter(r => ['moderator','admin','superadmin','owner','nobody'].includes(r.id)), // listRankStaffExtend
@@ -227,6 +249,13 @@ const ROOM_TABS = [
   },
 ];
 
+// Module-level so handleSave can reference it without declaration order issues
+const MAIN_TABS = [
+  { id: 'member', label: 'Member Permissions', icon: 'fa-users',       tabs: MEMBER_TABS },
+  { id: 'staff',  label: 'Staff Permissions',  icon: 'fa-user-shield', tabs: STAFF_TABS  },
+  { id: 'room',   label: 'Room Permissions',   icon: 'fa-door-open',   tabs: ROOM_TABS   },
+];
+
 // ─── Sub-component: Rank Dropdown with icon ───────────────────────────────────
 
 function RankSelect({ value, onChange, rankSet }) {
@@ -333,20 +362,20 @@ export default function Permissions() {
   const [settings, setSettings]   = useState(null);
   const [mainTab,  setMainTab]    = useState('member');
   const [saving,   setSaving]     = useState(false);
+  // FIX: track load error so spinner doesn't spin forever on failure
+  const [loadError, setLoadError] = useState('');
 
-  const toast = (msg, type = 'success') => {
-    const el = document.createElement('div');
-    el.className = `ap-toast ap-toast--${type}`;
-    el.textContent = msg;
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 3200);
-  };
+  // FIX: removed toast defined inside component — use module-level toastMsg
 
-  const load = useCallback(() =>
+  const load = useCallback(() => {
+    setLoadError('');
     apiFetch('/settings')
       .then(d => setSettings(d.settings))
-      .catch(() => toast('Failed to load settings', 'error'))
-  , []);
+      .catch(e => {
+        setLoadError(e.message || 'Failed to load settings');
+        toastMsg(e.message || 'Failed to load settings', 'error');
+      });
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 
@@ -360,28 +389,44 @@ export default function Permissions() {
     });
   };
 
-  const handleSave = async (tab) => {
+  const handleSave = async (subTab) => {
     if (!settings) return;
     setSaving(true);
     try {
-      // Collect only the keys belonging to this tab
+      // Collect ALL keys for the active main category (all sub-tabs), not just the current sub-tab.
+      // This matches CodyChat's saveAdminUserPermission() which sends the whole category at once.
+      const activeTabs = MAIN_TABS.find(t => t.id === mainTab)?.tabs || [];
+      const allKeys = activeTabs.flatMap(t => t.fields.map(f => f.key));
       const payload = {};
-      (tab?.fields || []).forEach(f => {
-        if (settings[f.key] !== undefined) payload[f.key] = settings[f.key];
-      });
-      // If allow_wallet is in this tab, also sync minRankWallet
+      allKeys.forEach(k => { if (settings[k] !== undefined) payload[k] = settings[k]; });
+      // Sync allow_wallet with minRankWallet if present
       if (payload.allow_wallet !== undefined) payload.minRankWallet = payload.allow_wallet;
       await apiFetch('/settings/permissions', {
         method: 'PUT',
         body: JSON.stringify(payload),
       });
-      toast(`${tab?.label} permissions saved!`);
+      toastMsg(`${subTab?.label || 'Permissions'} saved!`);
     } catch (e) {
-      toast(e.message, 'error');
+      toastMsg(e.message, 'error');
     } finally {
       setSaving(false);
     }
   };
+
+  // FIX: show error UI with retry button instead of spinning forever
+  if (loadError) {
+    return (
+      <div className="ap-section">
+        <div style={{ textAlign: 'center', padding: 48, color: '#ef4444' }}>
+          <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 36, marginBottom: 12, display: 'block' }} />
+          <p style={{ marginBottom: 16, fontWeight: 600 }}>{loadError}</p>
+          <button className="ap-btn ap-btn--ghost" onClick={load}>
+            <i className="fa-solid fa-rotate" /> Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!settings) {
     return (
@@ -390,12 +435,6 @@ export default function Permissions() {
       </div>
     );
   }
-
-  const MAIN_TABS = [
-    { id: 'member', label: 'Member Permissions', icon: 'fa-users',       tabs: MEMBER_TABS },
-    { id: 'staff',  label: 'Staff Permissions',  icon: 'fa-user-shield', tabs: STAFF_TABS  },
-    { id: 'room',   label: 'Room Permissions',   icon: 'fa-door-open',   tabs: ROOM_TABS   },
-  ];
 
   const active = MAIN_TABS.find(t => t.id === mainTab);
 
