@@ -1,6 +1,6 @@
 // ChatMedia.jsx — Paint, GifPicker, YTPanel, SpotifyPanel, EmoticonPicker, YTMessage
 // Mobile-first: bottom-sheet on mobile, fixed popup on desktop (>=600px). No absolute fights.
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react' 
 import { API } from './chatConstants.js'
 
 // ─────────────────────────────────────────────────────────────
