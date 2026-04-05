@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import PageLayout from '../components/PageLayout.jsx';
 
 const API   = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-const token = () => localStorage.getItem('token');
+const token = () => localStorage.getItem('cgz_token');
 
 const api = async (path, opts = {}) => {
   const r = await fetch(`${API}/api${path}`, {
