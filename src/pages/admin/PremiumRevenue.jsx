@@ -5,16 +5,30 @@
  */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 
-const API   = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-const token = () => localStorage.getItem('token');
+// FIX: trim trailing slash; fall back safely if env var is missing
+const API   = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+// FIX: never returns null — always returns empty string so "Bearer null" is never sent
+const token = () => localStorage.getItem('token') || '';
 
+// FIX: unified api helper with network error handling and auth guard
 const api = async (path, opts = {}) => {
+  const tok = token();
+  if (!tok) throw new Error('Not authenticated — please log in.');
+  // Detect absolute /api/... paths (premium + revenue endpoints) vs admin-relative paths
   const base = path.startsWith('/api') ? API : `${API}/api/admin`;
-  const r = await fetch(`${base}${path}`, {
-    headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json', ...opts.headers },
-    ...opts,
-  });
-  if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || 'Request failed'); }
+  let r;
+  try {
+    r = await fetch(`${base}${path}`, {
+      headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json', ...opts.headers },
+      ...opts,
+    });
+  } catch {
+    throw new Error('Network error — cannot reach server.');
+  }
+  if (!r.ok) {
+    const e = await r.json().catch(() => ({}));
+    throw new Error(e.error || `Request failed (${r.status})`);
+  }
   return r.json();
 };
 
@@ -262,8 +276,18 @@ export function PremiumSection() {
     finally { setSaving(false); }
   };
 
+  // FIX: replaced native confirm() (blocks thread, bad UX) with a state flag
+  const [revokeTarget, setRevokeTarget] = React.useState(null);
+
   const revoke = async (userId, username) => {
-    if (!confirm(`Revoke premium from ${username}?`)) return;
+    // Trigger confirm dialog (handled in JSX below)
+    setRevokeTarget({ userId, username });
+  };
+
+  const confirmRevoke = async () => {
+    if (!revokeTarget) return;
+    const { userId, username } = revokeTarget;
+    setRevokeTarget(null);
     try {
       await api(`/api/premium/revoke/${userId}`, { method:'DELETE' });
       toast(`Revoked from ${username}`);
@@ -560,6 +584,19 @@ export function PremiumSection() {
           </div>
         </div>
       )}
+
+      {/* FIX: Revoke confirm dialog — replaces native confirm() call */}
+      {revokeTarget && (
+        <div className="ap-overlay" onClick={() => setRevokeTarget(null)}>
+          <div className="ap-dialog" onClick={e => e.stopPropagation()}>
+            <p>Revoke premium from <strong>{revokeTarget.username}</strong>?</p>
+            <div className="ap-dialog-actions">
+              <button className="ap-btn ap-btn--danger" onClick={confirmRevoke}>Confirm</button>
+              <button className="ap-btn ap-btn--ghost" onClick={() => setRevokeTarget(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -574,6 +611,30 @@ export function RevenueSection({ userRank }) {
   const [adData, setAdData]     = useState(null);
   const [tab, setTab]           = useState('overview');
 
+  // FIX: ALL hooks must be called before any conditional return (Rules of Hooks).
+  // The original code had `if (userRank !== 'owner') return (...)` BEFORE useCallback/useEffect,
+  // which caused React to crash with "rendered more hooks than previous render".
+  // Solution: call all hooks unconditionally, gate the early-return in JSX below.
+
+  const loadSummary = useCallback(async () => {
+    if (userRank !== 'owner') return;   // safe inside callback — not a hook call
+    setLoading(true);
+    try { const d = await api('/api/revenue/summary'); setData(d); }
+    catch(e) { toast(e.message,'error'); }
+    finally  { setLoading(false); }
+  }, [userRank]);
+
+  const loadAds = useCallback(async () => {
+    if (userRank !== 'owner') return;
+    try { const d = await api(`/api/revenue/ads?days=${adDays}`); setAdData(d); }
+    catch(e) { toast(e.message,'error'); }
+  }, [adDays, userRank]);
+
+  useEffect(() => { loadSummary(); }, [loadSummary]);
+  // FIX: removed setTimeout(loadAds, 50) — useEffect dependency on adDays handles re-fetch correctly
+  useEffect(() => { if (tab === 'ads') loadAds(); }, [tab, loadAds]);
+
+  // Guard: render lock-screen AFTER hooks (JSX return, not early return before hooks)
   if (userRank !== 'owner') {
     return (
       <div className="ap-section">
@@ -585,21 +646,6 @@ export function RevenueSection({ userRank }) {
       </div>
     );
   }
-
-  const loadSummary = useCallback(async () => {
-    setLoading(true);
-    try { const d = await api('/api/revenue/summary'); setData(d); }
-    catch(e) { toast(e.message,'error'); }
-    finally  { setLoading(false); }
-  }, []);
-
-  const loadAds = useCallback(async () => {
-    try { const d = await api(`/api/revenue/ads?days=${adDays}`); setAdData(d); }
-    catch(e) { toast(e.message,'error'); }
-  }, [adDays]);
-
-  useEffect(() => { loadSummary(); }, [loadSummary]);
-  useEffect(() => { if (tab === 'ads') loadAds(); }, [tab, loadAds]);
 
   const TABS = [
     {id:'overview', icon:'fa-chart-line',  label:'Overview'},
@@ -761,7 +807,7 @@ export function RevenueSection({ userRank }) {
                         borderRadius:'4px 4px 0 0',transition:'height .3s'
                       }}/>
                       <span style={{fontSize:9,color:'#6b7280',whiteSpace:'nowrap'}}>
-                        {new Date(d._id).toLocaleDateString('en',{month:'short',day:'numeric'})}
+                        {d._id ? new Date(d._id).toLocaleDateString('en',{month:'short',day:'numeric'}) : '—'}
                       </span>
                     </div>
                   );
@@ -826,7 +872,8 @@ export function RevenueSection({ userRank }) {
           <div className="ap-filter-bar">
             <span className="ap-muted">Show last</span>
             {[7,14,30,60,90].map(d => (
-              <button key={d} onClick={() => { setAdDays(d); setTimeout(loadAds,50); }}
+              // FIX: removed setTimeout(loadAds, 50) — setAdDays triggers useEffect([adDays]) cleanly
+              <button key={d} onClick={() => setAdDays(d)}
                 className={`ap-btn ap-btn--xs ${adDays===d?'ap-btn--primary':'ap-btn--ghost'}`}>
                 {d}d
               </button>
