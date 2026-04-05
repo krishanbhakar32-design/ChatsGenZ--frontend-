@@ -8,7 +8,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 // FIX: trim trailing slash; fall back safely if env var is missing
 const API   = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 // FIX: never returns null — always returns empty string so "Bearer null" is never sent
-const token = () => localStorage.getItem('token') || '';
+const token = () => localStorage.getItem('cgz_token') || '';
 
 // FIX: unified api helper with network error handling and auth guard
 const api = async (path, opts = {}) => {
