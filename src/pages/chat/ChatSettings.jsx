@@ -600,12 +600,21 @@ function AvatarDropdown({me,status,setStatus,onLeave,socket,onOpenSettings,onOpe
 // ─────────────────────────────────────────────────────────────
 // FOOTER
 // ─────────────────────────────────────────────────────────────
-function Footer({showRadio,setShowRadio,showRight,setRight,notif}){
-  return(
-    <div style={{background:'#fff',borderTop:'1px solid #e4e6ea',padding:'4px 10px',display:'flex',alignItems:'center',gap:4,flexShrink:0,position:'relative'}}>
-      <FBtn faIcon="fa-solid fa-radio" active={showRadio} onClick={()=>setShowRadio(s=>!s)} title="Radio"/>
+// Footer — FIXED: accepts tObj so it always matches the active theme
+function Footer({showRadio, setShowRadio, showRight, setRight, notif, tObj}) {
+  const bg     = tObj?.bg_header  || '#fff'
+  const border = tObj?.default_color || '#e4e6ea'
+  return (
+    <div style={{
+      background: bg,
+      borderTop: `1px solid ${border}44`,
+      padding: '4px 10px',
+      display: 'flex', alignItems: 'center', gap: 4,
+      flexShrink: 0, position: 'relative',
+    }}>
+      <FBtn faIcon="fa-solid fa-radio" active={showRadio} onClick={() => setShowRadio(s => !s)} title="Radio" tObj={tObj}/>
       <div style={{flex:1}}/>
-      <FBtn faIcon="fa-solid fa-users" active={showRight} onClick={()=>setRight(s=>!s)} title="User List" badge={notif.friends}/>
+      <FBtn faIcon="fa-solid fa-users" active={showRight} onClick={() => setRight(s => !s)} title="User List" badge={notif.friends} tObj={tObj}/>
     </div>
   )
 }
