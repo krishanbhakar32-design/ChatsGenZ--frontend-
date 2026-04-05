@@ -670,7 +670,7 @@ function ViewerView({ watching, watchVideoRef, viewerMicOn, viewerCamOn, setView
         <button
           onClick={stopWatching}
           style={{
-            marginLeft: 'auto', padding: '8px 14px', borderRadius: 9, border: 'none',
+            marginLeft: 'auto', padding: '8px 14px', borderRadius: 9,
             background: 'rgba(239,68,68,0.2)', color: '#ef4444',
             fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem', flexShrink: 0,
             border: '1px solid rgba(239,68,68,0.3)',
