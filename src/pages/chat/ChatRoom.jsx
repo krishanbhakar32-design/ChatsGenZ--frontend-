@@ -242,7 +242,7 @@ export default function ChatRoom() {
 
   return (
     // ROOT: full viewport height, column flex, NO overflow on root so header+footer are always visible
-    <div style={{height:'100dvh',display:'flex',flexDirection:'column',background:thBg,overflow:'hidden',position:'relative',maxWidth:'100vw'}} onClick={closeAll}>
+    <div style={{height:'100dvh',display:'flex',flexDirection:'column',background:thBg,overflow:'hidden',position:'relative',maxWidth:'100vw',paddingBottom:50}} onClick={closeAll}>
 
       {/* Background image layer */}
       {thBgImg && (
@@ -453,8 +453,8 @@ export default function ChatRoom() {
         )}
       </div>
 
-      {/* ══════════════ FOOTER — sticky, never scrolls ══════════════ */}
-      <div style={{flexShrink:0, position:'relative', zIndex:100}}>
+      {/* ══════════════ FOOTER — fixed at bottom, never scrolls ══════════════ */}
+      <div style={{position:'fixed', bottom:0, left:0, right:0, zIndex:200}}>
         {showRadio && <RadioPanel onClose={() => setRadio(false)}/>}
         {miniYT && (
           <div style={{position:'absolute',bottom:'100%',right:8,background:'#111',border:'1px solid #333',borderRadius:10,overflow:'hidden',boxShadow:'0 -4px 16px rgba(0,0,0,.4)',display:'flex',alignItems:'center',gap:8,padding:'6px 10px',maxWidth:280}}>
