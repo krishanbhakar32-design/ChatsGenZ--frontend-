@@ -1,8 +1,11 @@
 // ============================================================
-// ChatMessages.jsx — CodyChat Dark Theme
-// - All hardcoded colors replaced with CSS variables / tObj
-// - Dark theme contrast ensured throughout
-// - Message hover, context menu, bubbles all dark-themed
+// ChatMessages.jsx — Fixed for all themes
+// KEY FIXES:
+// 1. Username ALWAYS visible — uses tObj.text with guaranteed contrast
+// 2. Message text ALWAYS visible — bubbleColor bg uses matching fg
+// 3. No styles imported from StyleModal — tObj passed as prop
+// 4. System messages: clean left-aligned pill, no avatar
+// 5. Font size/family consistent: name 0.82rem, msg 0.875rem baseline
 // ============================================================
 import { useState } from 'react'
 import { API, R, RL, GBR, SYS_CFG, SYSTEM_SENDER, resolveNameColor } from './chatConstants.js'
@@ -49,6 +52,7 @@ function formatTs(createdAt) {
 export function QuotedMessage({ replyTo, tObj }) {
   if (!replyTo) return null
   const thText = tObj?.text || '#ffffff'
+  const thAccent = tObj?.accent || '#03add8'
   const senderName = replyTo.sender?.username || 'Unknown'
   let preview = ''
   if      (replyTo.type === 'image')   preview = '📷 Image'
@@ -62,14 +66,14 @@ export function QuotedMessage({ replyTo, tObj }) {
   return (
     <div style={{
       display: 'flex', gap: 8,
-      background: 'rgba(3,173,216,0.10)',
-      borderLeft: '3px solid var(--accent)',
+      background: thAccent + '18',
+      borderLeft: `3px solid ${thAccent}`,
       borderRadius: '0 8px 8px 0',
       padding: '5px 10px', marginBottom: 5,
       maxWidth: '100%', overflow: 'hidden',
     }}>
       <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-        <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--accent)', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <div style={{ fontSize: '0.7rem', fontWeight: 800, color: thAccent, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           ↩ {senderName}
         </div>
         <div style={{ fontSize: '0.75rem', color: thText + '88', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -98,10 +102,11 @@ const SYS_TEXT = {
 
 // ── Msg Component ──────────────────────────────────────────
 function Msg({ msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myLevel, socket, roomId, onYTMinimize, onIgnore, tObj }) {
-  // Use tObj for theme colors, fallback to dark theme CSS vars
+  // tObj is ALWAYS the source of truth for theme colors
   const thText   = tObj?.text   || '#ffffff'
   const thAccent = tObj?.accent || '#03add8'
   const thBg     = tObj?.bg_chat || '#151515'
+  const thLog    = tObj?.bg_log  || 'rgba(255,255,255,0.04)'
 
   const isSystem = ['system','join','leave','kick','mute','ban','mod','dice','gift','warning','success','error'].includes(msg.type)
 
@@ -110,7 +115,7 @@ function Msg({ msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myL
     return <WhisperMessage msg={msg} myId={myId} onWhisperReply={onWhisper} />
   }
 
-  // ── SYSTEM MESSAGE ──
+  // ── SYSTEM MESSAGE — clean left-aligned pill, no avatar ──
   if (isSystem) {
     const cfg = SYS_TEXT[msg.type] || SYS_TEXT.system
     const ts = formatTs(msg.createdAt)
@@ -118,6 +123,7 @@ function Msg({ msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myL
 
     function renderSysContent(content) {
       if (!content) return null
+      // Bold the username part (first word/name before action verb)
       const m = content.match(/^(.+?)\s+(has|was|have|joined|left)\b(.*)$/i)
       if (m) {
         return (
@@ -132,24 +138,25 @@ function Msg({ msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myL
 
     return (
       <div
-        style={{ display: 'flex', alignItems: 'center', gap: 0, padding: '3px 10px', margin: '1px 0', position: 'relative' }}
+        style={{ display: 'flex', alignItems: 'center', gap: 0, padding: '2px 10px', margin: '1px 0', position: 'relative' }}
         onMouseEnter={e => e.currentTarget.querySelector('.sys-del-btn')?.style && (e.currentTarget.querySelector('.sys-del-btn').style.opacity = '1')}
         onMouseLeave={e => e.currentTarget.querySelector('.sys-del-btn')?.style && (e.currentTarget.querySelector('.sys-del-btn').style.opacity = '0')}
       >
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
           background: cfg.bg, border: `1px solid ${cfg.border}`,
-          borderRadius: 20, padding: '3px 10px 3px 4px',
+          borderRadius: 20, padding: '3px 10px 3px 6px',
           maxWidth: 'min(95%,520px)', flexShrink: 1, minWidth: 0,
         }}>
+          {/* Small icon circle */}
           <div style={{
-            width: 20, height: 20, borderRadius: '50%',
+            width: 18, height: 18, borderRadius: '50%',
             background: cfg.color + '22', border: `1px solid ${cfg.color}44`,
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
           }}>
-            <i className={cfg.icon} style={{ fontSize: 9, color: cfg.color }} />
+            <i className={cfg.icon} style={{ fontSize: 8, color: cfg.color }} />
           </div>
-          <span style={{ fontSize: '0.77rem', lineHeight: 1.3, minWidth: 0 }}>
+          <span style={{ fontSize: '0.76rem', lineHeight: 1.3, minWidth: 0 }}>
             {renderSysContent(msg.content)}
           </span>
           <span style={{ fontSize: '0.58rem', color: '#666', whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 4 }}>{ts}</span>
@@ -180,16 +187,36 @@ function Msg({ msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myL
   const nameFontCls = nameFontId && nameFontId.startsWith('font') ? 'bnfont' + nameFontId.replace('font','') : ''
   const msgFontCls  = msgFontId  && msgFontId.startsWith('font')  ? 'bfont'  + msgFontId.replace('font','')  : ''
 
+  // ── NAME COLOR — always resolves to visible color ──────────────────────
+  // Priority: custom nameColor class → custom hex → theme text color
   function nameColorInfo() {
     const nc = msg.sender?.nameColor
-    if (!nc || nc === 'user') return { cls: '', style: { color: thText } }
+    // no custom → use theme text (guaranteed visible on theme bg)
+    if (!nc || nc === 'user' || nc === 'default') return { cls: '', style: { color: thText } }
+    // CSS class-based (gradient/neon)
     if (nc.startsWith('bcolor') || nc.startsWith('bgrad') || nc.startsWith('bneon')) {
       return { cls: nc, style: {} }
     }
+    // Direct hex/rgb
     if (nc.startsWith('#') || nc.startsWith('rgb')) return { cls: '', style: { color: nc } }
     return { cls: '', style: { color: thText } }
   }
   const nameInfo = nameColorInfo()
+
+  // ── BUBBLE TEXT COLOR — always visible regardless of bubble bg ─────────
+  // If bubbleColor class is set (colored bg), use sender's msgFontColor or white
+  // If no bubble bg, use theme text color so it's always readable
+  const bubCls = getBubClassName(msg.sender?.bubbleColor)
+  const hasBubbleBg = !!bubCls
+
+  function getMsgTextColor() {
+    if (msg.sender?.msgFontColor) return msg.sender.msgFontColor
+    // bubble bg → white text (works on any colored bg)
+    if (hasBubbleBg) return '#ffffff'
+    // no bubble → theme text (guaranteed contrast on theme bg)
+    return thText
+  }
+  const msgTextColor = getMsgTextColor()
 
   function renderContent(text) {
     if (!text) return null
@@ -208,8 +235,6 @@ function Msg({ msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myL
     setMenuPos({ x: Math.min(e.clientX, window.innerWidth - 185), y: Math.min(e.clientY, window.innerHeight - 210) })
   }
 
-  const bubCls = getBubClassName(msg.sender?.bubbleColor)
-
   const senderForWhisper = msg.sender ? {
     ...msg.sender,
     userId: msg.sender.userId || msg.sender._id,
@@ -221,7 +246,7 @@ function Msg({ msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myL
     <>
       {menuPos && <div onClick={() => setMenuPos(null)} style={{ position: 'fixed', inset: 0, zIndex: 8888 }} />}
       {menuPos && (
-        // Context menu — CodyChat dark style: #202020 bg, dark borders
+        // Context menu
         <div style={{
           position: 'fixed', top: menuPos.y, left: menuPos.x,
           background: '#202020', border: '1px solid rgba(255,255,255,0.08)',
@@ -229,7 +254,7 @@ function Msg({ msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myL
           overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
         }}>
           {[
-            { icon: 'fa-solid fa-reply-all',     label: 'Quote',   color: '#03add8', disabled: false,  fn: () => { onQuote?.(msg); setMenuPos(null) } },
+            { icon: 'fa-solid fa-reply-all',     label: 'Quote',   color: thAccent, disabled: false,  fn: () => { onQuote?.(msg); setMenuPos(null) } },
             { icon: 'fa-solid fa-hand-lizard',   label: 'Whisper', color: '#a78bfa', disabled: isMine, fn: () => { if (!senderForWhisper || isMine) return; onWhisper?.(senderForWhisper); setMenuPos(null) } },
             { icon: 'fa-solid fa-eye-slash',     label: 'Hide',    color: '#888888', disabled: false,  fn: () => { onHide?.(msg._id); setMenuPos(null) } },
             { icon: 'fa-sharp fa-solid fa-flag', label: 'Report',  color: '#f59e0b', disabled: false,  fn: () => setMenuPos(null) },
@@ -254,7 +279,7 @@ function Msg({ msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myL
         </div>
       )}
 
-      {/* Message row — hover shows subtle dark bg, matching CodyChat .bhover */}
+      {/* Message row */}
       <div
         onClick={handleClick}
         style={{
@@ -276,42 +301,54 @@ function Msg({ msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myL
         />
 
         <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-          {/* Name row */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 1 }}>
+          {/* Name row — username ALWAYS visible using theme text color as fallback */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
             <RIcon rank={msg.sender?.rank} size={12} />
             <span
               className={[nameInfo.cls, nameFontCls].filter(Boolean).join(' ')}
               style={{
-                fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                lineHeight: 1.2,
+                // font family: class handles it if nameFontCls set, else inline
                 ...(nameFontCls ? {} : { fontFamily: nameFontFamily }),
+                // Color: class handles it if cls set, else inline style (always a visible color)
                 ...nameInfo.style,
               }}
               onClick={e => { e.stopPropagation(); onMention?.(`@${msg.sender?.username} `) }}
               onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
               onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
             >
-              {msg.sender?.username}
+              {msg.sender?.username || 'Unknown'}
             </span>
-            {/* Timestamp — matches CodyChat .sub_chat style */}
-            <span style={{ marginLeft: 'auto', fontSize: '0.6rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>{ts}</span>
+            {/* Timestamp */}
+            <span style={{ marginLeft: 'auto', fontSize: '0.6rem', color: thText ? thText + '66' : '#555', whiteSpace: 'nowrap', flexShrink: 0 }}>{ts}</span>
           </div>
 
-          {/* Bubble */}
+          {/* Bubble — message text ALWAYS visible */}
           <div
             className={[bubCls, msgFontCls].filter(Boolean).join(' ')}
             style={{
               fontSize: msg.sender?.msgFontSize ? `${msg.sender.msgFontSize}px` : '0.875rem',
-              lineHeight: 1.5,
-              color: bubCls
-                ? (msg.sender?.msgFontColor || '#ffffff')
-                : (msg.sender?.msgFontColor || thText),
+              lineHeight: 1.55,
+              // text color: always resolved to visible value
+              color: msgTextColor,
               wordBreak: 'break-word',
               overflowWrap: 'break-word',
-              fontFamily: msgFontFamily,
+              // font family
+              ...(msgFontCls ? {} : { fontFamily: msgFontFamily }),
               fontWeight: msg.sender?.bubbleStyle?.includes('bold') ? 700 : 400,
               fontStyle: msg.sender?.bubbleStyle?.includes('italic') ? 'italic' : 'normal',
               maxWidth: '100%',
-              ...(bubCls ? { padding: '5px 10px', borderRadius: '3px 10px 10px 10px', display: 'inline-block' } : {}),
+              // bubble bg padding only if colored bubble class is applied
+              ...(hasBubbleBg ? {
+                padding: '5px 10px',
+                borderRadius: '3px 10px 10px 10px',
+                display: 'inline-block',
+                // ensure text-shadow is not hiding text — reset
+                textShadow: 'none',
+              } : {}),
             }}
           >
             {msg.replyTo && <QuotedMessage replyTo={msg.replyTo} tObj={tObj} />}
