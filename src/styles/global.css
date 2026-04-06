@@ -386,3 +386,18 @@ img.rank-icon, img.rank-icon-xs, img.rank-icon-sm, img.rank-icon-md, img.rank-ic
 /* ── MOBILE TAP HIGHLIGHT ────────────────────────────────── */
 * { -webkit-tap-highlight-color: transparent; }
 input, textarea, select { font-size: 16px !important; }
+
+/* ── FIX 7: No backdrop blur anywhere ───────────────────────── */
+/* Blur was causing performance issues and visual bugs on some themes */
+* {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ── FIX 4: Chatroom page — no body scroll, fixed layout ───── */
+body.chatroom-active {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+}
