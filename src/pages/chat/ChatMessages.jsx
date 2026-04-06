@@ -45,16 +45,16 @@ const BUB_GRADS = [
   'linear-gradient(135deg,#ffecd2,#fcb69f)','linear-gradient(135deg,#ff9a9e,#fecfef)',
 ]
 
+// getBubClassName: returns CSS class from public/bubbles.css (bubcolor1-32, bubgrad1-40, bubneon1-40)
+function getBubClassName(bubbleColor) {
+  if (!bubbleColor) return ''
+  if (bubbleColor.startsWith('bubcolor') || bubbleColor.startsWith('bubgrad') || bubbleColor.startsWith('bubneon')) return bubbleColor
+  return ''
+}
+// getBubStyle: only sets text color/shadow since background is handled by CSS class
 function getBubStyle(bubbleColor) {
   if (!bubbleColor) return {}
-  if (bubbleColor.startsWith('bubcolor')) {
-    const bg = SOLID_COLORS[parseInt(bubbleColor.replace('bubcolor','')) - 1]
-    return bg ? {background:bg, padding:'5px 10px', borderRadius:'3px 10px 10px 10px', display:'inline-block'} : {}
-  }
-  if (bubbleColor.startsWith('bubgrad')) {
-    const bg = BUB_GRADS[parseInt(bubbleColor.replace('bubgrad','')) - 1]
-    return bg ? {background:bg, padding:'5px 10px', borderRadius:'3px 10px 10px 10px', display:'inline-block'} : {}
-  }
+  if (bubbleColor.startsWith('bubcolor') || bubbleColor.startsWith('bubgrad') || bubbleColor.startsWith('bubneon')) return {}
   return {}
 }
 
@@ -185,24 +185,26 @@ function Msg({ msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myL
   const canMod = myLevel >= 11 && RL(msg.sender?.rank) < myLevel
   const canDel = isMine || canMod
 
-  const nameFontFamily = msg.sender?.nameFont    ? (FONT_MAP[msg.sender.nameFont]     || 'inherit') : 'inherit'
-  const msgFontFamily  = msg.sender?.msgFontStyle ? (FONT_MAP[msg.sender.msgFontStyle] || 'inherit') : 'inherit'
+  // Fonts via FONT_MAP; CSS classes bnfont1-16 / bfont1-30 also loaded from public/fonts.css
+  const nameFontId     = msg.sender?.nameFont || ''
+  const msgFontId      = msg.sender?.msgFont  || msg.sender?.msgFontStyle || ''
+  const nameFontFamily = nameFontId ? (FONT_MAP[nameFontId] || 'inherit') : 'inherit'
+  const msgFontFamily  = msgFontId  ? (FONT_MAP[msgFontId]  || 'inherit') : 'inherit'
+  const nameFontCls = nameFontId && nameFontId.startsWith('font') ? 'bnfont' + nameFontId.replace('font','') : ''
+  const msgFontCls  = msgFontId  && msgFontId.startsWith('font')  ? 'bfont'  + msgFontId.replace('font','')  : ''
 
-  // Username color — user-set only, fallback to theme text color
-  function nameColorStyle() {
+  // Username color — returns {cls, style} using CSS classes from public/colors.css
+  function nameColorInfo() {
     const nc = msg.sender?.nameColor
-    if (!nc) return {color: thText}  // ← was empty {}, now correctly uses theme color
-    if (nc.startsWith('bcolor')) {
-      const c = SOLID_COLORS[parseInt(nc.replace('bcolor','')) - 1]
-      return c ? {color:c} : {color:thText}
+    if (!nc || nc === 'user') return { cls: '', style: {color: thText} }
+    // CSS classes: bcolor1-32, bgrad1-40, bneon1-32
+    if (nc.startsWith('bcolor') || nc.startsWith('bgrad') || nc.startsWith('bneon')) {
+      return { cls: nc, style: {} }
     }
-    if (nc.startsWith('bgrad')) {
-      const g = BUB_GRADS[parseInt(nc.replace('bgrad','')) - 1]
-      return g ? {background:g, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text'} : {color:thText}
-    }
-    if (nc.startsWith('#') || nc.startsWith('rgb')) return {color:nc}
-    return {color:thText}
+    if (nc.startsWith('#') || nc.startsWith('rgb')) return { cls: '', style: {color:nc} }
+    return { cls: '', style: {color:thText} }
   }
+  const nameInfo = nameColorInfo()
 
   function renderContent(text) {
     if (!text) return null
@@ -221,6 +223,7 @@ function Msg({ msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myL
     setMenuPos({x:Math.min(e.clientX, window.innerWidth-185), y:Math.min(e.clientY, window.innerHeight-200)})
   }
 
+  const bubCls   = getBubClassName(msg.sender?.bubbleColor)
   const bubStyle = getBubStyle(msg.sender?.bubbleColor)
 
   const senderForWhisper = msg.sender ? {
@@ -268,7 +271,8 @@ function Msg({ msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myL
           <div style={{display:'flex',alignItems:'center',gap:4,marginBottom:1}}>
             <RIcon rank={msg.sender?.rank} size={12}/>
             <span
-              style={{fontSize:'0.82rem',fontWeight:700,cursor:'pointer',fontFamily:nameFontFamily, ...nameColorStyle()}}
+              className={[nameInfo.cls, nameFontCls].filter(Boolean).join(' ')}
+              style={{fontSize:'0.82rem',fontWeight:700,cursor:'pointer',...(nameFontCls ? {} : {fontFamily:nameFontFamily}), ...nameInfo.style}}
               onClick={e => { e.stopPropagation(); onMention?.(`@${msg.sender?.username} `) }}
               onMouseEnter={e => e.currentTarget.style.textDecoration='underline'}
               onMouseLeave={e => e.currentTarget.style.textDecoration='none'}
@@ -279,11 +283,12 @@ function Msg({ msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myL
           </div>
 
           {/* Message content */}
-          <div style={{
+          <div
+            className={[bubCls, msgFontCls].filter(Boolean).join(' ')}
+            style={{
             fontSize: msg.sender?.msgFontSize ? `${msg.sender.msgFontSize}px` : '0.875rem',
             lineHeight: 1.45,
-            // ← KEY FIX: use theme text color when no bubble bg, not empty string
-            color: bubStyle.background
+            color: bubCls
               ? (msg.sender?.msgFontColor || '#fff')
               : (msg.sender?.msgFontColor || thText),
             wordBreak: 'break-word',
@@ -292,7 +297,7 @@ function Msg({ msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myL
             fontWeight:  msg.sender?.bubbleStyle?.includes('bold')   ? 700 : 400,
             fontStyle:   msg.sender?.bubbleStyle?.includes('italic')  ? 'italic' : 'normal',
             maxWidth: '100%',
-            ...bubStyle,
+            ...(bubCls ? {padding:'5px 10px', borderRadius:'3px 10px 10px 10px', display:'inline-block'} : {}),
           }}>
             {msg.replyTo && <QuotedMessage replyTo={msg.replyTo} tObj={tObj}/>}
             {msg.type==='gift'
