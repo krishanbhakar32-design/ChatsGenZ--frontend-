@@ -128,7 +128,7 @@ function RoomModal({editRoom,onClose,onSave,showToast}){
         headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},
         body:JSON.stringify(payload)
       })
-      const d=await r.json()
+      const d=await r.json() 
       if(!r.ok){showToast(d.error||'Failed to save room','error');setSaving(false);return}
       showToast(editRoom?'Room updated!':'Room created!','success')
       onSave(d.room)
