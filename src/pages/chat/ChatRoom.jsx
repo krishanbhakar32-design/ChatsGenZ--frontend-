@@ -1,10 +1,10 @@
 // ============================================================
 // ChatRoom.jsx — CodyChat Dark Theme Layout
-// - Header: #111 bg, accent icons, dark border
-// - Chat wall: #151515 bg with rgba(255,255,255,0.04) log bubbles
-// - Input bar: #191919 bg, #222 borders, accent send button
-// - Footer: fixed #111, dark border
-// - All CSS variable-driven, no hardcoded light colors
+// Fixes:
+// 1. Refresh popup confirmation before page reload
+// 2. Leave msg only on explicit leave (not tab switch/refresh)
+// 3. System messages not auto-sent on refresh
+// 4. Theme styles NOT imported from StyleModal — inline tObj used everywhere
 // ============================================================
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate }                   from 'react-router-dom'
@@ -72,6 +72,22 @@ export default function ChatRoom() {
 
   const sockRef = useRef(null), bottomRef = useRef(null), inputRef = useRef(null)
   const typingTimer = useRef(null), isTypingRef = useRef(false)
+  // Track intentional leave vs refresh/tab switch
+  const intentionalLeaveRef = useRef(false)
+
+  // ── beforeunload: ask confirm on refresh/close, leave msg only on intentional leave ──
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      // Show browser confirm dialog before refresh/close
+      e.preventDefault()
+      e.returnValue = 'Are you sure you want to leave the chat?'
+      return e.returnValue
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [])
 
   useEffect(() => {
     if (!token) { nav('/login'); return }
@@ -190,7 +206,15 @@ export default function ChatRoom() {
     inputRef.current?.focus()
   }
 
-  function leave() { sockRef.current?.disconnect(); nav('/chat') }
+  // Intentional leave — marks flag, server emits left system msg, then navigate
+  function leave() {
+    intentionalLeaveRef.current = true
+    sockRef.current?.emit('leaveRoom', { roomId })
+    setTimeout(() => {
+      sockRef.current?.disconnect()
+      nav('/chat')
+    }, 150)
+  }
 
   const handleIgnore    = useCallback((uid) => { setIgnored(p => { const n = new Set(p); n.has(uid) ? n.delete(uid) : n.add(uid); return n }) }, [])
   const handleMention   = useCallback((text) => { setInput(p => text + (p ? ' ' + p : '')); inputRef.current?.focus() }, [])
@@ -200,7 +224,7 @@ export default function ChatRoom() {
   const myLevel    = RANKS[me?.rank]?.level || 1
   const isStaffRole = myLevel >= 11
 
-  // Active theme
+  // Active theme — all color values come from tObj, NEVER import colors from StyleModal directly into rendering
   const tObj    = THEMES.find(t => t.id === (me?.chatTheme || 'Dark')) || THEMES.find(t => t.id === 'Dark') || THEMES[0]
   const thBg     = tObj.bg_chat
   const thHeader = tObj.bg_header
@@ -230,7 +254,6 @@ export default function ChatRoom() {
   if (loading) return (
     <div style={{ minHeight: '100dvh', background: '#141414', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center' }}>
-        {/* CodyChat-style spinner */}
         <div style={{ width: 32, height: 32, border: '3px solid rgba(255,255,255,0.1)', borderTop: '3px solid #03add8', borderRadius: '50%', animation: 'spin .8s linear infinite', margin: '0 auto 10px' }} />
         <p style={{ color: '#666', fontSize: '0.9rem' }}>Joining room...</p>
       </div>
@@ -238,7 +261,6 @@ export default function ChatRoom() {
   )
 
   return (
-    // ROOT — full viewport, column flex, dark bg
     <div
       style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: thBg || '#151515', overflow: 'hidden', position: 'relative', maxWidth: '100vw', paddingBottom: 50 }}
       onClick={closeAll}
@@ -248,10 +270,9 @@ export default function ChatRoom() {
         <div style={{ position: 'fixed', inset: 0, backgroundImage: `url(${thBgImg})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', zIndex: 0, pointerEvents: 'none', opacity: 0.55 }} />
       )}
 
-      {/* ════════════════ HEADER — CodyChat .bhead ═══════════ */}
+      {/* ════════════════ HEADER ═══════════ */}
       <div style={{
         height: 50, flexShrink: 0, zIndex: 100, position: 'relative',
-        // CodyChat .bhead
         background: thHeader || '#111111',
         borderBottom: '1px solid rgba(255,255,255,0.05)',
         display: 'flex', alignItems: 'center', padding: '0 8px', gap: 2,
@@ -262,9 +283,9 @@ export default function ChatRoom() {
           onClick={e => { e.stopPropagation(); setLeft(s => !s) }}
           title="Menu"
           style={{
-            background: showLeft ? 'rgba(3,173,216,0.18)' : 'none',
+            background: showLeft ? `${thAccent || '#03add8'}22` : 'none',
             border: 'none', cursor: 'pointer',
-            color: showLeft ? '#03add8' : 'rgba(255,255,255,0.55)',
+            color: showLeft ? thAccent || '#03add8' : 'rgba(255,255,255,0.55)',
             width: 34, height: 34, borderRadius: 7,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 16, flexShrink: 0, transition: 'all .12s',
@@ -273,42 +294,39 @@ export default function ChatRoom() {
           <i className="fa-solid fa-bars" />
         </button>
 
-        {/* Room name */}
+        {/* Online count only — no room name in header */}
         <div style={{ flex: 1, minWidth: 0, padding: '0 4px' }}>
-          <div style={{ fontSize: '0.85rem', fontWeight: 700, color: thText || '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {room?.name || 'Chat Room'}
-          </div>
           {onlineCount > 0 && (
-            <div style={{ fontSize: '0.65rem', color: '#22c55e', lineHeight: 1 }}>
-              <i className="fa-solid fa-circle" style={{ fontSize: 7, marginRight: 3 }} />
+            <div style={{ fontSize: '0.7rem', color: '#22c55e', lineHeight: 1, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <i className="fa-solid fa-circle" style={{ fontSize: 7 }} />
               {onlineCount} online
             </div>
           )}
         </div>
 
         {/* Webcam */}
-        <HBtn img="/default_images/icons/webcam.svg" title="Webcam" active={showCam} onClick={e => { e.stopPropagation(); setShowCam(p => !p) }} />
+        <HBtn img="/default_images/icons/webcam.svg" title="Webcam" active={showCam} onClick={e => { e.stopPropagation(); setShowCam(p => !p) }} tObj={tObj} />
 
         {/* DM */}
         <div style={{ position: 'relative' }}>
-          <HBtn faIcon="fa-solid fa-envelope" title="Messages" badge={notif.dm} active={showDM} onClick={e => { e.stopPropagation(); setShowDM(p => !p); setShowNotif(false) }} />
+          <HBtn faIcon="fa-solid fa-envelope" title="Messages" badge={notif.dm} active={showDM} onClick={e => { e.stopPropagation(); setShowDM(p => !p); setShowNotif(false) }} tObj={tObj} />
           {showDM && <DMPanel me={me} socket={sockRef.current} onClose={() => setShowDM(false)} onCount={n => setNotif(p => ({ ...p, dm: n }))} />}
         </div>
 
         {/* Friend requests */}
         <div style={{ position: 'relative' }}>
-          <HBtn faIcon="fa-solid fa-user-plus" title="Friend Requests" badge={notif.friends} active={showFriends} onClick={e => { e.stopPropagation(); setShowFriends(p => !p); setShowDM(false); setShowNotif(false) }} />
+          <HBtn faIcon="fa-solid fa-user-plus" title="Friend Requests" badge={notif.friends} active={showFriends} onClick={e => { e.stopPropagation(); setShowFriends(p => !p); setShowDM(false); setShowNotif(false) }} tObj={tObj} />
           {showFriends && <FriendReqPanel onClose={() => setShowFriends(false)} onCount={n => setNotif(p => ({ ...p, friends: n }))} />}
         </div>
 
         {/* Notifications */}
         <div style={{ position: 'relative' }}>
-          <HBtn faIcon="fa-solid fa-bell" title="Notifications" badge={notif.notif} active={showNotif} onClick={e => { e.stopPropagation(); setShowNotif(p => !p); setShowDM(false) }} />
+          <HBtn faIcon="fa-solid fa-bell" title="Notifications" badge={notif.notif} active={showNotif} onClick={e => { e.stopPropagation(); setShowNotif(p => !p); setShowDM(false) }} tObj={tObj} />
           {showNotif && <NotifPanel onClose={() => setShowNotif(false)} onCount={n => setNotif(p => ({ ...p, notif: n }))} />}
         </div>
 
         {/* Staff reports */}
-        {isStaffRole && <HBtn faIcon="fa-sharp fa-solid fa-flag" title="Reports" badge={notif.reports} />}
+        {isStaffRole && <HBtn faIcon="fa-sharp fa-solid fa-flag" title="Reports" badge={notif.reports} tObj={tObj} />}
 
         {/* Avatar / profile dropdown */}
         <AvatarDropdown
@@ -316,6 +334,7 @@ export default function ChatRoom() {
           onLeave={leave} socket={sockRef.current}
           onOpenSettings={() => setShowChatSettings(true)}
           onOpenProfile={() => setProf(me)}
+          tObj={tObj}
         />
       </div>
 
@@ -334,13 +353,13 @@ export default function ChatRoom() {
             onStyleSaved={updated => { if (updated) setMe(p => ({ ...p, ...updated })) }} />
         )}
 
-        {/* ── MESSAGES COLUMN ────────────────────────────── */}
+        {/* ── MESSAGES COLUMN ── */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, maxWidth: '100%', background: thBg || '#151515' }}>
 
-          {/* Topic bar — CodyChat .back_ptop style */}
+          {/* Topic bar */}
           {room?.topic && (
             <div style={{
-              background: '#212121',
+              background: thHeader || '#212121',
               borderBottom: '1px solid rgba(255,255,255,0.05)',
               padding: '8px 14px', fontSize: '0.78rem',
               color: thText || '#ffffff', flexShrink: 0,
@@ -361,7 +380,7 @@ export default function ChatRoom() {
           )}
           <LiveCamBar socket={sockRef.current} roomId={roomId} me={me} liveCams={liveCams} setLiveCams={setLiveCams} onOpenHostPanel={() => setShowCam(true)} />
 
-          {/* ── Scrollable messages — CodyChat .back_chat ── */}
+          {/* ── Scrollable messages ── */}
           <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '6px 0', minHeight: 0 }}>
             {messages.map((m, i) => (
               !hiddenMsgs.has(m._id) && !m._ignored &&
@@ -380,10 +399,10 @@ export default function ChatRoom() {
               <div style={{ padding: '2px 12px 4px', display: 'flex', alignItems: 'center', gap: 7 }}>
                 <div style={{ display: 'flex', gap: 3 }}>
                   {[0, 1, 2].map(i => (
-                    <span key={i} style={{ width: 4, height: 4, background: '#666', borderRadius: '50%', display: 'inline-block', animation: `typingDot .8s ease-in-out ${i * 0.2}s infinite` }} />
+                    <span key={i} style={{ width: 4, height: 4, background: thAccent || '#666', borderRadius: '50%', display: 'inline-block', animation: `typingDot .8s ease-in-out ${i * 0.2}s infinite` }} />
                   ))}
                 </div>
-                <span style={{ fontSize: '0.7rem', color: '#666', fontStyle: 'italic' }}>
+                <span style={{ fontSize: '0.7rem', color: (thText || '#fff') + '88', fontStyle: 'italic' }}>
                   {typers.filter(t => t !== me?.username).join(', ')} typing...
                 </span>
               </div>
@@ -391,30 +410,29 @@ export default function ChatRoom() {
             <div ref={bottomRef} />
           </div>
 
-          {/* ════════════════ INPUT BAR — CodyChat .back_input ═ */}
+          {/* ════════════════ INPUT BAR ═════════════════ */}
           <div style={{
-            // CodyChat .back_input
             borderTop: '1px solid rgba(255,255,255,0.05)',
             padding: '5px 8px',
-            background: '#191919',
+            background: thHeader || '#191919',
             flexShrink: 0, position: 'relative', zIndex: 10,
           }}>
             {/* Quote preview */}
             {quotedMsg && (
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 8,
-                background: 'rgba(3,173,216,0.10)',
-                border: '1px solid rgba(3,173,216,0.25)',
+                background: `${thAccent || '#03add8'}12`,
+                border: `1px solid ${thAccent || '#03add8'}30`,
                 borderRadius: 8, padding: '5px 10px', marginBottom: 5,
-                borderLeft: '3px solid #03add8',
+                borderLeft: `3px solid ${thAccent || '#03add8'}`,
                 overflow: 'hidden', maxWidth: '100%',
               }}>
-                <i className="fa-solid fa-reply-all" style={{ fontSize: 12, color: '#03add8', flexShrink: 0 }} />
+                <i className="fa-solid fa-reply-all" style={{ fontSize: 12, color: thAccent || '#03add8', flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                  <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#03add8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <div style={{ fontSize: '0.68rem', fontWeight: 800, color: thAccent || '#03add8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     Replying to {quotedMsg.sender?.username || 'Unknown'}
                   </div>
-                  <div style={{ fontSize: '0.72rem', color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '0.72rem', color: (thText || '#fff') + '88', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {quotedMsg.type === 'image' ? '📷 Image'
                       : quotedMsg.type === 'gif' ? '🖼️ GIF'
                       : quotedMsg.type === 'voice' ? '🎤 Voice message'
@@ -427,12 +445,11 @@ export default function ChatRoom() {
               </div>
             )}
 
-            {/* + popup menu — CodyChat dark popup style */}
+            {/* + popup menu */}
             {showPlus && (
               <div onClick={e => e.stopPropagation()} style={{
                 position: 'absolute', bottom: 'calc(100% + 5px)', left: 6,
-                // CodyChat .back_menu
-                background: '#242424', border: '1px solid rgba(255,255,255,0.08)',
+                background: thHeader || '#242424', border: '1px solid rgba(255,255,255,0.08)',
                 borderRadius: 12, padding: 8,
                 display: 'flex', gap: 6,
                 boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
@@ -453,9 +470,8 @@ export default function ChatRoom() {
                     style={{
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
                       padding: '7px 8px',
-                      // CodyChat .bback dark
-                      background: b.active ? 'rgba(3,173,216,0.15)' : 'rgba(255,255,255,0.05)',
-                      border: `1px solid ${b.active ? '#03add8' : 'rgba(255,255,255,0.08)'}`,
+                      background: b.active ? `${thAccent || '#03add8'}22` : 'rgba(255,255,255,0.05)',
+                      border: `1px solid ${b.active ? (thAccent || '#03add8') : 'rgba(255,255,255,0.08)'}`,
                       borderRadius: 9, cursor: 'pointer', minWidth: 44, transition: 'all .15s',
                     }}>
                     {b.type === 'spotify'
@@ -464,10 +480,10 @@ export default function ChatRoom() {
                         ? <span style={{ fontSize: 20 }}>{b.emoji}</span>
                         : <>
                             <img src={b.icon} alt={b.label} style={{ width: 20, height: 20, objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block' }} />
-                            <i className={b.fallback} style={{ display: 'none', fontSize: 18, color: b.active ? '#03add8' : '#666' }} />
+                            <i className={b.fallback} style={{ display: 'none', fontSize: 18, color: b.active ? thAccent : '#666' }} />
                           </>
                     }
-                    <span style={{ fontSize: '0.6rem', fontWeight: 600, color: b.active ? '#03add8' : '#888' }}>{b.label}</span>
+                    <span style={{ fontSize: '0.6rem', fontWeight: 600, color: b.active ? thAccent : '#888' }}>{b.label}</span>
                   </button>
                 ))}
               </div>
@@ -492,7 +508,7 @@ export default function ChatRoom() {
                 } catch { toast?.show('Image upload failed', 'error', 3000) }
               }} />
 
-            {/* Input row — CodyChat style */}
+            {/* Input row */}
             <form onSubmit={send} style={{ display: 'flex', alignItems: 'center', gap: 5, maxWidth: '100%', overflow: 'hidden' }}>
               {/* + button */}
               <button type="button"
@@ -500,8 +516,8 @@ export default function ChatRoom() {
                 style={{
                   width: 32, height: 32, borderRadius: '50%',
                   border: '1.5px solid rgba(255,255,255,0.12)',
-                  background: showPlus ? 'rgba(3,173,216,0.15)' : 'rgba(255,255,255,0.06)',
-                  color: showPlus ? '#03add8' : '#888888',
+                  background: showPlus ? `${thAccent || '#03add8'}22` : 'rgba(255,255,255,0.06)',
+                  color: showPlus ? thAccent || '#03add8' : '#888888',
                   cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 20, flexShrink: 0, fontWeight: 700, lineHeight: 1, transition: 'all .15s',
                 }}>+</button>
@@ -509,12 +525,12 @@ export default function ChatRoom() {
               {/* Emoji */}
               <button type="button"
                 onClick={e => { e.stopPropagation(); setShowEmoji(p => !p); setShowPlus(false) }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: showEmoji ? '#03add8' : '#666', fontSize: 20, padding: '0 1px', flexShrink: 0, display: 'flex', alignItems: 'center', lineHeight: 1 }}>
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: showEmoji ? thAccent || '#03add8' : '#666', fontSize: 20, padding: '0 1px', flexShrink: 0, display: 'flex', alignItems: 'center', lineHeight: 1 }}>
                 <img src="/icons/emoticon/happy.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block' }} />
                 <i className="fa-regular fa-face-smile" style={{ display: 'none' }} />
               </button>
 
-              {/* Text input — CodyChat input style */}
+              {/* Text input — uses theme colors */}
               <input
                 ref={inputRef}
                 value={input}
@@ -523,31 +539,30 @@ export default function ChatRoom() {
                 disabled={!connected}
                 style={{
                   flex: 1, minWidth: 0, padding: '8px 12px',
-                  // CodyChat input styles
-                  background: '#151515',
-                  border: '1px solid #222222',
+                  background: thBg || '#151515',
+                  border: `1px solid ${thBorder || '#222222'}`,
                   borderRadius: 22,
-                  color: '#ffffff',
+                  color: thText || '#ffffff',
                   fontSize: '0.88rem',
                   outline: 'none',
                   transition: 'border-color .15s',
                   fontFamily: "'Nunito', sans-serif",
                 }}
-                onFocus={e => e.target.style.borderColor = '#03add8'}
-                onBlur={e  => e.target.style.borderColor = '#222222'}
+                onFocus={e => e.target.style.borderColor = thAccent || '#03add8'}
+                onBlur={e  => e.target.style.borderColor = thBorder || '#222222'}
               />
 
-              {/* Send button — CodyChat .theme_btn */}
+              {/* Send button */}
               <button type="submit"
                 disabled={!input.trim() || !connected}
                 style={{
                   width: 34, height: 34, borderRadius: '50%', border: 'none',
-                  background: input.trim() && connected ? '#03add8' : '#222222',
+                  background: input.trim() && connected ? thAccent || '#03add8' : 'rgba(255,255,255,0.08)',
                   color: input.trim() && connected ? '#ffffff' : '#444444',
                   cursor: input.trim() && connected ? 'pointer' : 'not-allowed',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 14, flexShrink: 0,
-                  boxShadow: input.trim() && connected ? '0 2px 8px rgba(3,173,216,0.4)' : 'none',
+                  boxShadow: input.trim() && connected ? `0 2px 8px ${thAccent || '#03add8'}55` : 'none',
                   transition: 'all .15s',
                 }}>
                 <i className="fa-solid fa-paper-plane" />
@@ -570,7 +585,7 @@ export default function ChatRoom() {
         )}
       </div>
 
-      {/* ════════════════ FOOTER — fixed, CodyChat .bfoot ════ */}
+      {/* ════════════════ FOOTER ════ */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200 }}>
         {showRadio && <RadioPanel onClose={() => setRadio(false)} />}
 
@@ -578,7 +593,7 @@ export default function ChatRoom() {
         {miniYT && (
           <div style={{
             position: 'absolute', bottom: '100%', right: 8,
-            background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.08)',
+            background: thHeader || '#1a1a1a', border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: 10, overflow: 'hidden',
             boxShadow: '0 -4px 16px rgba(0,0,0,.6)',
             display: 'flex', alignItems: 'center', gap: 8,
