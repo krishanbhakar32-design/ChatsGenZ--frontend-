@@ -1,6 +1,8 @@
 // ============================================================
-// ChatSettings.jsx — FIXED (white screen cause: missing imports)
-// Added: FONT_LIST, SOLID_COLORS, BUB_GRADS, useNavigate
+// ChatSettings.jsx — CodyChat Dark Theme (Footer + AvatarDropdown)
+// - Footer bar: #111 bg, accent icons, dark borders
+// - AvatarDropdown: #202020 panel, dark borders, accent colors
+// - ChatSettingsOverlay: full dark modal
 // ============================================================
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -36,88 +38,75 @@ const BUB_NEONS = [
   {bg:'#111',shadow:'0 0 8px #ff00cc',border:'#ff00cc',color:'#ff00cc'},
 ]
 const FONT_LIST = [
-  {id:'',      name:"Default (Regular)", f:"'Nunito',sans-serif"},
-  {id:'font1', name:"Kalam",         f:"'Kalam',cursive"},
-  {id:'font2', name:"Signika",        f:"'Signika',sans-serif"},
-  {id:'font3', name:"Grandstander",   f:"'Grandstander',cursive"},
-  {id:'font4', name:"Comic Neue",     f:"'Comic Neue',cursive"},
-  {id:'font5', name:"Quicksand",      f:"'Quicksand',sans-serif"},
-  {id:'font6', name:"Orbitron",       f:"'Orbitron',sans-serif"},
-  {id:'font7', name:"Lemonada",       f:"'Lemonada',cursive"},
-  {id:'font8', name:"Merienda",       f:"'Merienda',cursive"},
-  {id:'font9', name:"Comfortaa",      f:"'Comfortaa',cursive"},
-  {id:'font10',name:"Pacifico",       f:"'Pacifico',cursive"},
-  {id:'font11',name:"Dancing Script", f:"'Dancing Script',cursive"},
-  {id:'font12',name:"Lobster Two",    f:"'Lobster Two',cursive"},
-  {id:'font13',name:"Caveat",         f:"'Caveat',cursive"},
-  {id:'font14',name:"Satisfy",        f:"'Satisfy',cursive"},
-  {id:'font15',name:"Indie Flower",   f:"'Indie Flower',cursive"},
-  {id:'font16',name:"Rajdhani",       f:"'Rajdhani',sans-serif"},
-  {id:'font17',name:"Exo 2",          f:"'Exo 2',sans-serif"},
-  {id:'font18',name:"Josefin Sans",   f:"'Josefin Sans',sans-serif"},
-  {id:'font19',name:"Audiowide",      f:"'Audiowide',sans-serif"},
-  {id:'font20',name:"Righteous",      f:"'Righteous',cursive"},
-  {id:'font21',name:"Fredoka One",    f:"'Fredoka One',cursive"},
-  {id:'font22',name:"Nunito",         f:"'Nunito',sans-serif"},
-  {id:'font23',name:"Turret Road",    f:"'Turret Road',cursive"},
-  {id:'font24',name:"Sansita",        f:"'Sansita',sans-serif"},
+  {id:'',      name:'Default',          f:"'Nunito',sans-serif"},
+  {id:'font1', name:'Kalam',            f:"'Kalam',cursive"},
+  {id:'font2', name:'Signika',          f:"'Signika',sans-serif"},
+  {id:'font3', name:'Grandstander',     f:"'Grandstander',cursive"},
+  {id:'font4', name:'Comic Neue',       f:"'Comic Neue',cursive"},
+  {id:'font5', name:'Quicksand',        f:"'Quicksand',sans-serif"},
+  {id:'font6', name:'Orbitron',         f:"'Orbitron',sans-serif"},
+  {id:'font7', name:'Lemonada',         f:"'Lemonada',cursive"},
+  {id:'font8', name:'Merienda',         f:"'Merienda',cursive"},
+  {id:'font9', name:'Comfortaa',        f:"'Comfortaa',cursive"},
+  {id:'font10',name:'Pacifico',         f:"'Pacifico',cursive"},
+  {id:'font11',name:'Dancing Script',   f:"'Dancing Script',cursive"},
+  {id:'font12',name:'Lobster Two',      f:"'Lobster Two',cursive"},
+  {id:'font13',name:'Caveat',           f:"'Caveat',cursive"},
+  {id:'font14',name:'Satisfy',          f:"'Satisfy',cursive"},
+  {id:'font22',name:'Nunito',           f:"'Nunito',sans-serif"},
+  {id:'font16',name:'Rajdhani',         f:"'Rajdhani',sans-serif"},
+  {id:'font19',name:'Audiowide',        f:"'Audiowide',sans-serif"},
 ]
 const SOUND_KEYS = [
-  {key:'newMessage',label:'New Message',    icon:'/default_images/icons/comment.svg'},
-  {key:'join',      label:'User Joined',    icon:'/default_images/icons/active.svg'},
-  {key:'gift',      label:'Gift Received',  icon:'/default_images/icons/gift.svg'},
-  {key:'levelUp',   label:'Level Up',       icon:'/default_images/icons/level.svg'},
-  {key:'mention',   label:'Mention',        icon:'/default_images/icons/note.svg'},
-  {key:'privateMsg',label:'Private Message',icon:'/default_images/icons/comment.svg'},
-  {key:'badge',     label:'Badge Earned',   icon:'/default_images/icons/badge.svg'},
+  {key:'newMessage',label:'New Message',     icon:'/default_images/icons/comment.svg'},
+  {key:'join',      label:'User Joined',     icon:'/default_images/icons/active.svg'},
+  {key:'gift',      label:'Gift Received',   icon:'/default_images/icons/gift.svg'},
+  {key:'levelUp',   label:'Level Up',        icon:'/default_images/icons/level.svg'},
+  {key:'mention',   label:'Mention',         icon:'/default_images/icons/note.svg'},
+  {key:'privateMsg',label:'Private Message', icon:'/default_images/icons/comment.svg'},
+  {key:'badge',     label:'Badge Earned',    icon:'/default_images/icons/badge.svg'},
 ]
 function getSoundPrefs(){try{return JSON.parse(localStorage.getItem('cgz_sounds')||'{}')}catch{return{}}}
 function setSoundPref(k,v){const p=getSoundPrefs();p[k]=v;localStorage.setItem('cgz_sounds',JSON.stringify(p))}
 
-const SW={width:26,height:26,borderRadius:5,cursor:'pointer',border:'2px solid transparent',display:'inline-flex',alignItems:'center',justifyContent:'center',flexShrink:0,margin:2,transition:'transform .1s'}
+// ── Swatch button ──────────────────────────────────────────
+const SW = {
+  width:26,height:26,borderRadius:5,cursor:'pointer',border:'2px solid transparent',
+  display:'inline-flex',alignItems:'center',justifyContent:'center',
+  flexShrink:0,margin:2,transition:'transform .1s',
+}
 
-// ─────────────────────────────────────────────────────────────
-// CHAT OPTIONS OVERLAY
-// ─────────────────────────────────────────────────────────────
-function ChatSettingsOverlay({me,onClose,onSaved}){
-  const [tab,setTab]=useState('chatOptions')
-  const [saving,setSaving]=useState(false)
-  const [ok,setOk]=useState('')
-  const [optOpen,setOptOpen]=useState(false)
-  const [selTheme,setSelTheme]=useState(me?.chatTheme||'Dolphin')
-  const [nameTab,setNameTab]=useState('solid')
-  const [nameSel,setNameSel]=useState(me?.nameColor||'')
-  const [nameFont,setNameFont]=useState(me?.nameFont||'')
-  const [bubTab,setBubTab]=useState('solid')
-  const [bubSel,setBubSel]=useState(me?.bubbleColor||'')
-  const [bubFont,setBubFont]=useState(me?.msgFontStyle||'')
-  const [bubStyle,setBubStyle]=useState(me?.bubbleStyle||'normal')
-  const [msgColor,setMsgColor]=useState(me?.msgFontColor||'#ffffff')
-  const [fontSize,setFontSize]=useState(me?.msgFontSize||14)
-  const [soundPrefs,setSoundPrefs]=useState(getSoundPrefs)
-  const [themeLimit,setThemeLimit]=useState(-1) // -1 = unlimited, fetched below
+// ── Chat Settings Overlay — CodyChat dark modal ────────────
+function ChatSettingsOverlay({ me, onClose, onSaved }) {
+  const [tab,         setTab]         = useState('chatOptions')
+  const [saving,      setSaving]      = useState(false)
+  const [ok,          setOk]          = useState('')
+  const [selTheme,    setSelTheme]    = useState(me?.chatTheme||'Dark')
+  const [nameTab,     setNameTab]     = useState('solid')
+  const [nameSel,     setNameSel]     = useState(me?.nameColor||'')
+  const [nameFont,    setNameFont]    = useState(me?.nameFont||'')
+  const [bubTab,      setBubTab]      = useState('solid')
+  const [bubSel,      setBubSel]      = useState(me?.bubbleColor||'')
+  const [bubFont,     setBubFont]     = useState(me?.msgFontStyle||'')
+  const [bubStyle,    setBubStyle]    = useState(me?.bubbleStyle||'normal')
+  const [msgColor,    setMsgColor]    = useState(me?.msgFontColor||'#ffffff')
+  const [fontSize,    setFontSize]    = useState(me?.msgFontSize||14)
+  const [soundPrefs,  setSoundPrefs]  = useState(getSoundPrefs)
+  const [themeLimit,  setThemeLimit]  = useState(-1)
 
-  // Fetch per-rank theme limit
   useEffect(()=>{
     fetch(`${API}/api/admin/themes-by-rank`)
       .then(r=>r.json())
-      .then(d=>{
-        const rank=me?.rank||'user'
-        const limit=d?.themesByRank?.[rank]
-        setThemeLimit(limit===undefined ? 0 : limit)
-      })
+      .then(d=>{const rank=me?.rank||'user';const limit=d?.themesByRank?.[rank];setThemeLimit(limit===undefined?0:limit)})
       .catch(()=>setThemeLimit(0))
   },[me?.rank])
 
-  // How many themes this user can pick (0=blocked, -1=unlimited, N=count)
   const canUseTheme=(idx)=>{
-    if(themeLimit===-1) return true   // unlimited
-    if(themeLimit===0)  return false  // blocked
-    // allowed: first N themes (free themes) + currently selected
+    if(themeLimit===-1) return true
+    if(themeLimit===0)  return false
     const freeThemes=THEMES.slice(0,themeLimit).map(t=>t.id)
-    return freeThemes.includes(THEMES[idx]?.id) || THEMES[idx]?.id===me?.chatTheme
+    return freeThemes.includes(THEMES[idx]?.id)||THEMES[idx]?.id===me?.chatTheme
   }
-
 
   async function save(){
     setSaving(true);setOk('')
@@ -126,7 +115,7 @@ function ChatSettingsOverlay({me,onClose,onSaved}){
     if(tab==='chatOptions') body={chatTheme:selTheme}
     if(tab==='nameColor')   body={nameColor:nameSel,nameFont}
     if(tab==='textColor')   body={bubbleColor:bubSel,bubbleStyle:bubStyle,msgFontColor:msgColor,msgFontStyle:bubFont,msgFontSize:fontSize}
-    if(tab==='sounds')      {setSaving(false);return}
+    if(tab==='sounds'){setSaving(false);return}
     try{
       const r=await fetch(`${API}/api/users/me/style`,{method:'PUT',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify(body)})
       const d=await r.json()
@@ -136,284 +125,204 @@ function ChatSettingsOverlay({me,onClose,onSaved}){
     setTimeout(()=>setOk(''),2000)
   }
 
-  const previewName=()=>{
-    if(nameTab==='solid'&&nameSel)    return{color:SOLID_COLORS[parseInt(nameSel.replace('bcolor',''))-1]}
-    if(nameTab==='gradient'&&nameSel) return{background:BUB_GRADS[parseInt(nameSel.replace('bgrad',''))-1],WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}
-    return{color:'#111827'}
-  }
-  const previewBub=()=>{
-    if(bubTab==='solid'&&bubSel)    return{background:SOLID_COLORS[parseInt(bubSel.replace('bubcolor',''))-1]}
-    if(bubTab==='gradient'&&bubSel) return{background:BUB_GRADS[parseInt(bubSel.replace('bubgrad',''))-1]}
-    if(bubTab==='neon'&&bubSel){const n=BUB_NEONS[parseInt(bubSel.replace('bubneon',''))-1];return n?{background:n.bg,boxShadow:n.shadow,border:`1px solid ${n.border}`,color:n.color}:{}}
-    return{background:'#374151'}
-  }
-
-  const TABS=[
-    {id:'chatOptions',icon:'fa-solid fa-user-gear',label:'Chat Options'},
-    {id:'nameColor',  icon:'fa-solid fa-signature',           label:'Username'},
-    {id:'textColor',  icon:'fa-solid fa-comments',     label:'Text Color'},
-    {id:'sounds',     icon:'fa-solid fa-microphone-lines',          label:'Sounds'},
-  ]
-  const OPT_BTNS=[
-    {id:'chatOptions',label:'Chat Options',icon:'fa-solid fa-user-gear'},
-    {id:'nameColor',  label:'Username Color',icon:'fa-solid fa-signature'},
-    {id:'textColor',  label:'Text Color',icon:'fa-solid fa-signature'},
-    {id:'sounds',     label:'Sounds',icon:'fa-solid fa-microphone-lines'},
+  // Tab definitions
+  const STABS = [
+    {id:'chatOptions',label:'Theme',   icon:'fa-solid fa-palette'},
+    {id:'nameColor',  label:'Name',    icon:'fa-solid fa-signature'},
+    {id:'textColor',  label:'Bubble',  icon:'fa-solid fa-message'},
+    {id:'sounds',     label:'Sounds',  icon:'fa-solid fa-volume-high'},
   ]
 
-  return(
-    <div onClick={onClose} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',zIndex:1200,display:'flex',alignItems:'center',justifyContent:'center',padding:'12px'}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:'#fff',borderRadius:16,width:'min(480px,100%)',maxHeight:'88vh',display:'flex',flexDirection:'column',boxShadow:'0 20px 60px rgba(0,0,0,.35)',overflow:'hidden'}}>
-
-        {/* Header */}
-        <div style={{background:'linear-gradient(135deg,#1a1f2e,#2d3555)',padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
-          <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <div style={{width:32,height:32,borderRadius:8,background:'rgba(255,255,255,.12)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-              <i className="fa-solid fa-gear" style={{fontSize:16,color:'#fff'}}/>
-            </div>
-            <div>
-              <div style={{fontFamily:'Outfit,sans-serif',fontWeight:800,fontSize:'0.95rem',color:'#fff'}}>Chat Options</div>
-              <div style={{fontSize:'0.6rem',color:'rgba(255,255,255,.5)'}}>Customize your chat</div>
-            </div>
-          </div>
-          <button onClick={onClose} style={{background:'rgba(255,255,255,.1)',border:'none',borderRadius:8,width:30,height:30,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:14}}>
+  return (
+    <div style={{position:'fixed',inset:0,zIndex:9999,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'flex-start',justifyContent:'center',paddingTop:60}}>
+      <div style={{
+        background:'#191919', border:'1px solid rgba(255,255,255,0.05)',
+        borderRadius:14, width:'min(480px,96vw)',
+        maxHeight:'80vh', display:'flex', flexDirection:'column',
+        boxShadow:'0 8px 40px rgba(0,0,0,0.7)',
+      }}>
+        {/* Modal header */}
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 18px',borderBottom:'1px solid rgba(255,255,255,0.05)',background:'#111',borderRadius:'14px 14px 0 0',flexShrink:0}}>
+          <span style={{fontSize:'0.95rem',fontWeight:700,color:'#ffffff'}}>Chat Settings</span>
+          <button onClick={onClose} style={{background:'rgba(255,255,255,0.06)',border:'none',borderRadius:8,color:'#888',cursor:'pointer',width:28,height:28,display:'flex',alignItems:'center',justifyContent:'center',fontSize:15}}>
             <i className="fa-solid fa-xmark"/>
           </button>
         </div>
 
         {/* Tab bar */}
-        <div style={{display:'flex',borderBottom:'2px solid #f3f4f6',background:'#fafafa',flexShrink:0,overflowX:'auto'}}>
-          {TABS.map(t=>(
-            <button key={t.id} onClick={()=>{setTab(t.id);setOk('')}}
-              style={{flex:'1 1 auto',minWidth:70,padding:'10px 6px',border:'none',background:'none',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:3,borderBottom:`2px solid ${tab===t.id?'#1a73e8':'transparent'}`,marginBottom:-2,color:tab===t.id?'#1a73e8':'#6b7280',transition:'all .15s'}}>
-              <i className={`${t.icon}`} style={{fontSize:15}}/>
-              <span style={{fontSize:'0.58rem',fontWeight:700,whiteSpace:'nowrap'}}>{t.label}</span>
+        <div style={{display:'flex',borderBottom:'1px solid rgba(255,255,255,0.05)',flexShrink:0,background:'#111'}}>
+          {STABS.map(t=>(
+            <button key={t.id} onClick={()=>setTab(t.id)} style={{
+              flex:1,padding:'10px 0',border:'none',cursor:'pointer',fontSize:'0.75rem',fontWeight:600,
+              background:'none',
+              color:tab===t.id?'#03add8':'rgba(255,255,255,0.35)',
+              borderBottom:tab===t.id?'2px solid #03add8':'2px solid transparent',
+              transition:'color .12s,border-color .12s',display:'flex',flexDirection:'column',alignItems:'center',gap:3,
+            }}>
+              <i className={t.icon} style={{fontSize:16}}/>
+              {t.label}
             </button>
           ))}
         </div>
 
-        {/* Body */}
-        <div style={{flex:1,overflowY:'auto',padding:'14px'}}>
-          {ok&&<div style={{background:'#f0fdf4',border:'1px solid #86efac',borderRadius:8,padding:'7px 12px',fontSize:'0.78rem',color:'#15803d',marginBottom:10,display:'flex',alignItems:'center',gap:6}}><i className="fa-solid fa-circle-check" style={{fontSize:14}}/> {ok}</div>}
+        {/* Content */}
+        <div style={{flex:1,overflowY:'auto',padding:'16px 18px'}}>
 
-          {/* Chat Options tab */}
-          {tab==='chatOptions'&&(
-            <>
-              <button onClick={()=>setOptOpen(p=>!p)} style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'11px 14px',background:'#f9fafb',border:'1.5px solid #e4e6ea',borderRadius:optOpen?'10px 10px 0 0':10,cursor:'pointer',marginBottom:0,transition:'all .15s'}}>
-                <div style={{display:'flex',alignItems:'center',gap:9}}>
-                  <i className="fa-solid fa-user-gear" style={{color:'#1a73e8',fontSize:15}}/>
-                  <span style={{fontWeight:700,fontSize:'0.85rem',color:'#111827'}}>Chat Options</span>
-                </div>
-                <i className={`fa-solid fa-angle-${optOpen?'down':'right'}`} style={{color:'#9ca3af',fontSize:13}}/>
-              </button>
-              {optOpen&&(
-                <div style={{background:'#f9fafb',border:'1.5px solid #e4e6ea',borderTop:'none',borderRadius:'0 0 10px 10px',marginBottom:12,overflow:'hidden'}}>
-                  {OPT_BTNS.map(b=>(
-                    <button key={b.id} onClick={()=>setTab(b.id)}
-                      style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'10px 14px',background:'none',border:'none',borderBottom:'1px solid #e4e6ea',cursor:'pointer',textAlign:'left'}}>
-                      <i className={`${b.icon}`} style={{fontSize:14,color:'#6b7280',width:18,textAlign:'center'}}/>
-                      <span style={{fontSize:'0.83rem',fontWeight:600,color:'#374151'}}>{b.label}</span>
-                      <i className="fa-solid fa-angle-right" style={{marginLeft:'auto',color:'#d1d5db',fontSize:11}}/>
-                    </button>
-                  ))}
-                </div>
-              )}
-              <div style={{fontSize:'0.7rem',fontWeight:700,color:'#9ca3af',textTransform:'uppercase',letterSpacing:.5,marginBottom:6,marginTop:optOpen?0:12}}>
-                Select Theme
-                {themeLimit===0&&<span style={{marginLeft:8,color:'#ef4444',fontSize:'0.65rem',fontWeight:700}}>⛔ Blocked for your rank</span>}
-                {themeLimit>0&&<span style={{marginLeft:8,color:'#f59e0b',fontSize:'0.65rem',fontWeight:600}}>{themeLimit} available · <a href="/premium" style={{color:'#aa44ff',textDecoration:'none'}}>Get Premium</a> for unlimited</span>}
-                {themeLimit===-1&&<span style={{marginLeft:8,color:'#22c55e',fontSize:'0.65rem',fontWeight:600}}>♾ Unlimited</span>}
-              </div>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8}}>
-                {THEMES.map((t,idx)=>{
+          {/* THEME TAB */}
+          {tab==='chatOptions' && (
+            <div>
+              <p style={{fontSize:'0.78rem',color:'#666',marginBottom:12}}>Select a chat theme:</p>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
+                {THEMES.map((th,idx)=>{
                   const allowed=canUseTheme(idx)
-                  return(
-                  <div key={t.id}
-                    onClick={()=>allowed&&setSelTheme(t.id)}
-                    style={{borderRadius:9,overflow:'hidden',border:`2px solid ${selTheme===t.id?'#1a73e8':allowed?'#e4e6ea':'#e4e6ea44'}`,cursor:allowed?'pointer':'not-allowed',transform:selTheme===t.id?'scale(1.03)':'scale(1)',transition:'all .15s',boxShadow:selTheme===t.id?'0 0 0 3px rgba(26,115,232,.15)':'none',opacity:allowed?1:0.5,position:'relative'}}>
-                    {!allowed&&(
-                      <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.55)',zIndex:10,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:2}}>
-                        <i className="fa-solid fa-lock" style={{fontSize:14,color:'#aa44ff'}}/>
-                        <a href="/premium" style={{fontSize:'0.6rem',color:'#aa44ff',fontWeight:800,textDecoration:'none'}}>Premium</a>
+                  return (
+                    <div key={th.id} onClick={()=>allowed&&setSelTheme(th.id)}
+                      style={{
+                        borderRadius:10,overflow:'hidden',cursor:allowed?'pointer':'not-allowed',
+                        border:selTheme===th.id?'2px solid #03add8':'2px solid rgba(255,255,255,0.08)',
+                        opacity:allowed?1:0.45,
+                        transition:'border-color .15s',
+                        position:'relative',
+                      }}>
+                      <div style={{height:44,background:th.bg_header,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                        <div style={{width:24,height:24,borderRadius:'50%',background:th.bg_log,border:`2px solid ${th.accent}`}}/>
                       </div>
-                    )}
-                    <div style={{background:t.bg_header,padding:'5px 8px',display:'flex',alignItems:'center',gap:4,minHeight:26}}>
-                      {selTheme===t.id&&<i className="fa-solid fa-circle-check" style={{fontSize:8,color:t.accent||'#fff',flexShrink:0}}/>}
-                      <span style={{fontSize:'0.65rem',fontWeight:800,color:'#fff',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',textShadow:'0 1px 3px rgba(0,0,0,.6)',flex:1}}>{t.name}</span>
-                    </div>
-                    <div style={{background:t.bg_image?`url(${t.bg_image})`:t.bg_chat,backgroundSize:'cover',backgroundPosition:'center',padding:'5px 8px',height:40,display:'flex',alignItems:'center',position:'relative'}}>
-                      {t.bg_image&&<div style={{position:'absolute',inset:0,background:t.bg_chat&&t.bg_chat!=='transparent'?t.bg_chat+'99':'rgba(0,0,0,.35)'}}/>}
-                      <div style={{background:t.bg_log,borderRadius:4,padding:'2px 7px',display:'inline-block',position:'relative',zIndex:1,maxWidth:'90%'}}>
-                        <span style={{fontSize:'0.6rem',color:t.text,fontWeight:600,whiteSpace:'nowrap'}}>Hello 👋</span>
+                      <div style={{background:'#111',padding:'5px 6px',textAlign:'center'}}>
+                        <span style={{fontSize:'0.68rem',fontWeight:600,color:selTheme===th.id?'#03add8':'#888'}}>{th.name}</span>
                       </div>
-                      <div style={{position:'absolute',right:6,bottom:5,width:14,height:14,borderRadius:'50%',background:t.accent,zIndex:1}}/>
+                      {!allowed&&<div style={{position:'absolute',top:4,right:4,background:'#f59e0b',borderRadius:4,padding:'1px 5px',fontSize:'0.6rem',fontWeight:700,color:'#000'}}>VIP</div>}
                     </div>
-                  </div>
                   )
                 })}
               </div>
-            </>
+            </div>
           )}
 
-          {/* Username Color tab */}
-          {tab==='nameColor'&&(
-            <>
-              <div style={{textAlign:'center',marginBottom:12,padding:'12px',background:'#f9fafb',borderRadius:8,border:'1px solid #f3f4f6'}}>
-                <div style={{fontSize:'0.62rem',color:'#9ca3af',fontWeight:600,marginBottom:4}}>Preview</div>
-                <span style={{fontSize:17,fontWeight:800,fontFamily:FONT_LIST.find(f=>f.id===nameFont)?.f||'Outfit,sans-serif',...previewName()}}>{me?.username||'Your Name'}</span>
-              </div>
-              <div style={{display:'flex',gap:4,marginBottom:10}}>
+          {/* NAME COLOR TAB */}
+          {tab==='nameColor' && (
+            <div>
+              <div style={{marginBottom:12,display:'flex',gap:6}}>
                 {['solid','gradient'].map(t=>(
-                  <button key={t} onClick={()=>setNameTab(t)} style={{flex:1,padding:'5px',borderRadius:5,border:`1px solid ${nameTab===t?'#1a73e8':'#e4e6ea'}`,background:nameTab===t?'#eff6ff':'none',color:nameTab===t?'#1a73e8':'#9ca3af',fontSize:'0.72rem',fontWeight:700,cursor:'pointer',textTransform:'capitalize'}}>{t}</button>
+                  <button key={t} onClick={()=>setNameTab(t)} style={{padding:'4px 14px',borderRadius:20,border:'none',cursor:'pointer',fontSize:'0.75rem',fontWeight:600,background:nameTab===t?'rgba(3,173,216,0.2)':'rgba(255,255,255,0.06)',color:nameTab===t?'#03add8':'#888'}}>
+                    {t.charAt(0).toUpperCase()+t.slice(1)}
+                  </button>
                 ))}
               </div>
-              {nameTab==='solid'&&(
-                <div style={{display:'flex',flexWrap:'wrap',marginBottom:12}}>
-                  <div onClick={()=>setNameSel('')} style={{...SW,background:'#f3f4f6',border:`2px solid ${nameSel===''?'#1a73e8':'#e4e6ea'}`}}>
-                    {nameSel===''&&<i className="fa-solid fa-check" style={{fontSize:9,color:'#1a73e8'}}/>}
+              <div style={{display:'flex',flexWrap:'wrap',gap:0,marginBottom:14}}>
+                {nameTab==='solid'&&SOLID_COLORS.map((c,i)=>(
+                  <div key={i} onClick={()=>setNameSel(`bcolor${i+1}`)}
+                    style={{...SW,background:c,border:nameSel===`bcolor${i+1}`?'2px solid #ffffff':'2px solid transparent'}}>
+                    {nameSel===`bcolor${i+1}`&&<i className="fa-solid fa-check" style={{fontSize:10,color:'#fff'}}/>}
                   </div>
-                  {SOLID_COLORS.map((c,i)=>(
-                    <div key={i} onClick={()=>setNameSel(`bcolor${i+1}`)} style={{...SW,background:c,border:`2px solid ${nameSel===`bcolor${i+1}`?'#fff':'transparent'}`,transform:nameSel===`bcolor${i+1}`?'scale(1.25)':'scale(1)'}}>
-                      {nameSel===`bcolor${i+1}`&&<i className="fa-solid fa-check" style={{fontSize:8,color:'#fff'}}/>}
-                    </div>
-                  ))}
-                </div>
-              )}
-              {nameTab==='gradient'&&(
-                <div style={{display:'flex',flexWrap:'wrap',marginBottom:12}}>
-                  {BUB_GRADS.map((g,i)=>(
-                    <div key={i} onClick={()=>setNameSel(`bgrad${i+1}`)} style={{...SW,background:g,border:`2px solid ${nameSel===`bgrad${i+1}`?'#fff':'transparent'}`,transform:nameSel===`bgrad${i+1}`?'scale(1.25)':'scale(1)'}}>
-                      {nameSel===`bgrad${i+1}`&&<i className="fa-solid fa-check" style={{fontSize:8,color:'#fff'}}/>}
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div style={{fontSize:'0.7rem',fontWeight:700,color:'#9ca3af',marginBottom:6,textTransform:'uppercase',letterSpacing:.5}}>Username Font</div>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4}}>
-                <div onClick={()=>setNameFont('')} style={{padding:'6px 7px',borderRadius:5,border:`1.5px solid ${nameFont===''?'#1a73e8':'#e4e6ea'}`,background:nameFont===''?'#eff6ff':'#f9fafb',cursor:'pointer',fontSize:'0.72rem',textAlign:'center',color:nameFont===''?'#1a73e8':'#374151',fontWeight:600}}>Default</div>
+                ))}
+                {nameTab==='gradient'&&BUB_GRADS.map((g,i)=>(
+                  <div key={i} onClick={()=>setNameSel(`bgrad${i+1}`)}
+                    style={{...SW,background:g,border:nameSel===`bgrad${i+1}`?'2px solid #ffffff':'2px solid transparent'}}>
+                    {nameSel===`bgrad${i+1}`&&<i className="fa-solid fa-check" style={{fontSize:10,color:'#fff'}}/>}
+                  </div>
+                ))}
+              </div>
+              <p style={{fontSize:'0.75rem',color:'#666',marginBottom:8}}>Name font:</p>
+              <select value={nameFont} onChange={e=>setNameFont(e.target.value)}
+                style={{width:'100%',padding:'8px 10px',background:'#191919',border:'1px solid #222',borderRadius:8,color:'#ffffff',fontSize:'0.82rem'}}>
                 {FONT_LIST.map(f=>(
-                  <div key={f.id} onClick={()=>setNameFont(f.id)} style={{padding:'6px 7px',borderRadius:5,border:`1.5px solid ${nameFont===f.id?'#1a73e8':'#e4e6ea'}`,background:nameFont===f.id?'#eff6ff':'#f9fafb',cursor:'pointer',fontSize:'0.73rem',textAlign:'center',fontFamily:f.f,color:nameFont===f.id?'#1a73e8':'#374151',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                    {f.name}
-                  </div>
+                  <option key={f.id} value={f.id} style={{fontFamily:f.f}}>{f.name}</option>
                 ))}
-              </div>
-            </>
+              </select>
+            </div>
           )}
 
-          {/* Text Color tab */}
-          {tab==='textColor'&&(
-            <>
-              <div style={{marginBottom:12,padding:'10px',background:'#1a1a2e',borderRadius:8}}>
-                <div style={{fontSize:'0.62rem',color:'#9ca3af',marginBottom:6,fontWeight:600}}>Preview</div>
-                <div style={{display:'inline-block',padding:'7px 12px',borderRadius:'3px 10px 10px 10px',
-                  fontSize:`${Math.max(14,Math.min(28,fontSize))}px`,
-                  fontWeight:bubStyle.includes('bold')?700:400,
-                  fontStyle:bubStyle.includes('italic')?'italic':'normal',
-                  fontFamily:FONT_LIST.find(f=>f.id===bubFont)?.f||'inherit',
-                  color:msgColor||'#fff',...previewBub()}}>
-                  Hey there! 👋 How are you?
-                </div>
-              </div>
-              <div style={{display:'flex',gap:4,marginBottom:10}}>
-                {['solid','gradient','neon'].map(t=>(
-                  <button key={t} onClick={()=>setBubTab(t)} style={{flex:1,padding:'5px',borderRadius:5,border:`1px solid ${bubTab===t?'#1a73e8':'#e4e6ea'}`,background:bubTab===t?'#eff6ff':'none',color:bubTab===t?'#1a73e8':'#9ca3af',fontSize:'0.72rem',fontWeight:700,cursor:'pointer',textTransform:'capitalize'}}>{t}</button>
+          {/* BUBBLE TAB */}
+          {tab==='textColor' && (
+            <div>
+              <div style={{marginBottom:10,display:'flex',gap:6}}>
+                {['solid','gradient','neon','none'].map(t=>(
+                  <button key={t} onClick={()=>setBubTab(t)} style={{padding:'4px 12px',borderRadius:20,border:'none',cursor:'pointer',fontSize:'0.72rem',fontWeight:600,background:bubTab===t?'rgba(3,173,216,0.2)':'rgba(255,255,255,0.06)',color:bubTab===t?'#03add8':'#888'}}>
+                    {t.charAt(0).toUpperCase()+t.slice(1)}
+                  </button>
                 ))}
               </div>
-              {bubTab==='solid'&&(
-                <div style={{display:'flex',flexWrap:'wrap',marginBottom:10}}>
-                  <div onClick={()=>setBubSel('')} style={{...SW,background:'#f3f4f6',border:`2px solid ${bubSel===''?'#1a73e8':'#e4e6ea'}`}}>
-                    {bubSel===''&&<span style={{fontSize:8,color:'#6b7280',fontWeight:700}}>def</span>}
+              <div style={{display:'flex',flexWrap:'wrap',marginBottom:14}}>
+                {bubTab==='solid'&&SOLID_COLORS.map((c,i)=>(
+                  <div key={i} onClick={()=>setBubSel(`bubcolor${i+1}`)} style={{...SW,background:c,border:bubSel===`bubcolor${i+1}`?'2px solid #fff':'2px solid transparent'}}>
+                    {bubSel===`bubcolor${i+1}`&&<i className="fa-solid fa-check" style={{fontSize:10,color:'#fff'}}/>}
                   </div>
-                  {SOLID_COLORS.map((c,i)=>(
-                    <div key={i} onClick={()=>setBubSel(`bubcolor${i+1}`)} style={{...SW,background:c,border:`2px solid ${bubSel===`bubcolor${i+1}`?'#fff':'transparent'}`,transform:bubSel===`bubcolor${i+1}`?'scale(1.25)':'scale(1)'}}>
-                      {bubSel===`bubcolor${i+1}`&&<i className="fa-solid fa-check" style={{fontSize:8,color:'#fff'}}/>}
-                    </div>
-                  ))}
-                </div>
-              )}
-              {bubTab==='gradient'&&(
-                <div style={{display:'flex',flexWrap:'wrap',marginBottom:10}}>
-                  {BUB_GRADS.map((g,i)=>(
-                    <div key={i} onClick={()=>setBubSel(`bubgrad${i+1}`)} style={{...SW,background:g,border:`2px solid ${bubSel===`bubgrad${i+1}`?'#fff':'transparent'}`,transform:bubSel===`bubgrad${i+1}`?'scale(1.25)':'scale(1)'}}>
-                      {bubSel===`bubgrad${i+1}`&&<i className="fa-solid fa-check" style={{fontSize:8,color:'#fff'}}/>}
-                    </div>
-                  ))}
-                </div>
-              )}
-              {bubTab==='neon'&&(
-                <div style={{display:'flex',flexWrap:'wrap',marginBottom:10,background:'#111',padding:8,borderRadius:8}}>
-                  {BUB_NEONS.map((n,i)=>(
-                    <div key={i} onClick={()=>setBubSel(`bubneon${i+1}`)} style={{...SW,background:n.bg,boxShadow:bubSel===`bubneon${i+1}`?n.shadow:'none',border:`2px solid ${bubSel===`bubneon${i+1}`?n.border:'#333'}`,transform:bubSel===`bubneon${i+1}`?'scale(1.25)':'scale(1)'}}>
-                      <span style={{width:10,height:10,borderRadius:'50%',background:n.border,display:'block'}}/>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
-                <div>
-                  <div style={{fontSize:'0.68rem',fontWeight:700,color:'#9ca3af',marginBottom:5,textTransform:'uppercase',letterSpacing:.5}}>Text Color</div>
-                  <input type="color" value={msgColor} onChange={e=>setMsgColor(e.target.value)} style={{width:'100%',height:32,borderRadius:6,border:'1.5px solid #e4e6ea',cursor:'pointer',padding:2}}/>
-                </div>
-                <div>
-                  <div style={{fontSize:'0.68rem',fontWeight:700,color:'#9ca3af',marginBottom:5,textTransform:'uppercase',letterSpacing:.5}}>Style</div>
-                  <select value={bubStyle} onChange={e=>setBubStyle(e.target.value)} style={{width:'100%',padding:'6px 8px',border:'1.5px solid #e4e6ea',borderRadius:6,fontSize:'0.78rem',background:'#f9fafb',outline:'none',cursor:'pointer'}}>
-                    <option value="normal">Normal</option>
-                    <option value="bold">Bold</option>
-                    <option value="italic">Italic</option>
-                    <option value="bold italic">Bold Italic</option>
-                  </select>
-                </div>
+                ))}
+                {bubTab==='gradient'&&BUB_GRADS.map((g,i)=>(
+                  <div key={i} onClick={()=>setBubSel(`bubgrad${i+1}`)} style={{...SW,background:g,border:bubSel===`bubgrad${i+1}`?'2px solid #fff':'2px solid transparent'}}>
+                    {bubSel===`bubgrad${i+1}`&&<i className="fa-solid fa-check" style={{fontSize:10,color:'#fff'}}/>}
+                  </div>
+                ))}
+                {bubTab==='neon'&&BUB_NEONS.map((n,i)=>(
+                  <div key={i} onClick={()=>setBubSel(`bubneon${i+1}`)} style={{...SW,background:n.bg,boxShadow:n.shadow,border:bubSel===`bubneon${i+1}`?`2px solid ${n.border}`:'2px solid transparent'}}>
+                    {bubSel===`bubneon${i+1}`&&<i className="fa-solid fa-check" style={{fontSize:10,color:n.color}}/>}
+                  </div>
+                ))}
+                {bubTab==='none'&&(
+                  <button onClick={()=>setBubSel('')} style={{padding:'6px 16px',borderRadius:20,border:'none',cursor:'pointer',background:'rgba(255,255,255,0.08)',color:'#888',fontSize:'0.78rem'}}>
+                    Clear bubble color
+                  </button>
+                )}
               </div>
-              <div style={{marginBottom:12}}>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
-                  <div style={{fontSize:'0.68rem',fontWeight:700,color:'#9ca3af',textTransform:'uppercase',letterSpacing:.5}}>Font Size</div>
-                  <span style={{fontSize:'0.75rem',fontWeight:700,color:'#1a73e8'}}>{fontSize}px</span>
-                </div>
-                <input type="range" min={14} max={28} step={1} value={fontSize} onChange={e=>setFontSize(+e.target.value)} style={{width:'100%',accentColor:'#1a73e8'}}/>
-                <div style={{display:'flex',justifyContent:'space-between',fontSize:'0.62rem',color:'#9ca3af',marginTop:2}}><span>14px</span><span>28px</span></div>
-              </div>
-              <div style={{fontSize:'0.68rem',fontWeight:700,color:'#9ca3af',marginBottom:6,textTransform:'uppercase',letterSpacing:.5}}>Message Font</div>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4}}>
-                <div onClick={()=>setBubFont('')} style={{padding:'6px 7px',borderRadius:5,border:`1.5px solid ${bubFont===''?'#1a73e8':'#e4e6ea'}`,background:bubFont===''?'#eff6ff':'#f9fafb',cursor:'pointer',fontSize:'0.72rem',textAlign:'center',color:bubFont===''?'#1a73e8':'#374151',fontWeight:600}}>Default</div>
+              <p style={{fontSize:'0.75rem',color:'#666',marginBottom:8}}>Message font:</p>
+              <select value={bubFont} onChange={e=>setBubFont(e.target.value)}
+                style={{width:'100%',padding:'8px 10px',background:'#191919',border:'1px solid #222',borderRadius:8,color:'#ffffff',fontSize:'0.82rem',marginBottom:10}}>
                 {FONT_LIST.map(f=>(
-                  <div key={f.id} onClick={()=>setBubFont(f.id)} style={{padding:'6px 7px',borderRadius:5,border:`1.5px solid ${bubFont===f.id?'#1a73e8':'#e4e6ea'}`,background:bubFont===f.id?'#eff6ff':'#f9fafb',cursor:'pointer',fontSize:'0.73rem',textAlign:'center',fontFamily:f.f,color:bubFont===f.id?'#1a73e8':'#374151',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                    {f.name}
-                  </div>
+                  <option key={f.id} value={f.id} style={{fontFamily:f.f}}>{f.name}</option>
                 ))}
+              </select>
+              <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+                <span style={{fontSize:'0.78rem',color:'#888',minWidth:80}}>Font size: {fontSize}px</span>
+                <input type="range" min={11} max={22} value={fontSize} onChange={e=>setFontSize(+e.target.value)}
+                  style={{flex:1,accentColor:'#03add8'}}/>
               </div>
-            </>
+              <div style={{display:'flex',alignItems:'center',gap:10}}>
+                <span style={{fontSize:'0.78rem',color:'#888'}}>Text color:</span>
+                <input type="color" value={msgColor} onChange={e=>setMsgColor(e.target.value)}
+                  style={{width:40,height:30,border:'none',background:'none',cursor:'pointer'}}/>
+                <span style={{fontSize:'0.75rem',color:'#666'}}>{msgColor}</span>
+              </div>
+            </div>
           )}
 
-          {/* Sounds tab */}
-          {tab==='sounds'&&(
-            <>
-              <div style={{fontSize:'0.7rem',fontWeight:700,color:'#9ca3af',textTransform:'uppercase',letterSpacing:.5,marginBottom:12}}>Sound Notifications</div>
-              <div style={{display:'flex',flexDirection:'column',gap:6}}>
-                {SOUND_KEYS.map(s=>{
-                  const on=soundPrefs[s.key]!==false
-                  return(
-                    <div key={s.key} style={{display:'flex',alignItems:'center',gap:12,padding:'10px 12px',background:'#f9fafb',border:'1.5px solid #e4e6ea',borderRadius:10}}>
-                      <img src={s.icon} alt="" style={{width:20,height:20,objectFit:'contain',opacity:.7,flexShrink:0}} onError={e=>e.target.style.display='none'}/>
-                      <span style={{flex:1,fontSize:'0.82rem',fontWeight:600,color:'#374151'}}>{s.label}</span>
-                      <div onClick={()=>{setSoundPref(s.key,!on);setSoundPrefs(getSoundPrefs())}}
-                        style={{width:44,height:24,borderRadius:12,background:on?'#1a73e8':'#d1d5db',cursor:'pointer',position:'relative',transition:'background .2s',flexShrink:0}}>
-                        <div style={{position:'absolute',top:3,left:on?22:3,width:18,height:18,borderRadius:'50%',background:'#fff',transition:'left .2s',boxShadow:'0 1px 4px rgba(0,0,0,.2)'}}/>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-              <div style={{marginTop:10,fontSize:'0.7rem',color:'#9ca3af',textAlign:'center'}}>Saved locally on your device.</div>
-            </>
+          {/* SOUNDS TAB */}
+          {tab==='sounds' && (
+            <div>
+              {SOUND_KEYS.map(sk=>(
+                <div key={sk.key} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 0',borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
+                  <span style={{fontSize:'0.82rem',color:'#ffffff'}}>{sk.label}</span>
+                  <button onClick={()=>{
+                    const current=soundPrefs[sk.key]!==false
+                    setSoundPref(sk.key,!current)
+                    setSoundPrefs(p=>({...p,[sk.key]:!current}))
+                  }} style={{
+                    width:42,height:24,borderRadius:12,border:'none',cursor:'pointer',
+                    background:soundPrefs[sk.key]!==false?'#03add8':'#333',
+                    position:'relative',transition:'background .2s',
+                  }}>
+                    <span style={{
+                      position:'absolute',top:3,
+                      left:soundPrefs[sk.key]!==false?'calc(100% - 20px)':'3px',
+                      width:18,height:18,borderRadius:'50%',background:'#fff',
+                      transition:'left .2s',
+                    }}/>
+                  </button>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
         {/* Footer */}
-        {tab!=='sounds'&&(
-          <div style={{borderTop:'1px solid #f3f4f6',padding:'12px 14px',display:'flex',gap:8,flexShrink:0,background:'#fafafa'}}>
-            <button onClick={onClose} style={{flex:1,padding:'9px',borderRadius:8,border:'1.5px solid #e4e6ea',background:'#fff',color:'#6b7280',cursor:'pointer',fontSize:'0.82rem',fontWeight:600}}>Cancel</button>
-            <button onClick={save} disabled={saving} style={{flex:2,padding:'9px',borderRadius:8,border:'none',background:saving?'#9ca3af':'linear-gradient(135deg,#1a73e8,#0d5bcd)',color:'#fff',cursor:saving?'not-allowed':'pointer',fontSize:'0.82rem',fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
-              <i className={saving?'fa-solid fa-circle-notch fa-spin':'fa-solid fa-floppy-disk'} style={{fontSize:14}}/> {saving?'Saving…':'Apply'}
+        {tab!=='sounds' && (
+          <div style={{padding:'12px 18px',borderTop:'1px solid rgba(255,255,255,0.05)',display:'flex',alignItems:'center',gap:10,flexShrink:0,background:'#111',borderRadius:'0 0 14px 14px'}}>
+            {ok && <span style={{fontSize:'0.8rem',color:'#74b20e',fontWeight:600}}>{ok}</span>}
+            <div style={{flex:1}}/>
+            <button onClick={onClose} style={{padding:'8px 18px',borderRadius:8,border:'none',cursor:'pointer',background:'rgba(255,255,255,0.08)',color:'#888',fontSize:'0.82rem',fontWeight:600}}>
+              Cancel
+            </button>
+            <button onClick={save} disabled={saving} style={{padding:'8px 20px',borderRadius:8,border:'none',cursor:'pointer',background:'#03add8',color:'#fff',fontSize:'0.82rem',fontWeight:700,opacity:saving?0.6:1}}>
+              {saving ? 'Saving...' : 'Save'}
             </button>
           </div>
         )}
@@ -422,201 +331,161 @@ function ChatSettingsOverlay({me,onClose,onSaved}){
   )
 }
 
-// ─────────────────────────────────────────────────────────────
-// AVATAR DROPDOWN
-// ─────────────────────────────────────────────────────────────
-// AVATAR DROPDOWN — CodyChatPHP chat_main_menu style
-// Cover banner + avatar + rank icon + username + edit_profile link
-// Sections: wallet/level, settings, room options, admin, leave/logout
-// ─────────────────────────────────────────────────────────────
-function AvatarDropdown({me,status,setStatus,onLeave,socket,onOpenSettings,onOpenProfile}){
-  const [open,setOpen]=useState(false)
-  const ref=useRef(null)
-  const nav=useNavigate()
+// ── Avatar Dropdown — CodyChat .back_menu style ────────────
+function AvatarDropdown({ me, status, setStatus, onLeave, socket, onOpenSettings, onOpenProfile }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  const nav = useNavigate()
 
-  useEffect(()=>{
-    const fn=e=>{if(ref.current&&!ref.current.contains(e.target))setOpen(false)}
-    if(open) document.addEventListener('mousedown',fn)
-    return()=>document.removeEventListener('mousedown',fn)
-  },[open])
+  useEffect(() => {
+    function h(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
+  }, [])
 
-  const ri=R(me?.rank)
-  const border=GBR(me?.gender,me?.rank)
-  const curSt=STATUSES.find(s=>s.id===status)||STATUSES[0]
-  const isStaffRole=['moderator','admin','superadmin','owner'].includes(me?.rank)
-  const isAdminRole=['admin','superadmin','owner'].includes(me?.rank)
+  const STATUS_OPTS = [
+    { id: 'online',    label: 'Online',    color: '#22c55e', icon: 'fa-solid fa-circle' },
+    { id: 'away',      label: 'Away',      color: '#f59e0b', icon: 'fa-regular fa-clock' },
+    { id: 'busy',      label: 'Busy',      color: '#ef4444', icon: 'fa-solid fa-ban' },
+    { id: 'invisible', label: 'Invisible', color: '#9ca3af', icon: 'fa-solid fa-eye-slash' },
+  ]
+  const STATUS_COLOR = { online: '#22c55e', away: '#f59e0b', busy: '#ef4444', invisible: '#9ca3af' }
 
-  function MenuItem({icon,label,color,chevron,fn,danger}){
-    return(
-      <button onClick={fn}
-        style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'9px 14px',
-          background:'none',border:'none',borderBottom:'1px solid #2d3555',
-          cursor:'pointer',textAlign:'left',transition:'background .12s'}}
-        onMouseEnter={e=>e.currentTarget.style.background=danger?'rgba(239,68,68,.1)':'#2d3555'}
-        onMouseLeave={e=>e.currentTarget.style.background='none'}>
-        <i className={icon} style={{fontSize:14,color:color||'#9ca3af',width:18,textAlign:'center',flexShrink:0}}/>
-        <span style={{fontSize:'0.84rem',fontWeight:600,color:danger?'#f87171':'#e2e8f0',flex:1}}>{label}</span>
-        {chevron&&<i className="fa-solid fa-angle-right" style={{fontSize:11,color:'#6b7280',flexShrink:0}}/>}
-      </button>
-    )
-  }
+  const ri = R(me?.rank)
 
-  return(
-    <div ref={ref} style={{position:'relative',flexShrink:0}}>
-      {/* Trigger button — avatar + status dot */}
-      <button onClick={()=>setOpen(o=>!o)}
-        style={{background:'none',border:'none',cursor:'pointer',padding:'2px 3px',display:'flex',alignItems:'center'}}>
-        <div style={{position:'relative'}}>
-          <img src={me?.avatar||'/default_images/avatar/default_guest.png'} alt=""
-            style={{width:28,height:28,borderRadius:'50%',objectFit:'cover',border:`2px solid ${border}`,display:'block'}}
-            onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
-          <span style={{position:'absolute',bottom:0,right:0,width:7,height:7,
-            background:curSt.color,borderRadius:'50%',border:'1.5px solid #fff'}}/>
+  return (
+    <div ref={ref} style={{ position: 'relative', flexShrink: 0 }}>
+      <button onClick={e => { e.stopPropagation(); setOpen(p => !p) }}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 3, borderRadius: 8, display: 'flex', alignItems: 'center', gap: 5, position: 'relative' }}>
+        <div style={{ position: 'relative' }}>
+          <img
+            src={me?.avatar || '/default_images/avatar/default_guest.png'}
+            alt=""
+            style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', border: `1.5px solid ${GBR(me?.gender, me?.rank)}`, display: 'block' }}
+            onError={e => { e.target.src = '/default_images/avatar/default_guest.png' }}
+          />
+          {/* Status dot */}
+          <span style={{
+            position: 'absolute', bottom: 0, right: 0,
+            width: 8, height: 8, borderRadius: '50%',
+            background: STATUS_COLOR[status] || '#22c55e',
+            border: '1.5px solid #111',
+          }} />
         </div>
       </button>
 
-      {open&&(
-        <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',
-          background:'#1a1f2e',border:'1px solid #2d3555',borderRadius:12,
-          minWidth:250,maxWidth:280,boxShadow:'0 8px 40px rgba(0,0,0,.6)',
-          zIndex:999,overflow:'hidden'}}
-          onClick={e=>e.stopPropagation()}>
-
-          {/* ── TOP BANNER with cover background (CodyChatPHP: float_ctop) ── */}
-          <div style={{
-            background:`linear-gradient(135deg, ${ri.color}55 0%, #0f172a 100%)`,
-            padding:'14px 14px 10px',borderBottom:'1px solid #2d3555',position:'relative',
-          }}>
-            {/* Rank icon top-right (CodyChatPHP style) */}
-            <div style={{position:'absolute',top:10,right:12,opacity:0.6}}>
-              <RIcon rank={me?.rank} size={28}/>
-            </div>
-
-            {/* Avatar row */}
-            <div style={{display:'flex',alignItems:'flex-end',gap:10}}>
-              <div style={{position:'relative',flexShrink:0}}>
-                <img src={me?.avatar||'/default_images/avatar/default_guest.png'} alt=""
-                  style={{width:54,height:54,borderRadius:'50%',objectFit:'cover',
-                    border:`2.5px solid ${border}`,display:'block',
-                    boxShadow:'0 2px 12px rgba(0,0,0,.4)'}}
-                  onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}}/>
-                {/* Status dot */}
-                <span style={{position:'absolute',bottom:2,right:2,width:10,height:10,
-                  background:curSt.color,borderRadius:'50%',border:'2px solid #1a1f2e'}}/>
-              </div>
-              <div style={{flex:1,minWidth:0,paddingBottom:2}}>
-                {/* Rank label */}
-                <div style={{display:'flex',alignItems:'center',gap:4,marginBottom:3}}>
-                  <RIcon rank={me?.rank} size={11}/>
-                  <span style={{fontSize:'0.6rem',fontWeight:700,color:ri.color,textTransform:'uppercase',letterSpacing:.5}}>{ri.label}</span>
-                </div>
-                {/* Username */}
-                <div style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1rem',
-                  color:'#fff',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                  {me?.username}
-                </div>
-                {/* Edit profile link */}
-                <div onClick={()=>{onOpenProfile?.();setOpen(false)}}
-                  style={{fontSize:'0.65rem',color:'rgba(255,255,255,.45)',marginTop:1,cursor:'pointer'}}
-                  onMouseEnter={e=>e.currentTarget.style.color='rgba(255,255,255,.8)'}
-                  onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,.45)'}>
-                  Edit Profile
-                </div>
+      {/* Dropdown — CodyChat .back_menu dark */}
+      {open && (
+        <div onClick={e => e.stopPropagation()} style={{
+          position: 'absolute', top: '100%', right: 0, marginTop: 4,
+          background: '#242424', border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: 12, minWidth: 210,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+          zIndex: 500, overflow: 'hidden',
+        }}>
+          {/* User info row */}
+          <div style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <img
+              src={me?.avatar || '/default_images/avatar/default_guest.png'} alt=""
+              style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover', border: `2px solid ${GBR(me?.gender, me?.rank)}` }}
+              onError={e => { e.target.src = '/default_images/avatar/default_guest.png' }}
+            />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{me?.username}</div>
+              <div style={{ fontSize: '0.7rem', color: '#666', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <RIcon rank={me?.rank} size={12} />
+                {ri.label}
               </div>
             </div>
+            {/* Gold */}
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '0.72rem', color: '#f59e0b', fontWeight: 700 }}>💰 {me?.gold || 0}</div>
+            </div>
+          </div>
 
-            {/* Status row */}
-            <div style={{display:'flex',gap:4,marginTop:10,flexWrap:'wrap'}}>
-              {STATUSES.map(s=>(
-                <button key={s.id}
-                  onClick={()=>{setStatus(s.id);socket?.emit('updateStatus',{status:s.id})}}
-                  style={{flex:'1 1 auto',minWidth:56,padding:'4px 6px',borderRadius:6,
-                    border:`1.5px solid ${status===s.id?s.color:'rgba(255,255,255,.15)'}`,
-                    background:status===s.id?s.color+'33':'rgba(255,255,255,.05)',
-                    cursor:'pointer',display:'flex',alignItems:'center',gap:4,justifyContent:'center',
-                    transition:'all .12s'}}>
-                  <span style={{width:6,height:6,borderRadius:'50%',background:s.color,
-                    display:'inline-block',flexShrink:0}}/>
-                  <span style={{fontSize:'0.62rem',fontWeight:700,
-                    color:status===s.id?s.color:'rgba(255,255,255,.5)'}}>{s.label}</span>
+          {/* Status section */}
+          <div style={{ padding: '8px 6px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <p style={{ fontSize: '0.68rem', color: '#666', padding: '2px 8px 6px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+              {STATUS_OPTS.map(s => (
+                <button key={s.id} onClick={() => { setStatus(s.id); socket?.emit('setStatus', { status: s.id }); setOpen(false) }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 7,
+                    padding: '7px 10px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                    background: status === s.id ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.03)',
+                    color: status === s.id ? '#ffffff' : '#888',
+                    fontSize: '0.78rem', fontWeight: status === s.id ? 700 : 500,
+                    transition: 'background .12s',
+                  }}>
+                  <i className={s.icon} style={{ fontSize: 10, color: s.color }} />
+                  {s.label}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* ── WALLET + LEVEL row ── */}
-          {!me?.isGuest&&(
-            <div style={{display:'flex',gap:0,borderBottom:'1px solid #2d3555'}}>
-              <div style={{flex:1,padding:'8px 12px',display:'flex',alignItems:'center',gap:7,
-                borderRight:'1px solid #2d3555'}}>
-                <img src="/default_images/icons/gold.svg" alt=""
-                  style={{width:18,height:18,objectFit:'contain',flexShrink:0}}
-                  onError={e=>{e.target.outerHTML="<span style='font-size:15px'>🪙</span>"}}/>
-                <div>
-                  <div style={{fontSize:'0.5rem',color:'#9ca3af',fontWeight:700,textTransform:'uppercase',letterSpacing:.3}}>Gold</div>
-                  <div style={{fontSize:'0.82rem',fontWeight:800,color:'#fbbf24'}}>{me?.gold||0}</div>
-                </div>
-              </div>
-              <div style={{flex:1,padding:'8px 12px',display:'flex',alignItems:'center',gap:7}}>
-                <img src="/default_images/icons/level.svg" alt=""
-                  style={{width:18,height:18,objectFit:'contain',flexShrink:0}}
-                  onError={e=>{e.target.outerHTML="<span style='font-size:15px'>🏆</span>"}}/>
-                <div>
-                  <div style={{fontSize:'0.5rem',color:'#9ca3af',fontWeight:700,textTransform:'uppercase',letterSpacing:.3}}>Level</div>
-                  <div style={{fontSize:'0.82rem',fontWeight:800,color:'#a78bfa'}}>{me?.level||1}</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ── MENU ITEMS (CodyChatPHP section_tmmenu + section_bmmenu) ── */}
-          <div>
-            <MenuItem icon="fa-solid fa-address-card"    label="My Profile"   color="#a78bfa" fn={()=>{onOpenProfile?.();setOpen(false)}}/>
-            <MenuItem icon="fa-solid fa-user-gear"        label="Chat Options" color="#60a5fa" chevron fn={()=>{onOpenSettings?.();setOpen(false)}}/>
-            {isAdminRole&&(
-              <MenuItem icon="fa-solid fa-gauge-high" label="Admin Panel" color="#f59e0b" fn={()=>{nav('/admin');setOpen(false)}}/>
-            )}
-            <MenuItem icon="fa-solid fa-circle-left"  label="Leave Room"  color="#64748b" fn={()=>{onLeave();setOpen(false)}}/>
-            <button
-              onClick={()=>{
-                const t=localStorage.getItem('cgz_token')
-                if(t)fetch(`${API}/api/auth/logout`,{method:'POST',headers:{Authorization:`Bearer ${t}`}}).catch(()=>{})
-                localStorage.removeItem('cgz_token');nav('/login')
+          {/* Menu items */}
+          {[
+            { icon: 'fa-solid fa-circle-user',         label: 'Profile',       fn: () => { onOpenProfile?.(); setOpen(false) } },
+            { icon: 'fa-solid fa-user-gear',           label: 'Chat Settings', fn: () => { onOpenSettings?.(); setOpen(false) } },
+            { icon: 'fa-solid fa-gauge',               label: 'Admin Panel',   fn: () => { nav('/admin'); setOpen(false) } },
+            { icon: 'fa-solid fa-right-from-bracket',  label: 'Leave Room',    fn: () => { onLeave?.(); setOpen(false) }, color: '#ef4444' },
+          ].map((item, i) => (
+            <button key={i} onClick={item.fn}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                width: '100%', padding: '10px 14px',
+                background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+                borderTop: i === 0 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                color: item.color || '#dddddd',
+                fontSize: '0.82rem', fontWeight: 600,
+                transition: 'background .12s',
               }}
-              style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'9px 14px',
-                background:'none',border:'none',cursor:'pointer',textAlign:'left',transition:'background .12s'}}
-              onMouseEnter={e=>e.currentTarget.style.background='rgba(239,68,68,.12)'}
-              onMouseLeave={e=>e.currentTarget.style.background='none'}>
-              <i className="fa-solid fa-right-from-bracket" style={{fontSize:14,color:'#f87171',width:18,textAlign:'center',flexShrink:0}}/>
-              <span style={{fontSize:'0.84rem',fontWeight:600,color:'#f87171',flex:1}}>Logout</span>
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+              <i className={item.icon} style={{ fontSize: 14, width: 18, textAlign: 'center', color: item.color || '#03add8' }} />
+              {item.label}
             </button>
-          </div>
+          ))}
         </div>
       )}
     </div>
   )
 }
 
-// ─────────────────────────────────────────────────────────────
-// FOOTER
-// ─────────────────────────────────────────────────────────────
-// Footer — FIXED: accepts tObj so it always matches the active theme
-function Footer({showRadio, setShowRadio, showRight, setRight, notif, tObj}) {
-  const bg     = tObj?.bg_header  || '#fff'
-  const border = tObj?.default_color || '#e4e6ea'
+// ── FOOTER BAR — CodyChat .bfoot style ────────────────────
+// Dark #111, accent icons, matches CodyChat footer exactly
+function Footer({ showRadio, setShowRadio, showRight, setRight, notif, tObj }) {
   return (
     <div style={{
-      background: bg,
-      borderTop: `1px solid ${border}44`,
-      padding: '4px 10px',
-      display: 'flex', alignItems: 'center', gap: 4,
-      flexShrink: 0, position: 'relative',
+      // CodyChat .bfoot
+      background: '#111111',
+      borderTop: '1px solid rgba(255,255,255,0.05)',
+      padding: '3px 10px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 2,
+      flexShrink: 0,
+      position: 'relative',
     }}>
-      <FBtn faIcon="fa-solid fa-radio" active={showRadio} onClick={() => setShowRadio(s => !s)} title="Radio" tObj={tObj}/>
-      <div style={{flex:1}}/>
-      <FBtn faIcon="fa-solid fa-users" active={showRight} onClick={() => setRight(s => !s)} title="User List" badge={notif.friends} tObj={tObj}/>
+      <FBtn
+        faIcon="fa-solid fa-radio"
+        active={showRadio}
+        onClick={() => setShowRadio(s => !s)}
+        title="Radio"
+        tObj={tObj}
+      />
+      <div style={{ flex: 1 }} />
+      <FBtn
+        faIcon="fa-solid fa-users"
+        active={showRight}
+        onClick={() => setRight(s => !s)}
+        title="Users"
+        badge={notif?.friends || 0}
+        tObj={tObj}
+      />
     </div>
   )
 }
 
-export {ChatSettingsOverlay, AvatarDropdown, Footer}
+export { ChatSettingsOverlay, AvatarDropdown, Footer }
