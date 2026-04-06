@@ -68,7 +68,7 @@ function ReportModal({ targetUser, onClose }) {
   }
 
   return (
-    <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:2200,background:'rgba(0,0,0,.65)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
+    <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:2200,background:'rgba(0,0,0,.65)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
       <div onClick={e=>e.stopPropagation()} style={{background:'#fff',borderRadius:16,maxWidth:360,width:'100%',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.3)'}}>
         <div style={{background:'linear-gradient(135deg,#ef4444,#dc2626)',padding:'14px 16px',display:'flex',alignItems:'center',gap:10}}>
           <i className="fa-sharp fa-solid fa-flag" style={{fontSize:18,color:'#fff'}}/>
@@ -139,7 +139,7 @@ function ShareWalletModal({ targetUser, myGold, myRuby, onClose, socket }) {
   }
 
   return (
-    <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:2500,background:'rgba(0,0,0,.7)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
+    <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:2500,background:'rgba(0,0,0,.7)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
       <div onClick={e=>e.stopPropagation()} style={{background:'#1e293b',borderRadius:16,maxWidth:320,width:'100%',overflow:'hidden',boxShadow:'0 24px 64px rgba(0,0,0,.5)',border:'1px solid #334155'}}>
         <div style={{padding:'13px 14px',borderBottom:'1px solid #334155',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
           <div style={{display:'flex',alignItems:'center',gap:8}}>
@@ -334,7 +334,7 @@ function StaffActionModal({ targetUser, myLevel, myRank, socket, roomId, onClose
   const D = S.dark
 
   return (
-    <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:2200,background:'rgba(0,0,0,.75)',backdropFilter:'blur(6px)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
+    <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:2200,background:'rgba(0,0,0,.75)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
       <div onClick={e=>e.stopPropagation()} style={{background:D.bg,borderRadius:16,maxWidth:440,width:'100%',maxHeight:'88vh',display:'flex',flexDirection:'column',boxShadow:'0 24px 64px rgba(0,0,0,.6)',border:`1px solid ${D.border}`,overflow:'hidden'}}>
 
         {/* Header */}
@@ -764,7 +764,7 @@ function SelfProfileOverlay({ user, onClose, onUpdated }) {
   }
 
   return (
-    <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:1200,background:'rgba(0,0,0,.55)',backdropFilter:'blur(5px)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
+    <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:1200,background:'rgba(0,0,0,.55)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
       <div onClick={e=>e.stopPropagation()} style={{background:'#fff',borderRadius:18,maxWidth:360,width:'100%',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.25)',maxHeight:'90vh',display:'flex',flexDirection:'column'}}>
         <div style={{height:80,background:`linear-gradient(135deg,${ri.color}66,#e8f0fe)`,position:'relative',flexShrink:0}}>
           <button onClick={onClose} style={{position:'absolute',top:10,right:10,background:'rgba(255,255,255,.85)',border:'none',width:28,height:28,borderRadius:'50%',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13}}>
@@ -847,7 +847,7 @@ function ProfileModal({ user, myLevel, myId, socket, roomId, onClose, onGift, ig
 
   return (
     <>
-      <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:1000,background:'rgba(0,0,0,.45)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
+      <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:1000,background:'rgba(0,0,0,.45)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
         <div onClick={e=>e.stopPropagation()} style={{background:'#fff',borderRadius:18,maxWidth:340,width:'100%',overflow:'hidden',boxShadow:'0 16px 48px rgba(0,0,0,.18)',maxHeight:'90vh',display:'flex',flexDirection:'column'}}>
           <div style={{height:88,background:`linear-gradient(135deg,${ri.color}44,#e8f0fe)`,position:'relative',flexShrink:0}}>
             <button onClick={onClose} style={{position:'absolute',top:10,right:10,background:'rgba(255,255,255,.8)',border:'none',width:28,height:28,borderRadius:'50%',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13}}>
