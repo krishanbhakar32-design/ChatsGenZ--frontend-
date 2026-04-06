@@ -162,8 +162,8 @@ function ChatSettingsOverlay({me,onClose,onSaved}){
   ]
 
   return(
-    <div onClick={e=>e.stopPropagation()} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',backdropFilter:'blur(3px)',zIndex:1200,display:'flex',alignItems:'center',justifyContent:'center',padding:'12px'}}>
-      <div style={{background:'#fff',borderRadius:16,width:'min(480px,100%)',maxHeight:'88vh',display:'flex',flexDirection:'column',boxShadow:'0 20px 60px rgba(0,0,0,.35)',overflow:'hidden'}}>
+    <div onClick={onClose} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',zIndex:1200,display:'flex',alignItems:'center',justifyContent:'center',padding:'12px'}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:'#fff',borderRadius:16,width:'min(480px,100%)',maxHeight:'88vh',display:'flex',flexDirection:'column',boxShadow:'0 20px 60px rgba(0,0,0,.35)',overflow:'hidden'}}>
 
         {/* Header */}
         <div style={{background:'linear-gradient(135deg,#1a1f2e,#2d3555)',padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
