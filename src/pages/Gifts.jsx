@@ -59,7 +59,7 @@ function UserSearchModal({ onSelect, onClose }) {
   }, [q])
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 16 }}
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 16 }}
       onClick={onClose}>
       <div style={{ background: '#1e293b', borderRadius: 16, width: '100%', maxWidth: 400, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,.5)' }}
         onClick={e => e.stopPropagation()}>
@@ -119,7 +119,7 @@ function SendModal({ gift, recipient, myGold, onClose, onSuccess }) {
   const canAfford = myGold >= gift.price
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300, padding: 16 }}
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300, padding: 16 }}
       onClick={onClose}>
       <div style={{ background: '#1e293b', borderRadius: 18, width: '100%', maxWidth: 360, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,.5)' }}
         onClick={e => e.stopPropagation()}>
