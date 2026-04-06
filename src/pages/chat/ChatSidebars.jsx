@@ -218,16 +218,16 @@ function RightSidebar({ users, myLevel, myId, onUserClick, onWhisper, onClose, t
     )
   }
 
-  const sideWidth = isMobile ? '100vw' : 220
+  const sideWidth = isMobile ? '80vw' : 220
 
   return (
     <div style={{
       width: sideWidth, flexShrink: 0, display: 'flex', flexDirection: 'column',
-      // CodyChat .bsidebar
       background: '#080808',
       borderLeft: '1px solid rgba(255,255,255,0.05)',
       overflow: 'hidden',
-      ...(isMobile ? { position: 'fixed', right: 0, top: 0, bottom: 0, zIndex: 300 } : {}),
+      height: '100%',
+      // FIX 4/8: On mobile, sidebar is fixed drawer from right
     }}>
       {/* Header */}
       <div style={{
@@ -334,17 +334,20 @@ function RightSidebar({ users, myLevel, myId, onUserClick, onWhisper, onClose, t
 }
 
 // ── LEFT SIDEBAR ───────────────────────────────────────────
-// Matches CodyChat's left nav drawer: dark sidebar, icon rows
-function LeftSidebar({ room, nav, socket, roomId, onClose, me, tObj, onStyleSaved }) {
+// FIX 4/7/8: All items open inside chatroom — no new pages for profile/settings
+function LeftSidebar({ room, nav, socket, roomId, onClose, me, tObj, onStyleSaved, onOpenProfile, onOpenSettings }) {
   const [showGames, setShowGames] = useState(false)
 
   const menuItems = [
-    { icon: 'fa-solid fa-house-chimney-user', label: 'Rooms',       fn: () => nav('/chat') },
-    { icon: 'fa-solid fa-address-card',       label: 'My Profile',  fn: () => nav('/profile') },
-    { icon: 'fa-sharp fa-solid fa-medal',     label: 'Leaderboard', fn: () => nav('/leaderboard') },
-    { icon: 'fa-solid fa-gift',               label: 'Gifts',       fn: () => nav('/gifts') },
-    { icon: 'fa-solid fa-store',              label: 'Premium',     fn: () => nav('/premium') },
-    { icon: 'fa-solid fa-dice',               label: 'Games',       fn: () => setShowGames(p => !p) },
+    { icon: 'fa-solid fa-house-chimney-user', label: 'Rooms',         fn: () => { nav('/chat'); onClose?.() } },
+    // FIX 7: My Profile opens inside chatroom as overlay, not /profile page
+    { icon: 'fa-solid fa-address-card',       label: 'My Profile',    fn: () => { onOpenProfile?.(); onClose?.() } },
+    // FIX 7: Chat Settings opens inside chatroom
+    { icon: 'fa-solid fa-palette',            label: 'Chat Settings', fn: () => { onOpenSettings?.(); onClose?.() } },
+    { icon: 'fa-sharp fa-solid fa-medal',     label: 'Leaderboard',   fn: () => { nav('/leaderboard'); onClose?.() } },
+    { icon: 'fa-solid fa-gift',               label: 'Gifts',         fn: () => { nav('/gifts'); onClose?.() } },
+    { icon: 'fa-solid fa-store',              label: 'Premium',       fn: () => { nav('/premium'); onClose?.() } },
+    { icon: 'fa-solid fa-dice',               label: 'Games',         fn: () => setShowGames(p => !p) },
   ]
 
   return (
