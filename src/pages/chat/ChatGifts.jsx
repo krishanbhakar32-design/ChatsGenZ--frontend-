@@ -35,7 +35,7 @@ function GiftPanel({targetUser, myGold, onClose, onSent, socket, roomId, onGoldS
   }
 
   return (
-    <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:1001,background:'rgba(0,0,0,.48)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:12}}>
+    <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:1001,background:'rgba(0,0,0,.48)',display:'flex',alignItems:'center',justifyContent:'center',padding:12}}>
       <div onClick={e => e.stopPropagation()} style={{background:'#fff',borderRadius:16,maxWidth:380,width:'100%',overflow:'hidden',boxShadow:'0 16px 48px rgba(0,0,0,.22)'}}>
 
         {/* Header */}
