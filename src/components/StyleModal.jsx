@@ -1,19 +1,12 @@
 /**
  * StyleModal.jsx — ChatsGenZ
- * Exact CodyChat color/theme/font/bubble system ported to React
- * 
- * USAGE:
- *   <StyleModal type="nameColor"  user={user} settings={settings} onSave={fn} onClose={fn} />
- *   <StyleModal type="bubbleColor" user={user} settings={settings} onSave={fn} onClose={fn} />
- *   <StyleModal type="theme"      user={user} settings={settings} onSave={fn} onClose={fn} />
- *
- * type: 'nameColor' | 'bubbleColor' | 'theme'
- * onSave({ field, value }) — field = nameColor|bubbleColor|bubbleStyle|theme|msgFont|nameFont
+ * Uses CSS classes from public/colors.css, public/bubbles.css, public/fonts.css
+ * NO inline Google Fonts injection — fonts already loaded in index.html
  */
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 
-// ── ALL 24 THEMES from CodyChat manifests ──────────────────────
+// ── ALL 24 THEMES ──────────────────────────────────────────────
 export const THEMES = [
   { id:'Dark',         name:'Dark',         bg_header:'#111',                                         bg_chat:'#151515',    bg_log:'rgb(255,255,255,0.04)', text:'#fff',     accent:'#03add8',  default_color:'#666',    bg_image:'' },
   { id:'Arc',          name:'Arc',          bg_header:'linear-gradient(to top,#21252f,#2b3140)',      bg_chat:'#181a21',    bg_log:'rgba(84,96,121,0.2)',   text:'#fff',     accent:'#5774b7',  default_color:'#546079', bg_image:'/themes/Arc/background.png' },
@@ -41,7 +34,6 @@ export const THEMES = [
   { id:'Yankees_Blue', name:'Yankees Blue', bg_header:'linear-gradient(to right,#0b1228,#182039)',    bg_chat:'#182039',    bg_log:'#27386f',               text:'#fff',     accent:'#3774d8',  default_color:'#7096d5', bg_image:'/themes/Yankees_Blue/background.png' },
 ]
 
-// ── SOLID COLORS (32) — bcolor1-32 ────────────────────────────
 export const SOLID_COLORS = [
   '#ff3333','#ff6633','#ff9933','#ffcc33','#cccc00','#99cc00','#59b300','#829356',
   '#008000','#00e639','#00e673','#00e6ac','#00cccc','#03add8','#3366ff','#107896',
@@ -49,7 +41,6 @@ export const SOLID_COLORS = [
   '#604439','#795548','#a97f70','#bc9b8f','#9E9E9E','#879fab','#698796','#495f69',
 ]
 
-// ── GRADIENTS (40) — bgrad1-40 ────────────────────────────────
 export const NAME_GRADIENTS = [
   'linear-gradient(to right,#40e0d0,#ff8c00,#ff0080)',
   'linear-gradient(to right,#11998e,#38ef7d)',
@@ -93,7 +84,6 @@ export const NAME_GRADIENTS = [
   'linear-gradient(45deg,#222 0%,#FFA600 50%,#222 100%)',
 ]
 
-// ── NEON COLORS (32) — bneon1-32 ──────────────────────────────
 export const NEON_COLORS = [
   { color:'#ff3333', shadow:'1px 1px 1px #e60000,1px 1px 3px #ff3333,1px 1px 5px #ff3333' },
   { color:'#ff6633', shadow:'1px 1px 1px #e63900,1px 1px 3px #ff6633,1px 1px 5px #ff6633' },
@@ -129,7 +119,6 @@ export const NEON_COLORS = [
   { color:'#495f69', shadow:'1px 1px 1px #2a363c,1px 1px 3px #495f69,1px 1px 5px #495f69' },
 ]
 
-// ── BUBBLE GRADIENTS (40) ─────────────────────────────────────
 export const BUBBLE_GRADIENTS = [
   'linear-gradient(90deg,#667eea,#764ba2)','linear-gradient(90deg,#f093fb,#f5576c)',
   'linear-gradient(90deg,#4facfe,#00f2fe)','linear-gradient(90deg,#43e97b,#38f9d7)',
@@ -153,13 +142,11 @@ export const BUBBLE_GRADIENTS = [
   'linear-gradient(45deg,#06beb6,#48b1bf)','linear-gradient(45deg,#f12711,#f5af19)',
 ]
 
-// Bubble neon = gradient + glow
 export const BUBBLE_NEONS = BUBBLE_GRADIENTS.map((g, i) => {
   const glows = ['#a18cff','#ffb6ff','#7eefff','#8cffd9','#ffd580','#ffb38c','#e3b0ff','#9fe2ff','#ff99d9','#d2ff9c','#ff7ab3','#66e0ff','#ff88f5','#80e0ff','#ffb199','#a18cff','#ffb6ff','#7eefff','#8cffd9','#ffd580','#ffd1a3','#9ff5f0','#77ffbf','#ff85b3','#c9a9ff','#9bf6d5','#ffb199','#9fd4ff','#f7a0c2','#ffe680','#66d6ff','#d780ff','#ff9a80','#a8ff9f','#ff9abb','#7be2ff','#e06699','#ff8ca6','#7dfcff','#ffb866']
   return { gradient: g, glow: glows[i] || '#ffffff44' }
 })
 
-// ── 30 FONTS ──────────────────────────────────────────────────
 export const FONTS = [
   { id:'font1',  name:'Kalam',            family:"'Kalam', cursive" },
   { id:'font2',  name:'Signika',          family:"'Signika', sans-serif" },
@@ -194,14 +181,13 @@ export const FONTS = [
 ]
 
 const FONT_STYLES = [
-  { id:'normal', name:'Normal' },
-  { id:'bold',   name:'Bold' },
-  { id:'italic', name:'Italic' },
+  { id:'normal',      name:'Normal' },
+  { id:'bold',        name:'Bold' },
+  { id:'italic',      name:'Italic' },
   { id:'bold italic', name:'Bold Italic' },
 ]
 
-// ── HELPERS to apply stored values ────────────────────────────
-export function getNameStyle(nameColor, nameFont) {
+export function getNameStyle(nameColor) {
   if (!nameColor || nameColor === 'user') return {}
   const idx = parseInt(nameColor.replace('bcolor','')) - 1
   if (nameColor.startsWith('bcolor') && SOLID_COLORS[idx]) return { color: SOLID_COLORS[idx] }
@@ -223,34 +209,21 @@ export function getBubbleStyle(bubbleColor) {
   return {}
 }
 
-// ── MAIN MODAL ────────────────────────────────────────────────
 export default function StyleModal({ type, user, settings, onSave, onClose }) {
-  const [tab, setTab]         = useState('solid')
-  const [selected, setSelected] = useState('')
-  const [selFont, setSelFont]   = useState(user?.msgFont || '')
+  const [tab, setTab]               = useState('solid')
+  const [selected, setSelected]     = useState('')
+  const [selFont, setSelFont]       = useState(user?.msgFont || '')
   const [selNameFont, setSelNameFont] = useState(user?.nameFont || '')
-  const [fontStyle, setFontStyle] = useState(user?.bubbleStyle || 'normal')
-  const [msgColor, setMsgColor]   = useState(user?.msgFontColor || '#ffffff')
-  const [selTheme, setSelTheme]   = useState(user?.theme || 'Dark')
-  const [saving, setSaving]       = useState(false)
+  const [fontStyle, setFontStyle]   = useState(user?.bubbleStyle || 'normal')
+  const [msgColor, setMsgColor]     = useState(user?.msgFontColor || '#ffffff')
+  const [selTheme, setSelTheme]     = useState(user?.theme || 'Dark')
+  const [saving, setSaving]         = useState(false)
 
-  // Load Google Fonts
-  useEffect(() => {
-    const families = FONTS.map(f=>f.name.replace(/ /,'+')).join('|')
-    const link = document.createElement('link')
-    link.rel = 'stylesheet'
-    link.href = `https://fonts.googleapis.com/css2?family=${families.split('|').map(f=>`${f}:wght@400;700`).join('&family=')}&display=swap`
-    document.head.appendChild(link)
-    return () => link.remove()
-  }, [])
+  const canGrad     = !!settings?.allow_grad
+  const canNeon     = !!settings?.allow_neon
+  const canNameGrad = !!settings?.allow_name_grad
+  const canNameNeon = !!settings?.allow_name_neon
 
-  const canGrad = settings?.allow_grad ? true : false
-  const canNeon = settings?.allow_neon ? true : false
-  const canNameGrad = settings?.allow_name_grad ? true : false
-  const canNameNeon = settings?.allow_name_neon ? true : false
-  const canFont = settings?.allow_font ? true : false
-
-  // Preview styles
   const previewNameStyle = type === 'nameColor' ? (
     tab === 'solid'    ? { color: SOLID_COLORS[parseInt(selected.replace('bcolor',''))-1] || '#333' } :
     tab === 'gradient' ? { background: NAME_GRADIENTS[parseInt(selected.replace('bgrad',''))-1], WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' } :
@@ -258,7 +231,7 @@ export default function StyleModal({ type, user, settings, onSave, onClose }) {
   ) : {}
 
   const previewBubbleStyle = type === 'bubbleColor' ? (
-    tab === 'solid'    ? { background: SOLID_COLORS[parseInt(selected.replace('bubcolor',''))-1] || '#f3f4f6', color:'#fff' } :
+    tab === 'solid'    ? { background: SOLID_COLORS[parseInt(selected.replace('bubcolor',''))-1] || '#374151', color:'#fff' } :
     tab === 'gradient' ? { background: BUBBLE_GRADIENTS[parseInt(selected.replace('bubgrad',''))-1], color:'#fff' } :
     tab === 'neon'     ? { background: BUBBLE_NEONS[parseInt(selected.replace('bubneon',''))-1]?.gradient, boxShadow:`0 0 10px ${BUBBLE_NEONS[parseInt(selected.replace('bubneon',''))-1]?.glow}`, color:'#fff' } : {}
   ) : {}
@@ -270,15 +243,15 @@ export default function StyleModal({ type, user, settings, onSave, onClose }) {
     try {
       if (type === 'nameColor') {
         await onSave([
-          { field:'nameColor',  value: selected || 'user' },
-          { field:'nameFont',   value: selNameFont },
+          { field:'nameColor', value: selected || 'user' },
+          { field:'nameFont',  value: selNameFont },
         ])
       } else if (type === 'bubbleColor') {
         await onSave([
-          { field:'bubbleColor', value: selected },
-          { field:'bubbleStyle', value: fontStyle },
-          { field:'msgFont',     value: selFont },
-          { field:'msgFontColor',value: msgColor },
+          { field:'bubbleColor',  value: selected },
+          { field:'bubbleStyle',  value: fontStyle },
+          { field:'msgFont',      value: selFont },
+          { field:'msgFontColor', value: msgColor },
         ])
       } else if (type === 'theme') {
         await onSave([{ field:'theme', value: selTheme }])
@@ -288,13 +261,12 @@ export default function StyleModal({ type, user, settings, onSave, onClose }) {
     setSaving(false)
   }
 
-  const SWATCH = { width:32, height:32, borderRadius:6, cursor:'pointer', border:'2px solid transparent', display:'flex', alignItems:'center', justifyContent:'center', transition:'transform .1s,border-color .1s', flexShrink:0 }
+  const SW = { width:32, height:32, borderRadius:6, cursor:'pointer', border:'2px solid transparent', display:'flex', alignItems:'center', justifyContent:'center', transition:'transform .1s,border-color .1s', flexShrink:0 }
 
   return (
-    <div style={{ position:'fixed', inset:0, zIndex:9000, background:'rgba(0,0,0,.7)', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }} onClick={onClose}>
+    <div style={{ position:'fixed', inset:0, zIndex:9000, background:'rgba(0,0,0,.75)', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }} onClick={onClose}>
       <div onClick={e=>e.stopPropagation()} style={{ background:'#1a1d2e', border:'1px solid #2a2d3e', borderRadius:16, width:'100%', maxWidth:540, maxHeight:'90vh', overflowY:'auto', boxShadow:'0 20px 60px #000a' }}>
 
-        {/* Header */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', borderBottom:'1px solid #2a2d3e' }}>
           <div style={{ fontWeight:900, fontSize:15, color:'#f1f5f9' }}>
             {type==='nameColor'   && '🎨 Username Color & Font'}
@@ -308,7 +280,6 @@ export default function StyleModal({ type, user, settings, onSave, onClose }) {
 
           {/* ── NAME COLOR ── */}
           {type === 'nameColor' && <>
-            {/* Preview */}
             <div style={{ background:'#0d1020', borderRadius:10, padding:'14px 16px', marginBottom:16, textAlign:'center' }}>
               <div style={{ fontSize:11, color:'#6b7280', marginBottom:8, textTransform:'uppercase', letterSpacing:.5 }}>Preview</div>
               <span style={{ fontSize:18, fontWeight:800, fontFamily: FONTS.find(f=>f.id===selNameFont)?.family || 'inherit', ...previewNameStyle }}>
@@ -316,64 +287,61 @@ export default function StyleModal({ type, user, settings, onSave, onClose }) {
               </span>
             </div>
 
-            {/* Tabs */}
             <div style={{ display:'flex', gap:6, marginBottom:14 }}>
-              {[['solid','🎨 Solid'],['gradient','🌈 Gradient'],['neon','✨ Neon']].filter(([id])=> id==='solid'||(id==='gradient'&&canNameGrad)||(id==='neon'&&canNameNeon)).map(([id,label])=>(
-                <button key={id} onClick={()=>setTab(id)}
-                  style={{ flex:1, padding:'7px', borderRadius:8, border:`1px solid ${tab===id?'#3b82f6':'#2a2d3e'}`, background:tab===id?'#1e3a5f':'transparent', color:tab===id?'#60a5fa':'#6b7280', fontWeight:700, fontSize:12, cursor:'pointer' }}>
-                  {label}
-                </button>
-              ))}
+              {[['solid','🎨 Solid'],['gradient','🌈 Gradient'],['neon','✨ Neon']]
+                .filter(([id]) => id==='solid'||(id==='gradient'&&canNameGrad)||(id==='neon'&&canNameNeon))
+                .map(([id,label]) => (
+                  <button key={id} onClick={()=>setTab(id)}
+                    style={{ flex:1, padding:'7px', borderRadius:8, border:`1px solid ${tab===id?'#3b82f6':'#2a2d3e'}`, background:tab===id?'#1e3a5f':'transparent', color:tab===id?'#60a5fa':'#6b7280', fontWeight:700, fontSize:12, cursor:'pointer' }}>
+                    {label}
+                  </button>
+                ))}
             </div>
 
-            {/* Solid swatches */}
             {tab==='solid' && (
               <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:16 }}>
-                {/* Default option */}
-                <div onClick={()=>setSelected('')} style={{ ...SWATCH, background:'#f3f4f6', border:`2px solid ${selected===''?'#3b82f6':'#374151'}` }}>
-                  {selected==='' && <span style={{ fontSize:14 }}>✓</span>}
+                <div onClick={()=>setSelected('')} style={{ ...SW, background:'#374151', border:`2px solid ${selected===''?'#3b82f6':'#555'}` }}>
+                  {selected==='' && <span style={{ fontSize:14, color:'#fff' }}>✓</span>}
                 </div>
-                {SOLID_COLORS.map((c,i)=>(
+                {SOLID_COLORS.map((c,i) => (
                   <div key={i} onClick={()=>setSelected(`bcolor${i+1}`)}
-                    style={{ ...SWATCH, background:c, border:`2px solid ${selected===`bcolor${i+1}`?'#fff':'transparent'}`, transform:selected===`bcolor${i+1}`?'scale(1.15)':'scale(1)' }}>
+                    style={{ ...SW, background:c, border:`2px solid ${selected===`bcolor${i+1}`?'#fff':'transparent'}`, transform:selected===`bcolor${i+1}`?'scale(1.15)':'scale(1)' }}>
                     {selected===`bcolor${i+1}` && <span style={{ color:'#fff', fontSize:12, textShadow:'0 1px 2px #000' }}>✓</span>}
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Gradient swatches */}
             {tab==='gradient' && (
               <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:16 }}>
-                {NAME_GRADIENTS.map((g,i)=>(
+                {NAME_GRADIENTS.map((g,i) => (
                   <div key={i} onClick={()=>setSelected(`bgrad${i+1}`)}
-                    style={{ ...SWATCH, background:g, border:`2px solid ${selected===`bgrad${i+1}`?'#fff':'transparent'}`, transform:selected===`bgrad${i+1}`?'scale(1.15)':'scale(1)' }}>
+                    style={{ ...SW, background:g, border:`2px solid ${selected===`bgrad${i+1}`?'#fff':'transparent'}`, transform:selected===`bgrad${i+1}`?'scale(1.15)':'scale(1)' }}>
                     {selected===`bgrad${i+1}` && <span style={{ color:'#fff', fontSize:12 }}>✓</span>}
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Neon swatches */}
             {tab==='neon' && (
               <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:16 }}>
-                {NEON_COLORS.map((n,i)=>(
+                {NEON_COLORS.map((n,i) => (
                   <div key={i} onClick={()=>setSelected(`bneon${i+1}`)}
-                    style={{ ...SWATCH, background:n.color, border:`2px solid ${selected===`bneon${i+1}`?'#fff':'#333'}`, boxShadow:`0 0 6px ${n.color}`, transform:selected===`bneon${i+1}`?'scale(1.15)':'scale(1)' }}>
+                    style={{ ...SW, background:n.color, border:`2px solid ${selected===`bneon${i+1}`?'#fff':'#333'}`, boxShadow:`0 0 6px ${n.color}`, transform:selected===`bneon${i+1}`?'scale(1.15)':'scale(1)' }}>
                     {selected===`bneon${i+1}` && <span style={{ color:'#fff', fontSize:12 }}>✓</span>}
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Name font */}
             <div style={{ marginTop:4 }}>
               <div style={{ fontSize:11, color:'#6b7280', marginBottom:8, fontWeight:700, textTransform:'uppercase' }}>Username Font</div>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6 }}>
-                <div onClick={()=>setSelNameFont('')} style={{ padding:'8px 10px', borderRadius:8, border:`1px solid ${selNameFont===''?'#3b82f6':'#2a2d3e'}`, background:selNameFont===''?'#1e3a5f':'transparent', cursor:'pointer', textAlign:'center', fontSize:13, color:selNameFont===''?'#60a5fa':'#9ca3af' }}>
+                <div onClick={()=>setSelNameFont('')}
+                  style={{ padding:'8px 10px', borderRadius:8, border:`1px solid ${selNameFont===''?'#3b82f6':'#2a2d3e'}`, background:selNameFont===''?'#1e3a5f':'transparent', cursor:'pointer', textAlign:'center', fontSize:13, color:selNameFont===''?'#60a5fa':'#9ca3af' }}>
                   Default
                 </div>
-                {FONTS.slice(0,11).map(f=>(
+                {FONTS.slice(0,16).map(f => (
                   <div key={f.id} onClick={()=>setSelNameFont(f.id)}
                     style={{ padding:'8px 10px', borderRadius:8, border:`1px solid ${selNameFont===f.id?'#3b82f6':'#2a2d3e'}`, background:selNameFont===f.id?'#1e3a5f':'transparent', cursor:'pointer', textAlign:'center', fontSize:13, fontFamily:f.family, color:selNameFont===f.id?'#60a5fa':'#d1d5db', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                     {f.name}
@@ -385,7 +353,6 @@ export default function StyleModal({ type, user, settings, onSave, onClose }) {
 
           {/* ── BUBBLE COLOR ── */}
           {type === 'bubbleColor' && <>
-            {/* Preview */}
             <div style={{ background:'#0d1020', borderRadius:10, padding:'14px 16px', marginBottom:16 }}>
               <div style={{ fontSize:11, color:'#6b7280', marginBottom:8, textTransform:'uppercase', letterSpacing:.5 }}>Preview</div>
               <div style={{ display:'flex', alignItems:'flex-end', gap:8 }}>
@@ -396,25 +363,26 @@ export default function StyleModal({ type, user, settings, onSave, onClose }) {
               </div>
             </div>
 
-            {/* Tabs */}
             <div style={{ display:'flex', gap:6, marginBottom:14 }}>
-              {[['solid','🎨 Solid'],['gradient','🌈 Gradient'],['neon','✨ Neon']].filter(([id])=>id==='solid'||(id==='gradient'&&canGrad)||(id==='neon'&&canNeon)).map(([id,label])=>(
-                <button key={id} onClick={()=>setTab(id)}
-                  style={{ flex:1, padding:'7px', borderRadius:8, border:`1px solid ${tab===id?'#3b82f6':'#2a2d3e'}`, background:tab===id?'#1e3a5f':'transparent', color:tab===id?'#60a5fa':'#6b7280', fontWeight:700, fontSize:12, cursor:'pointer' }}>
-                  {label}
-                </button>
-              ))}
+              {[['solid','🎨 Solid'],['gradient','🌈 Gradient'],['neon','✨ Neon']]
+                .filter(([id]) => id==='solid'||(id==='gradient'&&canGrad)||(id==='neon'&&canNeon))
+                .map(([id,label]) => (
+                  <button key={id} onClick={()=>setTab(id)}
+                    style={{ flex:1, padding:'7px', borderRadius:8, border:`1px solid ${tab===id?'#3b82f6':'#2a2d3e'}`, background:tab===id?'#1e3a5f':'transparent', color:tab===id?'#60a5fa':'#6b7280', fontWeight:700, fontSize:12, cursor:'pointer' }}>
+                    {label}
+                  </button>
+                ))}
             </div>
 
             {tab==='solid' && (
               <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:16 }}>
-                <div onClick={()=>setSelected('')} style={{ ...SWATCH, background:'#f3f4f6', border:`2px solid ${selected===''?'#3b82f6':'#374151'}` }}>
-                  {selected===''&&<span style={{ fontSize:10, color:'#666' }}>def</span>}
+                <div onClick={()=>setSelected('')} style={{ ...SW, background:'#374151', border:`2px solid ${selected===''?'#3b82f6':'#555'}` }}>
+                  {selected==='' && <span style={{ fontSize:10, color:'#9ca3af' }}>def</span>}
                 </div>
-                {SOLID_COLORS.map((c,i)=>(
+                {SOLID_COLORS.map((c,i) => (
                   <div key={i} onClick={()=>setSelected(`bubcolor${i+1}`)}
-                    style={{ ...SWATCH, background:c, border:`2px solid ${selected===`bubcolor${i+1}`?'#fff':'transparent'}`, transform:selected===`bubcolor${i+1}`?'scale(1.15)':'scale(1)' }}>
-                    {selected===`bubcolor${i+1}`&&<span style={{ color:'#fff', fontSize:12 }}>✓</span>}
+                    style={{ ...SW, background:c, border:`2px solid ${selected===`bubcolor${i+1}`?'#fff':'transparent'}`, transform:selected===`bubcolor${i+1}`?'scale(1.15)':'scale(1)' }}>
+                    {selected===`bubcolor${i+1}` && <span style={{ color:'#fff', fontSize:12 }}>✓</span>}
                   </div>
                 ))}
               </div>
@@ -422,10 +390,10 @@ export default function StyleModal({ type, user, settings, onSave, onClose }) {
 
             {tab==='gradient' && (
               <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:16 }}>
-                {BUBBLE_GRADIENTS.map((g,i)=>(
+                {BUBBLE_GRADIENTS.map((g,i) => (
                   <div key={i} onClick={()=>setSelected(`bubgrad${i+1}`)}
-                    style={{ ...SWATCH, background:g, border:`2px solid ${selected===`bubgrad${i+1}`?'#fff':'transparent'}`, transform:selected===`bubgrad${i+1}`?'scale(1.15)':'scale(1)' }}>
-                    {selected===`bubgrad${i+1}`&&<span style={{ color:'#fff', fontSize:12 }}>✓</span>}
+                    style={{ ...SW, background:g, border:`2px solid ${selected===`bubgrad${i+1}`?'#fff':'transparent'}`, transform:selected===`bubgrad${i+1}`?'scale(1.15)':'scale(1)' }}>
+                    {selected===`bubgrad${i+1}` && <span style={{ color:'#fff', fontSize:12 }}>✓</span>}
                   </div>
                 ))}
               </div>
@@ -433,20 +401,19 @@ export default function StyleModal({ type, user, settings, onSave, onClose }) {
 
             {tab==='neon' && (
               <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:16 }}>
-                {BUBBLE_NEONS.map((n,i)=>(
+                {BUBBLE_NEONS.map((n,i) => (
                   <div key={i} onClick={()=>setSelected(`bubneon${i+1}`)}
-                    style={{ ...SWATCH, background:n.gradient, boxShadow:`0 0 6px ${n.glow}`, border:`2px solid ${selected===`bubneon${i+1}`?'#fff':'transparent'}`, transform:selected===`bubneon${i+1}`?'scale(1.15)':'scale(1)' }}>
-                    {selected===`bubneon${i+1}`&&<span style={{ color:'#fff', fontSize:12 }}>✓</span>}
+                    style={{ ...SW, background:n.gradient, boxShadow:`0 0 6px ${n.glow}`, border:`2px solid ${selected===`bubneon${i+1}`?'#fff':'transparent'}`, transform:selected===`bubneon${i+1}`?'scale(1.15)':'scale(1)' }}>
+                    {selected===`bubneon${i+1}` && <span style={{ color:'#fff', fontSize:12 }}>✓</span>}
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Font style + font */}
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginTop:8 }}>
               <div>
                 <div style={{ fontSize:11, color:'#6b7280', marginBottom:6, fontWeight:700, textTransform:'uppercase' }}>Text Style</div>
-                {FONT_STYLES.map(fs=>(
+                {FONT_STYLES.map(fs => (
                   <div key={fs.id} onClick={()=>setFontStyle(fs.id)}
                     style={{ padding:'6px 10px', borderRadius:7, border:`1px solid ${fontStyle===fs.id?'#3b82f6':'#2a2d3e'}`, background:fontStyle===fs.id?'#1e3a5f':'transparent', cursor:'pointer', marginBottom:5, fontSize:13, fontWeight:fs.id.includes('bold')?700:400, fontStyle:fs.id.includes('italic')?'italic':'normal', color:fontStyle===fs.id?'#60a5fa':'#9ca3af' }}>
                     {fs.name}
@@ -459,9 +426,9 @@ export default function StyleModal({ type, user, settings, onSave, onClose }) {
                   style={{ width:'100%', height:40, borderRadius:8, border:'1px solid #2a2d3e', cursor:'pointer', background:'transparent', marginBottom:8 }}/>
                 <div style={{ fontSize:11, color:'#6b7280', marginBottom:6, fontWeight:700, textTransform:'uppercase' }}>Bubble Font</div>
                 <select value={selFont} onChange={e=>setSelFont(e.target.value)}
-                  style={{ width:'100%', background:'#0d1020', border:'1px solid #2a2d3e', borderRadius:7, padding:'7px 8px', color:'#f1f5f9', fontSize:12, fontFamily:'inherit', cursor:'pointer' }}>
+                  style={{ width:'100%', background:'#0d1020', border:'1px solid #2a2d3e', borderRadius:7, padding:'7px 8px', color:'#f1f5f9', fontSize:12, cursor:'pointer' }}>
                   <option value="">Default</option>
-                  {FONTS.map(f=><option key={f.id} value={f.id} style={{ fontFamily:f.family }}>{f.name}</option>)}
+                  {FONTS.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
                 </select>
               </div>
             </div>
@@ -470,16 +437,15 @@ export default function StyleModal({ type, user, settings, onSave, onClose }) {
           {/* ── THEME ── */}
           {type === 'theme' && <>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:10, marginBottom:16 }}>
-              {THEMES.map(t=>(
+              {THEMES.map(t => (
                 <div key={t.id} onClick={()=>setSelTheme(t.id)}
                   style={{ borderRadius:10, overflow:'hidden', border:`2px solid ${selTheme===t.id?'#3b82f6':'#2a2d3e'}`, cursor:'pointer', transition:'border-color .15s', transform:selTheme===t.id?'scale(1.02)':'scale(1)' }}>
-                  {/* Mini chat preview */}
                   <div style={{ background:t.bg_header, padding:'6px 10px', display:'flex', alignItems:'center', gap:6 }}>
                     <div style={{ width:8, height:8, borderRadius:'50%', background:'rgba(255,255,255,.3)' }}/>
-                    <span style={{ fontSize:10, color:t.text_header||t.text, fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.name}</span>
+                    <span style={{ fontSize:10, color:t.text||'#fff', fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.name}</span>
                     {selTheme===t.id && <span style={{ marginLeft:'auto', fontSize:10, color:'#60a5fa' }}>✓</span>}
                   </div>
-                  <div style={{ background:t.bg_image?`url(/themes/${t.id}/bg.jpg)`:t.bg_chat, backgroundSize:'cover', padding:'8px 10px', minHeight:52, position:'relative' }}>
+                  <div style={{ background:t.bg_chat, padding:'8px 10px', minHeight:52 }}>
                     <div style={{ background:t.bg_log, borderRadius:6, padding:'4px 8px', display:'inline-block', maxWidth:'80%' }}>
                       <span style={{ fontSize:10, color:t.text }}>Hello! 👋</span>
                     </div>
@@ -491,7 +457,6 @@ export default function StyleModal({ type, user, settings, onSave, onClose }) {
                 </div>
               ))}
             </div>
-            {/* Full preview */}
             <div style={{ borderRadius:12, overflow:'hidden', border:'1px solid #2a2d3e' }}>
               <div style={{ background:selThemeObj.bg_header, padding:'10px 14px' }}>
                 <span style={{ color:selThemeObj.text, fontWeight:700, fontSize:13 }}>#{selThemeObj.name}</span>
@@ -512,13 +477,11 @@ export default function StyleModal({ type, user, settings, onSave, onClose }) {
               </div>
             </div>
           </>}
-
         </div>
 
-        {/* Footer */}
         <div style={{ padding:'14px 20px', borderTop:'1px solid #2a2d3e', display:'flex', gap:10, justifyContent:'flex-end' }}>
           <button onClick={onClose} style={{ padding:'9px 18px', borderRadius:8, border:'1px solid #2a2d3e', background:'transparent', color:'#9ca3af', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
-          <button onClick={save} disabled={saving} style={{ padding:'9px 22px', borderRadius:8, border:'none', background:'linear-gradient(135deg,#3b82f6,#2563eb)', color:'#fff', fontWeight:800, fontSize:13, cursor:saving?'not-allowed':'pointer', fontFamily:'inherit', opacity:saving?.7:1 }}>
+          <button onClick={save} disabled={saving} style={{ padding:'9px 22px', borderRadius:8, border:'none', background:'linear-gradient(135deg,#3b82f6,#2563eb)', color:'#fff', fontWeight:800, fontSize:13, cursor:saving?'not-allowed':'pointer', fontFamily:'inherit', opacity:saving?0.7:1 }}>
             {saving ? '💾 Saving...' : '💾 Apply'}
           </button>
         </div>
