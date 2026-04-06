@@ -2,7 +2,7 @@
 // Fixes:
 //   - Msg now accepts tObj prop — text/username colors correctly use theme colors
 //   - QuotedMessage has overflow:hidden + no horizontal scroll
-//   - Username color fallback uses tObj.text instead of empty string
+//   - Username color fallback uses tObj.text instead of empty string 
 //   - Message text color fallback uses tObj.text
 import { useState } from 'react'
 import { API, R, RL, GBR, SYS_CFG, SYSTEM_SENDER, resolveNameColor } from './chatConstants.js'
