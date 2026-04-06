@@ -331,11 +331,12 @@ function ChatSettingsOverlay({ me, onClose, onSaved }) {
   )
 }
 
-// ── Avatar Dropdown — CodyChat .back_menu style ────────────
-function AvatarDropdown({ me, status, setStatus, onLeave, socket, onOpenSettings, onOpenProfile }) {
+// ── Avatar Dropdown — FIX 3: fully coded, all options work inside chatroom ──
+function AvatarDropdown({ me, status, setStatus, onLeave, socket, onOpenSettings, onOpenProfile, tObj }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   const nav = useNavigate()
+  const thAccent = tObj?.accent || '#03add8'
 
   useEffect(() => {
     function h(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
@@ -456,34 +457,24 @@ function AvatarDropdown({ me, status, setStatus, onLeave, socket, onOpenSettings
 // ── FOOTER BAR — CodyChat .bfoot style ────────────────────
 // Dark #111, accent icons, matches CodyChat footer exactly
 function Footer({ showRadio, setShowRadio, showRight, setRight, notif, tObj }) {
+  const thHeader = tObj?.bg_header || '#111111'
+  const thBorder = tObj?.default_color || '#222'
   return (
     <div style={{
-      // CodyChat .bfoot
-      background: '#111111',
-      borderTop: '1px solid rgba(255,255,255,0.05)',
+      background: thHeader,
+      borderTop: `1px solid ${thBorder}33`,
       padding: '3px 10px',
       display: 'flex',
       alignItems: 'center',
       gap: 2,
       flexShrink: 0,
       position: 'relative',
+      minHeight: 44,
     }}>
-      <FBtn
-        faIcon="fa-solid fa-radio"
-        active={showRadio}
-        onClick={() => setShowRadio(s => !s)}
-        title="Radio"
-        tObj={tObj}
-      />
+      <FBtn faIcon="fa-solid fa-radio"  active={showRadio}  onClick={() => setShowRadio(s => !s)} title="Radio"        tObj={tObj} />
       <div style={{ flex: 1 }} />
-      <FBtn
-        faIcon="fa-solid fa-users"
-        active={showRight}
-        onClick={() => setRight(s => !s)}
-        title="Users"
-        badge={notif?.friends || 0}
-        tObj={tObj}
-      />
+      {/* Users count badge on the users button */}
+      <FBtn faIcon="fa-solid fa-users"  active={showRight}  onClick={() => setRight(s => !s)}     title="Online Users" badge={notif?.friends || 0} tObj={tObj} />
     </div>
   )
 }
