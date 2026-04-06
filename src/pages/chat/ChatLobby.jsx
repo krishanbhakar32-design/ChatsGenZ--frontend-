@@ -71,7 +71,7 @@ function PassModal({room,onClose,onEnter}){
     onEnter(val.trim())
   }
   return(
-    <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:1500,background:'rgba(0,0,0,.5)',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
+    <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:1500,background:'rgba(0,0,0,.5)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
       <div onClick={e=>e.stopPropagation()} style={{background:'#fff',borderRadius:18,padding:'28px 24px',maxWidth:320,width:'100%',boxShadow:'0 24px 64px rgba(0,0,0,.22)',textAlign:'center'}}>
         <div style={{fontSize:40,marginBottom:12}}>🔒</div>
         <h3 style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1rem',color:'#111827',marginBottom:6}}>{room.name}</h3>
@@ -142,7 +142,7 @@ function RoomModal({editRoom,onClose,onSave,showToast}){
   const lab={display:'block',fontSize:'0.78rem',fontWeight:700,color:'#374151',marginBottom:5}
 
   return(
-    <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:2000,background:'rgba(0,0,0,.55)',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',justifyContent:'center',padding:12}}>
+    <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:2000,background:'rgba(0,0,0,.55)',display:'flex',alignItems:'center',justifyContent:'center',padding:12}}>
       <div onClick={e=>e.stopPropagation()} style={{background:'#fff',borderRadius:18,maxWidth:420,width:'100%',maxHeight:'95dvh',overflowY:'auto',boxShadow:'0 24px 64px rgba(0,0,0,.22)'}}>
         {/* Header */}
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'16px 18px 12px',borderBottom:'1px solid #f0f2f5',position:'sticky',top:0,background:'#fff',zIndex:5}}>
