@@ -8,7 +8,7 @@
 .rtl_toright { left:auto; right:0; }
 .rtl_toleft  { right:auto; left:0; }
 
-textarea, input { direction:rtl; }
+textarea, input { direction:ltr; }
 
 /* select box rtl */
 .selectboxit-arrow-container { position:absolute; left:0 !important; right:auto; }
