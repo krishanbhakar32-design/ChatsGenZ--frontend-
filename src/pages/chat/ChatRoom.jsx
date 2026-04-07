@@ -352,6 +352,7 @@ export default function ChatRoom() {
           onOpenSettings={() => setShowChatSettings(true)}
           onOpenProfile={() => setProf(me)}
           tObj={tObj}
+          room={room}
         />
       </div>
 
