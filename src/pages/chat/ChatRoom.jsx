@@ -78,7 +78,6 @@ export default function ChatRoom() {
   const [whisperTarget, setWhisper]   = useState(null)
 
   const sockRef = useRef(null), bottomRef = useRef(null), inputRef = useRef(null)
-  const dmBtnRef = useRef(null), friendsBtnRef = useRef(null), notifBtnRef = useRef(null)
   const typingTimer = useRef(null), isTypingRef = useRef(false)
   const intentionalLeaveRef = useRef(false)
 
@@ -327,21 +326,21 @@ export default function ChatRoom() {
         <HBtn faIcon="fa-solid fa-video" title="Webcam" active={showCam} onClick={e => { e.stopPropagation(); setShowCam(p => !p) }} tObj={tObj} />
 
         {/* DM */}
-        <div style={{ position: 'relative' }} ref={dmBtnRef}>
+        <div style={{ position: 'relative' }}>
           <HBtn faIcon="fa-solid fa-envelope" title="Messages" badge={notif.dm} active={showDM} onClick={e => { e.stopPropagation(); setShowDM(p => !p); setShowNotif(false) }} tObj={tObj} />
-          {showDM && <div onClick={e => e.stopPropagation()}><DMPanel me={me} socket={sockRef.current} onClose={() => setShowDM(false)} onCount={n => setNotif(p => ({ ...p, dm: n }))} anchorRef={dmBtnRef} /></div>}
+          {showDM && <div onClick={e => e.stopPropagation()}><DMPanel me={me} socket={sockRef.current} onClose={() => setShowDM(false)} onCount={n => setNotif(p => ({ ...p, dm: n }))} /></div>}
         </div>
 
         {/* Friends */}
-        <div style={{ position: 'relative' }} ref={friendsBtnRef}>
+        <div style={{ position: 'relative' }}>
           <HBtn faIcon="fa-solid fa-user-plus" title="Friend Requests" badge={notif.friends} active={showFriends} onClick={e => { e.stopPropagation(); setShowFriends(p => !p); setShowDM(false); setShowNotif(false) }} tObj={tObj} />
-          {showFriends && <div onClick={e => e.stopPropagation()}><FriendReqPanel onClose={() => setShowFriends(false)} onCount={n => setNotif(p => ({ ...p, friends: n }))} anchorRef={friendsBtnRef} /></div>}
+          {showFriends && <div onClick={e => e.stopPropagation()}><FriendReqPanel onClose={() => setShowFriends(false)} onCount={n => setNotif(p => ({ ...p, friends: n }))} /></div>}
         </div>
 
         {/* Notifications */}
-        <div style={{ position: 'relative' }} ref={notifBtnRef}>
+        <div style={{ position: 'relative' }}>
           <HBtn faIcon="fa-solid fa-bell" title="Notifications" badge={notif.notif} active={showNotif} onClick={e => { e.stopPropagation(); setShowNotif(p => !p); setShowDM(false) }} tObj={tObj} />
-          {showNotif && <div onClick={e => e.stopPropagation()}><NotifPanel onClose={() => setShowNotif(false)} onCount={n => setNotif(p => ({ ...p, notif: n }))} anchorRef={notifBtnRef} /></div>}
+          {showNotif && <div onClick={e => e.stopPropagation()}><NotifPanel onClose={() => setShowNotif(false)} onCount={n => setNotif(p => ({ ...p, notif: n }))} /></div>}
         </div>
 
         {isStaffRole && <HBtn faIcon="fa-sharp fa-solid fa-flag" title="Reports" badge={notif.reports} tObj={tObj} />}
@@ -360,15 +359,26 @@ export default function ChatRoom() {
       {/* ════ BODY ════ */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0, position: 'relative', zIndex: 1 }}>
 
-        {/* FIX 4/8: LEFT SIDEBAR — fixed overlay drawer */}
+        {/* LEFT SIDEBAR — inline flex on desktop (compacts chat), fixed overlay on mobile */}
         {showLeft && (
           <>
-            {/* Backdrop for mobile */}
+            {/* Mobile backdrop */}
             <div
               onClick={() => setLeft(false)}
-              style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 299, display: window.innerWidth < 768 ? 'block' : 'none' }}
+              style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 299,
+                display: window.innerWidth < 768 ? 'block' : 'none' }}
             />
-            <div style={{ position: window.innerWidth < 768 ? 'fixed' : 'relative', left: 0, top: window.innerWidth < 768 ? 50 : 0, bottom: 0, zIndex: 300 }}>
+            {/* Sidebar container — relative on desktop so chat area shrinks, fixed on mobile */}
+            <div style={{
+              position: window.innerWidth < 768 ? 'fixed' : 'relative',
+              left: 0,
+              top: window.innerWidth < 768 ? 50 : 0,
+              bottom: 0,
+              zIndex: 300,
+              display: 'flex',
+              flexShrink: 0,
+              height: window.innerWidth < 768 ? 'calc(100% - 50px)' : '100%',
+            }}>
               <LeftSidebar
                 room={room} nav={nav} socket={sockRef.current} roomId={room?._id || roomSlug}
                 onClose={() => setLeft(false)} me={me} tObj={tObj}
@@ -524,6 +534,7 @@ export default function ChatRoom() {
 
               <input
                 ref={inputRef}
+                dir="ltr"
                 value={input}
                 onChange={handleTyping}
                 placeholder={whisperTarget ? `Whisper to ${whisperTarget.username}...` : (connected ? 'Type a message...' : 'Connecting...')}
@@ -535,6 +546,7 @@ export default function ChatRoom() {
                   borderRadius: 22, color: thText || '#fff',
                   fontSize: '0.88rem', outline: 'none', transition: 'border-color .15s',
                   fontFamily: "'Nunito', sans-serif",
+                  direction: 'ltr', textAlign: 'left', unicodeBidi: 'plaintext',
                 }}
                 onFocus={e => e.target.style.borderColor = whisperTarget ? '#818cf8' : (thAccent || '#03add8')}
                 onBlur={e  => e.target.style.borderColor = whisperTarget ? 'rgba(99,102,241,0.5)' : (thBorder || '#222')}
