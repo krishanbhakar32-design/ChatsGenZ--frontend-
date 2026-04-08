@@ -194,8 +194,8 @@ function GifPicker({ onSelect, onClose }) {
       <div style={{padding:'10px 12px',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
         <div style={{position:'relative'}}>
           <i className="fa-solid fa-magnifying-glass" style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',fontSize:13,color:'#9ca3af',pointerEvents:'none'}}/>
-          <input autoFocus value={q} onChange={e=>setQ(e.target.value)} placeholder="Search GIFs..."
-            style={{width:'100%',padding:'9px 12px 9px 32px',border:'1.5px solid #e4e6ea',borderRadius:22,fontSize:'0.86rem',outline:'none',boxSizing:'border-box',background:'#f9fafb',fontFamily:'Nunito,sans-serif'}}
+          <input dir="ltr" autoFocus value={q} onChange={e=>setQ(e.target.value)} placeholder="Search GIFs..."
+            style={{width:'100%',padding:'9px 12px 9px 32px',border:'1.5px solid #e4e6ea',borderRadius:22,fontSize:'0.86rem',outline:'none',boxSizing:'border-box',background:'#f9fafb',fontFamily:'Nunito,sans-serif',direction:'ltr',textAlign:'left'}}
             onFocus={e=>e.target.style.borderColor='#1a73e8'} onBlur={e=>e.target.style.borderColor='#e4e6ea'}/>
         </div>
       </div>
@@ -241,8 +241,8 @@ function YTPanel({ onClose, onSend }) {
       <div style={{padding:'14px',display:'flex',flexDirection:'column',gap:12}}>
         <div style={{position:'relative'}}>
           <i className="fa-solid fa-link" style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',fontSize:14,color:'#9ca3af',pointerEvents:'none'}}/>
-          <input autoFocus value={link} onChange={e=>setLink(e.target.value)} placeholder="Paste YouTube link..."
-            style={{width:'100%',padding:'11px 12px 11px 34px',border:'1.5px solid #e4e6ea',borderRadius:10,fontSize:'0.88rem',outline:'none',boxSizing:'border-box',fontFamily:'Nunito,sans-serif'}}
+          <input dir="ltr" autoFocus value={link} onChange={e=>setLink(e.target.value)} placeholder="Paste YouTube link..."
+            style={{width:'100%',padding:'11px 12px 11px 34px',border:'1.5px solid #e4e6ea',borderRadius:10,fontSize:'0.88rem',outline:'none',boxSizing:'border-box',fontFamily:'Nunito,sans-serif',direction:'ltr',textAlign:'left'}}
             onFocus={e=>e.target.style.borderColor='#ef4444'} onBlur={e=>e.target.style.borderColor='#e4e6ea'}/>
         </div>
         {link&&!preview&&<p style={{textAlign:'center',color:'#9ca3af',fontSize:'0.78rem',margin:0}}>Paste a valid YouTube link to preview</p>}
@@ -313,9 +313,9 @@ function SpotifyPanel({ onClose, onSend }) {
       </div>
       <div style={{background:'#121212',flex:1,overflowY:'auto',padding:14,display:'flex',flexDirection:'column',gap:10}}>
         <div style={{display:'flex',gap:8}}>
-          <input autoFocus value={input} onChange={e=>{setInput(e.target.value);setError('');setEmbedId(null)}}
+          <input dir="ltr" autoFocus value={input} onChange={e=>{setInput(e.target.value);setError('');setEmbedId(null)}}
             onKeyDown={e=>e.key==='Enter'&&handlePreview()} placeholder="Paste Spotify link..."
-            style={{flex:1,padding:'10px 13px',borderRadius:9,border:`1.5px solid ${error?'#ef4444':'#1DB95455'}`,background:'#1e1e1e',color:'#fff',fontSize:'0.85rem',outline:'none',fontFamily:'Nunito,sans-serif'}}
+            style={{flex:1,padding:'10px 13px',borderRadius:9,border:`1.5px solid ${error?'#ef4444':'#1DB95455'}`,background:'#1e1e1e',color:'#fff',fontSize:'0.85rem',outline:'none',fontFamily:'Nunito,sans-serif',direction:'ltr',textAlign:'left'}}
             onFocus={e=>e.target.style.borderColor='#1DB954'} onBlur={e=>e.target.style.borderColor=error?'#ef4444':'#1DB95455'}/>
           <button onClick={handlePreview}
             style={{padding:'10px 16px',borderRadius:9,border:'none',background:'#1DB954',color:'#000',fontWeight:700,fontSize:'0.82rem',cursor:'pointer',whiteSpace:'nowrap',fontFamily:'Nunito,sans-serif'}}>
