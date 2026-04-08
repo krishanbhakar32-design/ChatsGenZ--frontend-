@@ -1791,9 +1791,7 @@ function MemberProfile({ u, onClose, onAction, setConfirmDialog, onSelectUser })
     }, [u._id, u.ipAddress]);
 
     const doEdit = async (field, val, msg) => {
-      // FIX: use PUT /users/:id/update — PUT is already in the backend CORS allowlist.
-      // PATCH was blocked by CORS preflight because the server didn't list PATCH in its
-      // allowed methods, causing "Network error — cannot reach server."
+      // Use PUT /users/:id/update for profile fields, specific routes for rank/gold/ruby
       await onAction(`/users/${u._id}/update`, 'PUT', { [field]: val }, msg);
       setEditField(null);
     };
@@ -1802,17 +1800,57 @@ function MemberProfile({ u, onClose, onAction, setConfirmDialog, onSelectUser })
       if (!u.ipAddress) return;
       setLoadingIp(true);
       try {
-        const r = await fetch(`https://ipapi.co/${u.ipAddress}/json/`);
-        if (!r.ok) throw new Error();
-        const d = await r.json();
-        if (d.error) throw new Error(d.reason || 'Lookup failed');
-        setIpDetails(d);
-      } catch {
+        let geoData = null;
+        let proxyData = null;
+
+        // Step 1: ipapi.co
         try {
-          const r2 = await fetch(`https://ip-api.com/json/${u.ipAddress}?fields=status,country,countryCode,regionName,city,isp,org,proxy,hosting,timezone,query`);
-          const d2 = await r2.json();
-          setIpDetails(d2);
-        } catch { setIpDetails({ error: 'Could not fetch IP details' }); }
+          const r = await fetch(`https://ipapi.co/${u.ipAddress}/json/`);
+          if (r.ok) {
+            const d = await r.json();
+            if (!d.error) geoData = d;
+          }
+        } catch {}
+
+        // Step 2: ip-api.com fallback
+        if (!geoData) {
+          try {
+            const r2 = await fetch(`https://ip-api.com/json/${u.ipAddress}?fields=status,country,countryCode,regionName,city,isp,org,proxy,hosting,timezone,query`);
+            const d2 = await r2.json();
+            if (d2.status === 'success') geoData = d2;
+          } catch {}
+        }
+
+        // Step 3: proxycheck.io
+        try {
+          const r3 = await fetch(`https://proxycheck.io/v2/${u.ipAddress}?vpn=1&asn=1&risk=1`);
+          if (r3.ok) {
+            const d3 = await r3.json();
+            if (d3.status === 'ok' && d3[u.ipAddress]) proxyData = d3[u.ipAddress];
+          }
+        } catch {}
+
+        if (!geoData && !proxyData) {
+          setIpDetails({ error: 'Could not fetch IP details' });
+          return;
+        }
+
+        setIpDetails({
+          country_name: geoData?.country_name || geoData?.country,
+          country_code: geoData?.country_code || geoData?.countryCode,
+          city:         geoData?.city,
+          region:       geoData?.region || geoData?.regionName,
+          org:          proxyData?.provider || geoData?.org || geoData?.isp,
+          timezone:     geoData?.timezone,
+          proxy:        proxyData?.proxy === 'yes' ? true : (proxyData?.proxy === 'no' ? false : (geoData?.proxy ?? null)),
+          hosting:      proxyData?.type === 'Hosting' || proxyData?.type === 'VPN' || geoData?.hosting,
+          vpn:          proxyData?.type === 'VPN',
+          proxyType:    proxyData?.type || null,
+          risk:         proxyData?.risk ?? null,
+          isp:          proxyData?.provider || geoData?.org || geoData?.isp,
+        });
+      } catch {
+        setIpDetails({ error: 'Could not fetch IP details' });
       } finally { setLoadingIp(false); }
     }, [u.ipAddress]);
 
@@ -2190,15 +2228,16 @@ function MemberProfile({ u, onClose, onAction, setConfirmDialog, onSelectUser })
                 ) : ipDetails ? (
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:14 }}>
                     {[
-                      { icon:'fa-flag',          label:'Country',    val: ipDetails.country_name || ipDetails.country,       color:'#60a5fa' },
-                      { icon:'fa-city',           label:'City',       val: ipDetails.city,                                    color:'#34d399' },
-                      { icon:'fa-map',            label:'Region',     val: ipDetails.region || ipDetails.regionName,          color:'#34d399' },
-                      { icon:'fa-globe',          label:'Country Code',val: ipDetails.country_code || ipDetails.countryCode,  color:'#60a5fa' },
-                      { icon:'fa-building',       label:'ISP',        val: ipDetails.org || ipDetails.isp,                    color:'#94a3b8' },
-                      { icon:'fa-clock',          label:'Timezone',   val: ipDetails.timezone,                                color:'#94a3b8' },
-                      { icon:'fa-mask',           label:'Proxy / VPN',val: ipDetails.proxy === true ? '⚠ Detected' : ipDetails.proxy === false ? '✓ Clean' : String(ipDetails.proxy ?? '—'), color: ipDetails.proxy ? '#fbbf24' : '#22c55e' },
+                      { icon:'fa-flag',          label:'Country',    val: ipDetails.country_name,                                              color:'#60a5fa' },
+                      { icon:'fa-city',           label:'City',       val: ipDetails.city,                                                      color:'#34d399' },
+                      { icon:'fa-map',            label:'Region',     val: ipDetails.region,                                                    color:'#34d399' },
+                      { icon:'fa-globe',          label:'Country Code',val: ipDetails.country_code,                                             color:'#60a5fa' },
+                      { icon:'fa-building',       label:'ISP',        val: ipDetails.isp || ipDetails.org,                                      color:'#94a3b8' },
+                      { icon:'fa-clock',          label:'Timezone',   val: ipDetails.timezone,                                                  color:'#94a3b8' },
+                      { icon:'fa-mask',           label:'Proxy / VPN',val: ipDetails.proxy === true ? `⚠ Detected${ipDetails.proxyType ? ` (${ipDetails.proxyType})` : ''}` : ipDetails.proxy === false ? '✓ Clean' : String(ipDetails.proxy ?? '—'), color: ipDetails.proxy ? '#fbbf24' : '#22c55e' },
                       { icon:'fa-server',         label:'Hosting',    val: ipDetails.hosting === true ? '⚠ Datacenter' : ipDetails.hosting === false ? '✓ Residential' : '—', color: ipDetails.hosting ? '#f97316' : '#22c55e' },
-                    ].filter(r => r.val && r.val !== '—').map(r => (
+                      ipDetails.risk != null ? { icon:'fa-triangle-exclamation', label:'Risk Score', val: `${ipDetails.risk}/100`, color: ipDetails.risk > 50 ? '#ef4444' : ipDetails.risk > 25 ? '#f59e0b' : '#22c55e' } : null,
+                    ].filter(r => r && r.val && r.val !== '—').map(r => (
                       <div key={r.label} style={{ background:'rgba(255,255,255,0.03)', borderRadius:7, padding:'8px 10px', border:'1px solid rgba(255,255,255,0.06)' }}>
                         <div style={{ fontSize:10, color:'#6b7280', marginBottom:3, display:'flex', alignItems:'center', gap:4 }}>
                           <i className={`fa-solid ${r.icon}`} style={{ fontSize:9 }} /> {r.label}
@@ -2318,22 +2357,73 @@ function Members() {
       await api(url, { method, body: JSON.stringify(body) });
       toast(msg);
       load();
-      if (selected) setSelected(s => ({ ...s, ...body }));
+      // Re-fetch the selected user so profile drawer reflects latest DB state
+      if (selected) {
+        try {
+          const fresh = await api(`/users/${selected._id}`);
+          const freshUser = fresh.user || fresh;
+          if (freshUser?._id) setSelected(freshUser);
+          else setSelected(s => ({ ...s, ...body }));
+        } catch {
+          setSelected(s => ({ ...s, ...body }));
+        }
+      }
     } catch (e) { toast(e.message, 'error'); }
   };
 
-  // Fetch IP geolocation using a public API
+  // Fetch IP geolocation using ipapi + proxycheck combo
   const fetchIpGeo = async (ip) => {
+    let geoData = null;
+    let proxyData = null;
+
+    // Step 1: ipapi.co for geo
     try {
       const r = await fetch(`https://ipapi.co/${ip}/json/`);
-      if (!r.ok) throw new Error();
-      return await r.json();
-    } catch {
+      if (r.ok) {
+        const d = await r.json();
+        if (!d.error) geoData = d;
+      }
+    } catch {}
+
+    // Step 2: Fallback to ip-api.com if ipapi failed
+    if (!geoData) {
       try {
-        const r2 = await fetch(`https://ip-api.com/json/${ip}?fields=status,country,regionName,city,isp,org,proxy,timezone,query`);
-        return await r2.json();
-      } catch { return { error: 'Lookup failed' }; }
+        const r2 = await fetch(`https://ip-api.com/json/${ip}?fields=status,country,countryCode,regionName,city,isp,org,proxy,hosting,timezone,query`);
+        const d2 = await r2.json();
+        if (d2.status === 'success') geoData = d2;
+      } catch {}
     }
+
+    // Step 3: proxycheck.io for proxy/VPN detection (free tier, no key needed)
+    try {
+      const r3 = await fetch(`https://proxycheck.io/v2/${ip}?vpn=1&asn=1&risk=1`);
+      if (r3.ok) {
+        const d3 = await r3.json();
+        if (d3.status === 'ok' && d3[ip]) {
+          proxyData = d3[ip];
+        }
+      }
+    } catch {}
+
+    if (!geoData && !proxyData) return { error: 'Lookup failed' };
+
+    // Merge results
+    return {
+      country_name: geoData?.country_name || geoData?.country,
+      country_code: geoData?.country_code || geoData?.countryCode,
+      city:         geoData?.city,
+      region:       geoData?.region || geoData?.regionName,
+      org:          geoData?.org || geoData?.isp,
+      timezone:     geoData?.timezone,
+      // proxycheck is the most accurate for proxy/VPN
+      proxy:        proxyData?.proxy === 'yes' ? true : (proxyData?.proxy === 'no' ? false : (geoData?.proxy ?? null)),
+      hosting:      proxyData?.type === 'Hosting' || proxyData?.type === 'VPN' || geoData?.hosting,
+      vpn:          proxyData?.type === 'VPN',
+      proxyType:    proxyData?.type || null,
+      risk:         proxyData?.risk ?? null,
+      asn:          proxyData?.asn || null,
+      isp:          proxyData?.provider || geoData?.org || geoData?.isp,
+    };
   };
 
   const openIpPopup = async (e, u) => {
@@ -2616,10 +2706,11 @@ function Members() {
                 { icon:'fa-flag',         label:'Country',  val: ipPopup.data.country_name || ipPopup.data.country },
                 { icon:'fa-city',         label:'City',     val: ipPopup.data.city },
                 { icon:'fa-map',          label:'Region',   val: ipPopup.data.region || ipPopup.data.regionName },
-                { icon:'fa-building',     label:'ISP',      val: ipPopup.data.org || ipPopup.data.isp },
+                { icon:'fa-building',     label:'ISP',      val: ipPopup.data.isp || ipPopup.data.org },
                 { icon:'fa-clock',        label:'Timezone', val: ipPopup.data.timezone },
-                { icon:'fa-mask',         label:'Proxy/VPN',val: ipPopup.data.proxy === true ? '⚠ Detected' : ipPopup.data.proxy === false ? 'Clean' : ipPopup.data.proxy },
-              ].filter(r => r.val).map(r => (
+                { icon:'fa-mask',         label:'Proxy/VPN',val: ipPopup.data.proxy === true ? `⚠ Detected${ipPopup.data.proxyType ? ` (${ipPopup.data.proxyType})` : ''}` : ipPopup.data.proxy === false ? 'Clean' : ipPopup.data.proxy },
+                ipPopup.data.risk != null ? { icon:'fa-triangle-exclamation', label:'Risk', val: `${ipPopup.data.risk}/100` } : null,
+              ].filter(r => r && r.val).map(r => (
                 <div key={r.label} style={{ display:'flex', alignItems:'flex-start', gap:8, fontSize:11 }}>
                   <i className={`fa-solid ${r.icon}`} style={{ color:'#6b7280', width:12, marginTop:1, flexShrink:0 }} />
                   <span style={{ color:'#9ca3af', flexShrink:0, minWidth:58 }}>{r.label}</span>
@@ -2884,27 +2975,131 @@ function News() {
 function Broadcast() {
   const [msg, setMsg] = useState('');
   const [type, setType] = useState('info');
+  const [rooms, setRooms] = useState([]);
+  const [roomId, setRoomId] = useState('');
+  const [history, setHistory] = useState([]);
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    api('/rooms').then(d => setRooms(d.rooms || [])).catch(() => {});
+  }, []);
+
   const send = async () => {
     if (!msg.trim()) return;
-    try { await api('/broadcast', { method: 'POST', body: JSON.stringify({ message: msg, type }) }); toast('Broadcast sent!'); setMsg(''); }
-    catch (e) { toast(e.message, 'error'); }
+    setSending(true);
+    try {
+      await api('/broadcast', { method: 'POST', body: JSON.stringify({ message: msg, type, roomId: roomId || null }) });
+      toast('Broadcast sent to all rooms! ✓');
+      // Save to local history
+      setHistory(h => [{ id: Date.now(), message: msg, type, roomId, time: new Date() }, ...h.slice(0, 19)]);
+      setMsg('');
+    } catch (e) { toast(e.message, 'error'); }
+    finally { setSending(false); }
+  };
+
+  const TYPE_META = {
+    info:    { color: '#3b82f6', icon: 'fa-circle-info',           bg: 'rgba(59,130,246,0.1)' },
+    warning: { color: '#f59e0b', icon: 'fa-triangle-exclamation',  bg: 'rgba(245,158,11,0.1)' },
+    success: { color: '#22c55e', icon: 'fa-circle-check',          bg: 'rgba(34,197,94,0.1)'  },
+    danger:  { color: '#ef4444', icon: 'fa-circle-xmark',          bg: 'rgba(239,68,68,0.1)'  },
   };
 
   return (
     <div className="ap-section">
       <h2 className="ap-section-title"><i className="fa-solid fa-bullhorn" /> Broadcast</h2>
+
       <div className="ap-card">
-        <textarea className="ap-textarea" placeholder="Message to broadcast to all users…" value={msg} onChange={e => setMsg(e.target.value)} rows={4} />
-        <div className="ap-row">
-          <select className="ap-select" value={type} onChange={e => setType(e.target.value)}>
-            <option value="info">Info</option>
-            <option value="warning">Warning</option>
-            <option value="success">Success</option>
-            <option value="danger">Danger</option>
-          </select>
-          <button className="ap-btn ap-btn--primary" onClick={send}><i className="fa-solid fa-paper-plane" /> Send Broadcast</button>
+        <div style={{ marginBottom:12, padding:'10px 14px', background:'rgba(59,130,246,0.06)', borderRadius:8, border:'1px solid rgba(59,130,246,0.2)', fontSize:13, color:'#94a3b8' }}>
+          <i className="fa-solid fa-circle-info" style={{ color:'#3b82f6', marginRight:6 }} />
+          Broadcasts are sent to <strong style={{ color:'#f1f5f9' }}>all connected users</strong> in all rooms and appear as system messages in chat.
+        </div>
+
+        <label className="ap-label" style={{ marginBottom:6 }}>Message</label>
+        <textarea
+          className="ap-textarea"
+          placeholder="Type your broadcast message here… (visible in all rooms)"
+          value={msg}
+          onChange={e => setMsg(e.target.value)}
+          rows={4}
+          style={{ marginBottom:12 }}
+        />
+
+        <div className="ap-row" style={{ flexWrap:'wrap', gap:8 }}>
+          {/* Type selector */}
+          <div style={{ flex:'1 1 160px' }}>
+            <label className="ap-label" style={{ marginBottom:4 }}>Message Type</label>
+            <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+              {Object.entries(TYPE_META).map(([t, m]) => (
+                <button
+                  key={t}
+                  onClick={() => setType(t)}
+                  className="ap-btn ap-btn--sm"
+                  style={{
+                    background: type === t ? m.bg : 'transparent',
+                    border: `1px solid ${type === t ? m.color : '#1e2436'}`,
+                    color: type === t ? m.color : '#6b7280',
+                    textTransform: 'capitalize',
+                  }}
+                >
+                  <i className={`fa-solid ${m.icon}`} /> {t}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Room selector */}
+          <div style={{ flex:'1 1 200px' }}>
+            <label className="ap-label" style={{ marginBottom:4 }}>Target Room</label>
+            <select className="ap-select" style={{ width:'100%' }} value={roomId} onChange={e => setRoomId(e.target.value)}>
+              <option value="">🌍 All Rooms (Global)</option>
+              {rooms.map(r => <option key={r._id} value={r._id}>{r.name}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {/* Preview */}
+        {msg.trim() && (
+          <div style={{ marginTop:14, padding:'10px 14px', background: TYPE_META[type]?.bg, border:`1px solid ${TYPE_META[type]?.color}33`, borderRadius:8 }}>
+            <div style={{ fontSize:11, color:'#6b7280', marginBottom:4, textTransform:'uppercase', letterSpacing:.5 }}>Preview</div>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <i className={`fa-solid ${TYPE_META[type]?.icon}`} style={{ color: TYPE_META[type]?.color, fontSize:14 }} />
+              <span style={{ color:'#f1f5f9', fontSize:13 }}>📢 {msg}</span>
+            </div>
+          </div>
+        )}
+
+        <div style={{ marginTop:14 }}>
+          <button className="ap-btn ap-btn--primary" onClick={send} disabled={!msg.trim() || sending} style={{ minWidth:160 }}>
+            {sending
+              ? <><i className="fa-solid fa-spinner fa-spin" /> Sending…</>
+              : <><i className="fa-solid fa-paper-plane" /> {roomId ? `Send to Room` : 'Broadcast to All Rooms'}</>
+            }
+          </button>
         </div>
       </div>
+
+      {/* Broadcast History */}
+      {history.length > 0 && (
+        <div className="ap-card" style={{ marginTop:16 }}>
+          <h3 className="ap-card-title"><i className="fa-solid fa-clock-rotate-left" /> Recent Broadcasts (this session)</h3>
+          <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+            {history.map(h => {
+              const m = TYPE_META[h.type] || TYPE_META.info;
+              return (
+                <div key={h.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 12px', background:'#131624', borderRadius:7, border:`1px solid ${m.color}22` }}>
+                  <i className={`fa-solid ${m.icon}`} style={{ color: m.color, fontSize:12, flexShrink:0 }} />
+                  <span style={{ flex:1, fontSize:13, color:'#c1cde0' }}>{h.message}</span>
+                  {h.roomId && <span style={{ fontSize:10, color:'#6b7280' }}><i className="fa-solid fa-door-open" /> Room only</span>}
+                  <span style={{ fontSize:10, color:'#4b5563', flexShrink:0 }}>{new Date(h.time).toLocaleTimeString()}</span>
+                  <button className="ap-btn ap-btn--xs ap-btn--ghost" title="Re-send" onClick={() => setMsg(h.message)}>
+                    <i className="fa-solid fa-rotate-left" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="ap-card" style={{ marginTop: 16 }}>
         <h3 className="ap-card-title">System Actions</h3>
