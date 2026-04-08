@@ -77,8 +77,8 @@ function PassModal({room,onClose,onEnter}){
         <h3 style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'1rem',color:'#111827',marginBottom:6}}>{room.name}</h3>
         <p style={{fontSize:'0.82rem',color:'#6b7280',marginBottom:16}}>This room is password protected.</p>
         {err&&<div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'8px 12px',fontSize:'0.8rem',color:'#dc2626',marginBottom:12}}>{err}</div>}
-        <input value={val} onChange={e=>{setVal(e.target.value);setErr('')}} onKeyDown={e=>e.key==='Enter'&&tryEnter()} placeholder="Enter room password" type="password" autoFocus
-          style={{width:'100%',padding:'10px 13px',border:'1.5px solid #e4e6ea',borderRadius:9,fontSize:'0.875rem',outline:'none',marginBottom:12,boxSizing:'border-box',textAlign:'center',letterSpacing:4}}/>
+        <input dir="ltr" value={val} onChange={e=>{setVal(e.target.value);setErr('')}} onKeyDown={e=>e.key==='Enter'&&tryEnter()} placeholder="Enter room password" type="password" autoFocus
+          style={{width:'100%',padding:'10px 13px',border:'1.5px solid #e4e6ea',borderRadius:9,fontSize:'0.875rem',outline:'none',marginBottom:12,boxSizing:'border-box',textAlign:'center',letterSpacing:4,direction:'ltr'}}/>
         <button onClick={tryEnter} style={{width:'100%',padding:'11px',borderRadius:10,border:'none',background:'linear-gradient(135deg,#1a73e8,#1464cc)',color:'#fff',fontWeight:800,cursor:'pointer',fontFamily:'Outfit,sans-serif'}}>
           Enter Room
         </button>
@@ -136,7 +136,7 @@ function RoomModal({editRoom,onClose,onSave,showToast}){
     setSaving(false)
   }
 
-  const inp={width:'100%',padding:'9px 12px',background:'#f9fafb',border:'1.5px solid #e4e6ea',borderRadius:9,fontSize:'0.875rem',outline:'none',color:'#111827',boxSizing:'border-box',fontFamily:'Nunito,sans-serif',transition:'border-color .15s'}
+  const inp={width:'100%',padding:'9px 12px',background:'#f9fafb',border:'1.5px solid #e4e6ea',borderRadius:9,fontSize:'0.875rem',outline:'none',color:'#111827',boxSizing:'border-box',fontFamily:'Nunito,sans-serif',transition:'border-color .15s',direction:'ltr',textAlign:'left'}
   const onF=e=>e.target.style.borderColor='#1a73e8'
   const onB=e=>e.target.style.borderColor='#e4e6ea'
   const lab={display:'block',fontSize:'0.78rem',fontWeight:700,color:'#374151',marginBottom:5}
@@ -484,8 +484,8 @@ export default function ChatLobby(){
         <div style={{maxWidth:860,margin:'0 auto',display:'flex',gap:8,alignItems:'center'}}>
           <div style={{flex:1,position:'relative'}}>
             <i className="fa-solid fa-search" style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'#9ca3af',fontSize:13,pointerEvents:'none'}}/>
-            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search rooms..."
-              style={{width:'100%',padding:'8px 12px 8px 34px',background:'rgba(255,255,255,0.08)',border:`1.5px solid ${tObj.default_color}`,borderRadius:10,color:tObj.text,fontSize:'0.875rem',outline:'none',boxSizing:'border-box',fontFamily:'Nunito,sans-serif'}}
+            <input dir="ltr" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search rooms..."
+              style={{width:'100%',padding:'8px 12px 8px 34px',background:'rgba(255,255,255,0.08)',border:`1.5px solid ${tObj.default_color}`,borderRadius:10,color:tObj.text,fontSize:'0.875rem',outline:'none',boxSizing:'border-box',fontFamily:'Nunito,sans-serif',direction:'ltr',textAlign:'left'}}
               onFocus={e=>{e.target.style.borderColor=tObj.accent;e.target.style.background='rgba(255,255,255,0.12)'}} onBlur={e=>{e.target.style.borderColor=tObj.default_color;e.target.style.background='rgba(255,255,255,0.08)'}}/>
           </div>
           {canAdmin&&(
