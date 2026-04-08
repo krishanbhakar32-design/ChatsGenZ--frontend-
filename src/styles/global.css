@@ -68,6 +68,9 @@ html {
   height: 100%;
   width: 100%;
   font-size: var(--font-size-base);
+  direction: ltr;
+  text-align: left;
+  unicode-bidi: plaintext;
 }
 
 body {
@@ -79,6 +82,15 @@ body {
   line-height: 1.5;
   width: 100%;
   height: 100%;
+  direction: ltr;
+  text-align: left;
+}
+
+/* Force all inputs/textareas to LTR left-to-right */
+input, textarea, [contenteditable] {
+  direction: ltr !important;
+  text-align: left !important;
+  unicode-bidi: plaintext !important;
 }
 
 #root {
