@@ -78,6 +78,7 @@ export default function ChatRoom() {
   const [whisperTarget, setWhisper]   = useState(null)
 
   const sockRef = useRef(null), bottomRef = useRef(null), inputRef = useRef(null)
+  const dmBtnRef = useRef(null), friendsBtnRef = useRef(null), notifBtnRef = useRef(null)
   const typingTimer = useRef(null), isTypingRef = useRef(false)
   const intentionalLeaveRef = useRef(false)
 
@@ -326,21 +327,21 @@ export default function ChatRoom() {
         <HBtn faIcon="fa-solid fa-video" title="Webcam" active={showCam} onClick={e => { e.stopPropagation(); setShowCam(p => !p) }} tObj={tObj} />
 
         {/* DM */}
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative' }} ref={dmBtnRef}>
           <HBtn faIcon="fa-solid fa-envelope" title="Messages" badge={notif.dm} active={showDM} onClick={e => { e.stopPropagation(); setShowDM(p => !p); setShowNotif(false) }} tObj={tObj} />
-          {showDM && <div onClick={e => e.stopPropagation()}><DMPanel me={me} socket={sockRef.current} onClose={() => setShowDM(false)} onCount={n => setNotif(p => ({ ...p, dm: n }))} /></div>}
+          {showDM && <div onClick={e => e.stopPropagation()}><DMPanel me={me} socket={sockRef.current} onClose={() => setShowDM(false)} onCount={n => setNotif(p => ({ ...p, dm: n }))} anchorRef={dmBtnRef} /></div>}
         </div>
 
         {/* Friends */}
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative' }} ref={friendsBtnRef}>
           <HBtn faIcon="fa-solid fa-user-plus" title="Friend Requests" badge={notif.friends} active={showFriends} onClick={e => { e.stopPropagation(); setShowFriends(p => !p); setShowDM(false); setShowNotif(false) }} tObj={tObj} />
-          {showFriends && <div onClick={e => e.stopPropagation()}><FriendReqPanel onClose={() => setShowFriends(false)} onCount={n => setNotif(p => ({ ...p, friends: n }))} /></div>}
+          {showFriends && <div onClick={e => e.stopPropagation()}><FriendReqPanel onClose={() => setShowFriends(false)} onCount={n => setNotif(p => ({ ...p, friends: n }))} anchorRef={friendsBtnRef} /></div>}
         </div>
 
         {/* Notifications */}
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative' }} ref={notifBtnRef}>
           <HBtn faIcon="fa-solid fa-bell" title="Notifications" badge={notif.notif} active={showNotif} onClick={e => { e.stopPropagation(); setShowNotif(p => !p); setShowDM(false) }} tObj={tObj} />
-          {showNotif && <div onClick={e => e.stopPropagation()}><NotifPanel onClose={() => setShowNotif(false)} onCount={n => setNotif(p => ({ ...p, notif: n }))} /></div>}
+          {showNotif && <div onClick={e => e.stopPropagation()}><NotifPanel onClose={() => setShowNotif(false)} onCount={n => setNotif(p => ({ ...p, notif: n }))} anchorRef={notifBtnRef} /></div>}
         </div>
 
         {isStaffRole && <HBtn faIcon="fa-sharp fa-solid fa-flag" title="Reports" badge={notif.reports} tObj={tObj} />}
