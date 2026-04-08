@@ -16,7 +16,7 @@ function Overlay({ onClose, children }) {
   )
 }
 
-const IS = { display:'block',width:'100%',padding:'11px 14px 11px 40px',border:'1.5px solid #e0e4ea',borderRadius:9,fontSize:'0.875rem',color:'#111827',fontFamily:'inherit',outline:'none',boxSizing:'border-box',background:'#f9fafb',transition:'all .15s' }
+const IS = { display:'block',width:'100%',padding:'11px 14px 11px 40px',border:'1.5px solid #e0e4ea',borderRadius:9,fontSize:'0.875rem',color:'#111827',fontFamily:'inherit',outline:'none',boxSizing:'border-box',background:'#f9fafb',transition:'all .15s',direction:'ltr',textAlign:'left' }
 const onF = e => { e.target.style.borderColor='#1a73e8'; e.target.style.background='#fff' }
 const onB = e => { e.target.style.borderColor='#e0e4ea'; e.target.style.background='#f9fafb' }
 const Lbl = ({ c }) => <label style={{ display:'block',fontSize:'0.79rem',fontWeight:700,color:'#6b7280',marginBottom:5 }}>{c}</label>
