@@ -182,6 +182,27 @@ export default function ChatRoom() {
     s.on('messagePinned',    ({ messageId }) => setMsgs(p => p.map(m => m._id === messageId ? { ...m, isPinned: true } : m)))
     s.on('userMuted',        ({ by, minutes }) => setMsgs(p => [...p, { _id: Date.now() + 'mu', type: 'mute', content: `${by} muted a user for ${minutes} minutes`, createdAt: new Date() }]))
     s.on('userKicked',       ({ by }) => setMsgs(p => [...p, { _id: Date.now() + 'ki', type: 'kick', content: `${by} kicked a user`, createdAt: new Date() }]))
+    // ── Admin Broadcast — appears as system message in every room ──
+    s.on('broadcastMessage', ({ message, type }) => {
+      const typeMap = { info: 'system', warning: 'warning', success: 'success', danger: 'error' }
+      const msgType = typeMap[type] || 'system'
+      setMsgs(p => [...p, {
+        _id: 'bc_' + Date.now() + Math.random().toString(36).slice(2,7),
+        type: msgType,
+        content: `📢 ${message}`,
+        createdAt: new Date(),
+        sender: null,
+      }])
+      Sounds.newMessage?.()
+    })
+    // ── Live settings/rank style updates from admin panel ──
+    s.on('siteSettingsUpdated', () => {
+      // Reload user's theme if rank styles changed
+      if (me?.chatTheme) loadThemeCss(me.chatTheme)
+    })
+    s.on('rankStyleUpdated', () => {
+      if (me?.chatTheme) loadThemeCss(me.chatTheme)
+    })
     s.on('diceError',        ({ msg }) => toast?.show(`🎲 ${msg}`, 'error', 4000))
     s.on('kenoError',        ({ msg }) => toast?.show(`🎯 ${msg}`, 'error', 4000))
     s.on('onlineCount',      n  => setOnlineCount(n))
