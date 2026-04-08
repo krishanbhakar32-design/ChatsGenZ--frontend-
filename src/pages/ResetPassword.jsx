@@ -16,7 +16,7 @@ export default function ResetPassword() {
   const [error,     setError]     = useState('')
   const [done,      setDone]      = useState(false)
 
-  const inp = { display:'block', width:'100%', padding:'11px 14px', border:'1.5px solid #dadce0', borderRadius:9, fontSize:'0.9rem', color:'#202124', fontFamily:'inherit', outline:'none', boxSizing:'border-box', background:'#fff', transition:'border-color .15s' }
+  const inp = { display:'block', width:'100%', padding:'11px 14px', border:'1.5px solid #dadce0', borderRadius:9, fontSize:'0.9rem', color:'#202124', fontFamily:'inherit', outline:'none', boxSizing:'border-box', background:'#fff', transition:'border-color .15s', direction:'ltr', textAlign:'left' }
 
   async function handleSubmit(e) {
     e.preventDefault()
