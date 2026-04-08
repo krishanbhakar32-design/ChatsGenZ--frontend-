@@ -128,12 +128,12 @@ function ActionBtn({ icon, label, color, onClick, badge, disabled }) {
 
 function SInput({ value, onChange, placeholder, rows, style }) {
   return rows ? (
-    <textarea value={value} onChange={onChange} placeholder={placeholder} rows={rows}
-      style={{ width: '100%', padding: '9px 12px', background: T.bg2, border: `1.5px solid ${T.border}`, borderRadius: 9, color: T.text, fontSize: '0.82rem', outline: 'none', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box', ...style }}
+    <textarea dir="ltr" value={value} onChange={onChange} placeholder={placeholder} rows={rows}
+      style={{ width: '100%', padding: '9px 12px', background: T.bg2, border: `1.5px solid ${T.border}`, borderRadius: 9, color: T.text, fontSize: '0.82rem', outline: 'none', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box', direction: 'ltr', textAlign: 'left', ...style }}
       onFocus={e => e.target.style.borderColor = T.accent} onBlur={e => e.target.style.borderColor = T.border} />
   ) : (
-    <input value={value} onChange={onChange} placeholder={placeholder}
-      style={{ width: '100%', padding: '9px 12px', background: T.bg2, border: `1.5px solid ${T.border}`, borderRadius: 9, color: T.text, fontSize: '0.82rem', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box', ...style }}
+    <input dir="ltr" value={value} onChange={onChange} placeholder={placeholder}
+      style={{ width: '100%', padding: '9px 12px', background: T.bg2, border: `1.5px solid ${T.border}`, borderRadius: 9, color: T.text, fontSize: '0.82rem', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box', direction: 'ltr', textAlign: 'left', ...style }}
       onFocus={e => e.target.style.borderColor = T.accent} onBlur={e => e.target.style.borderColor = T.border} />
   )
 }
