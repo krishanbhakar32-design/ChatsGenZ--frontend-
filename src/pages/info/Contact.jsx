@@ -71,7 +71,7 @@ export default function Contact() {
     border:'1.5px solid #dadce0', borderRadius:9,
     fontSize:'0.9rem', color:'#202124', fontFamily:'inherit',
     outline:'none', boxSizing:'border-box', background:'#fff',
-    transition:'border-color .15s',
+    transition:'border-color .15s', direction:'ltr', textAlign:'left',
   }
 
   return (
