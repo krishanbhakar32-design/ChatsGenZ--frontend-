@@ -5,9 +5,27 @@ import { useState, useEffect, useRef } from 'react'
 import { API, R, GBR } from './chatConstants.js'
 import { RIcon } from './ChatIcons.jsx'
 
-function FriendReqPanel({onClose,onCount}) {
+// Returns fixed position style so panel opens exactly centered below the anchor icon
+function useAnchorStyle(anchorRef, panelWidth) {
+  const [style, setStyle] = useState({ position: 'fixed', top: 60, left: '50%', transform: 'translateX(-50%)', zIndex: 9999 })
+  useEffect(() => {
+    if (!anchorRef?.current) return
+    const rect = anchorRef.current.getBoundingClientRect()
+    const center = rect.left + rect.width / 2
+    const pw = Math.min(panelWidth, window.innerWidth * 0.94)
+    let left = center - pw / 2
+    // keep inside screen
+    if (left < 6) left = 6
+    if (left + pw > window.innerWidth - 6) left = window.innerWidth - pw - 6
+    setStyle({ position: 'fixed', top: rect.bottom + 6, left, width: pw, zIndex: 9999 })
+  }, [anchorRef, panelWidth])
+  return style
+}
+
+function FriendReqPanel({onClose,onCount,anchorRef}) {
   const [reqs,setReqs]=useState([]), [load,setLoad]=useState(true)
   const token=localStorage.getItem('cgz_token')
+  const anchorStyle = useAnchorStyle(anchorRef, 300)
 
   function load_reqs() {
     fetch(`${API}/api/users/me/friends`,{headers:{Authorization:`Bearer ${token}`}})
@@ -31,7 +49,7 @@ function FriendReqPanel({onClose,onCount}) {
   }
 
   return (
-    <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',background:'#fff',border:'1px solid #e4e6ea',borderRadius:14,width:'min(300px,92vw)',maxHeight:380,display:'flex',flexDirection:'column',boxShadow:'0 8px 28px rgba(0,0,0,.14)',zIndex:999}} onClick={e=>e.stopPropagation()}>
+    <div style={{...anchorStyle,background:'#fff',border:'1px solid #e4e6ea',borderRadius:14,maxHeight:380,display:'flex',flexDirection:'column',boxShadow:'0 8px 28px rgba(0,0,0,.14)'}} onClick={e=>e.stopPropagation()}>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 13px',borderBottom:'1px solid #f3f4f6',flexShrink:0}}>
         <span style={{fontFamily:'Outfit,sans-serif',fontWeight:800,fontSize:'0.88rem',color:'#111827'}}>Friend Requests</span>
         <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:13}}><i className="fa-solid fa-xmark"/></button>
@@ -76,9 +94,10 @@ function FriendReqPanel({onClose,onCount}) {
 // ─────────────────────────────────────────────────────────────
 // NOTIFICATIONS PANEL
 // ─────────────────────────────────────────────────────────────
-function NotifPanel({onClose,onCount}) {
+function NotifPanel({onClose,onCount,anchorRef}) {
   const [list,setList]=useState([]), [load,setLoad]=useState(true)
   const token=localStorage.getItem('cgz_token')
+  const anchorStyle = useAnchorStyle(anchorRef, 310)
   useEffect(()=>{
     fetch(`${API}/api/notifications`,{headers:{Authorization:`Bearer ${token}`}}).then(r=>r.json()).then(d=>{setList(d.notifications||[]);onCount(d.unreadCount||0)}).catch(()=>{}).finally(()=>setLoad(false))
   },[])
@@ -88,7 +107,7 @@ function NotifPanel({onClose,onCount}) {
   }
   const unread=list.filter(n=>!n.isRead).length
   return (
-    <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',background:'#fff',border:'1px solid #e4e6ea',borderRadius:14,width:'min(310px,92vw)',maxHeight:400,display:'flex',flexDirection:'column',boxShadow:'0 8px 28px rgba(0,0,0,.14)',zIndex:999}} onClick={e=>e.stopPropagation()}>
+    <div style={{...anchorStyle,background:'#fff',border:'1px solid #e4e6ea',borderRadius:14,maxHeight:400,display:'flex',flexDirection:'column',boxShadow:'0 8px 28px rgba(0,0,0,.14)'}} onClick={e=>e.stopPropagation()}>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 13px',borderBottom:'1px solid #f3f4f6',flexShrink:0}}>
         <div style={{display:'flex',alignItems:'center',gap:7}}>
           <span style={{fontFamily:'Outfit,sans-serif',fontWeight:800,fontSize:'0.88rem',color:'#111827'}}>Notifications</span>
@@ -124,10 +143,11 @@ function NotifPanel({onClose,onCount}) {
 // ─────────────────────────────────────────────────────────────
 // DM PANEL
 // ─────────────────────────────────────────────────────────────
-function DMPanel({me,socket,onClose,onCount}) {
+function DMPanel({me,socket,onClose,onCount,anchorRef}) {
   const [convos,setConvos]=useState([]), [active,setActive]=useState(null), [msgs,setMsgs]=useState([]), [input,setInput]=useState(''), [load,setLoad]=useState(true)
   const bottomRef=useRef(null)
   const token=localStorage.getItem('cgz_token')
+  const anchorStyle = useAnchorStyle(anchorRef, 330)
 
   useEffect(()=>{
     fetch(`${API}/api/messages/private/conversations`,{headers:{Authorization:`Bearer ${token}`}}).then(r=>r.json()).then(d=>setConvos(d.conversations||[])).catch(()=>{}).finally(()=>setLoad(false))
@@ -148,7 +168,7 @@ function DMPanel({me,socket,onClose,onCount}) {
   function sendDM(e) { e.preventDefault(); if(!input.trim()||!active||!socket) return; socket.emit('privateMessage',{toUserId:active.userId||active._id,content:input.trim(),type:'text'}); setInput('') }
 
   return (
-    <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',background:'#fff',border:'1px solid #e4e6ea',borderRadius:14,width:'min(330px,94vw)',height:440,display:'flex',flexDirection:'column',boxShadow:'0 8px 28px rgba(0,0,0,.14)',zIndex:999,overflow:'hidden'}} onClick={e=>e.stopPropagation()}>
+    <div style={{...anchorStyle,background:'#fff',border:'1px solid #e4e6ea',borderRadius:14,height:440,display:'flex',flexDirection:'column',boxShadow:'0 8px 28px rgba(0,0,0,.14)',overflow:'hidden'}} onClick={e=>e.stopPropagation()}>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 13px',borderBottom:'1px solid #f3f4f6',flexShrink:0}}>
         {active?(
           <div style={{display:'flex',alignItems:'center',gap:8}}>
