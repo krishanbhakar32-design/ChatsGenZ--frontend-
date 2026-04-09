@@ -4,6 +4,7 @@ import Footer from '../components/Footer.jsx'
 import ScrollToTop from '../components/ScrollToTop.jsx'
 
 import { API_URL as API } from '../siteConfig'
+import { apiFetch } from '../utils/apiHelper'
 
 /* ─── Shared UI primitives ───────────────────────────────────────────────── */
 function Overlay({ onClose, children }) {
@@ -84,16 +85,16 @@ function OTPStep({ userId, email, username, onClose }) {
     if(otp.length!==6){setErr('Enter the 6-digit code.');return}
     setLoad(true);setErr('');setOk('')
     try {
-      const res=await fetch(`${API}/api/auth/verify-otp`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId,otp})})
+      const res=await apiFetch(`${API}/api/auth/verify-otp`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId,otp})})
       const d=await res.json()
       if(res.ok&&d.token){localStorage.setItem('cgz_token',d.token);window.location.href='/chat'}
       else setErr(d.error||'Incorrect code.')
-    }catch{setErr('Network error.')}
+    }catch(e){setErr(e.message||'Network error. Dobara try karo.')}
     finally{setLoad(false)}
   }
   async function resend() {
     setRl(true);setErr('');setOk('')
-    try{const res=await fetch(`${API}/api/auth/resend-otp`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId})});const d=await res.json();if(res.ok)setOk('New code sent! Check spam too.');else setErr(d.error||'Could not resend.')}catch{setErr('Network error.')}finally{setRl(false)}
+    try{const res=await apiFetch(`${API}/api/auth/resend-otp`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId})});const d=await res.json();if(res.ok)setOk('New code sent! Check spam too.');else setErr(d.error||'Could not resend.')}catch(e){setErr(e.message||'Network error. Dobara try karo.')}finally{setRl(false)}
   }
   return (
     <>
@@ -123,16 +124,16 @@ function LoginModal({ onClose }) {
   async function doLogin(e) {
     e.preventDefault();setLoad(true);reset()
     try {
-      const res=await fetch(`${API}/api/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login:form.login.trim(),password:form.password})})
+      const res=await apiFetch(`${API}/api/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login:form.login.trim(),password:form.password})})
       const d=await res.json()
       if(res.ok&&d.token){localStorage.setItem('cgz_token',d.token);window.location.href='/chat'}
       else if(res.ok&&d.needsVerification){setOtpData({userId:d.userId,email:form.login.trim(),username:d.username});setStep('otp')}
       else setErr(d.error||'Invalid credentials.')
-    }catch{setErr('Network error.')}finally{setLoad(false)}
+    }catch(e){setErr(e.message||'Network error. Dobara try karo.')}finally{setLoad(false)}
   }
   async function doForgot(e) {
     e.preventDefault();setLoad(true);reset()
-    try{const res=await fetch(`${API}/api/auth/forgot-password`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:fpEmail.trim()})});if((await res.json()),res.ok)setStep('forgot_sent');else setErr('Could not send.')}catch{setErr('Network error.')}finally{setLoad(false)}
+    try{const res=await apiFetch(`${API}/api/auth/forgot-password`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:fpEmail.trim()})});const d2=await res.json();if(res.ok)setStep('forgot_sent');else setErr(d2.error||'Could not send.')}catch(e){setErr(e.message||'Network error. Dobara try karo.')}finally{setLoad(false)}
   }
   return (
     <Overlay onClose={onClose}>
@@ -184,11 +185,11 @@ function GuestModal({ onClose }) {
     setLoad(true);setErr('')
     try{
       const dob=`${form.year}-${String(months.indexOf(form.month)+1).padStart(2,'0')}-${String(form.day).padStart(2,'0')}`
-      const res=await fetch(`${API}/api/auth/guest`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:form.username,gender:form.gender,dob})})
+      const res=await apiFetch(`${API}/api/auth/guest`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:form.username,gender:form.gender,dob})})
       const d=await res.json()
       if(res.ok&&d.token){localStorage.setItem('cgz_token',d.token);window.location.href='/chat'}
       else setErr(d.error||'Failed. Please try again.')
-    }catch{setErr('Network error.')}finally{setLoad(false)}
+    }catch(e){setErr(e.message||'Network error. Dobara try karo.')}finally{setLoad(false)}
   }
   return (
     <Overlay onClose={onClose}>
@@ -237,11 +238,11 @@ function RegisterModal({ onClose }) {
     setLoad(true);setErr('')
     try{
       const dob=`${form.year}-${String(months.indexOf(form.month)+1).padStart(2,'0')}-${String(form.day).padStart(2,'0')}`
-      const res=await fetch(`${API}/api/auth/register`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:form.username.trim(),email:form.email.trim().toLowerCase(),password:form.password,gender:form.gender,dob})})
+      const res=await apiFetch(`${API}/api/auth/register`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:form.username.trim(),email:form.email.trim().toLowerCase(),password:form.password,gender:form.gender,dob})})
       const d=await res.json()
       if(res.ok&&d.success){if(d.needsOTP){setOtpData({userId:d.userId,email:form.email.trim().toLowerCase(),username:d.username});setStep('otp')}else{localStorage.setItem('cgz_token',d.token);window.location.href='/chat'}}
       else setErr(d.error||'Registration failed.')
-    }catch{setErr('Network error.')}finally{setLoad(false)}
+    }catch(e){setErr(e.message||'Network error. Dobara try karo.')}finally{setLoad(false)}
   }
   if(step==='otp') return <Overlay onClose={onClose}><div style={{ padding:'24px 22px' }}><OTPStep {...otpData} onClose={onClose}/></div></Overlay>
   return (
