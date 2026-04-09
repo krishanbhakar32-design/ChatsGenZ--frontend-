@@ -125,7 +125,7 @@ export default function ChatRoom() {
       if (!rr.ok) { setErr(rd.error || 'Room not found'); setLoad(false); return }
       setRoom(rd.room)
       fetch(`${API}/api/rooms/${roomSlug}/messages?limit=50`, { headers: { Authorization: `Bearer ${token}` } })
-        .then(r => r.json()).then(d => { if (d.messages) setMsgs(d.messages.filter(m => !['system','join','leave','kick','mute','ban','mod','warning','success','error'].includes(m.type))) }).catch(() => {})
+        .then(r => r.json()).then(d => { if (d.messages) setMsgs(d.messages) }).catch(() => {})
     } catch { setErr('Connection failed.') }
     setLoad(false)
   }
@@ -144,12 +144,29 @@ export default function ChatRoom() {
     const s = io(API, { auth: { token }, transports: ['websocket', 'polling'] })
     s.on('connect',        () => { setConn(true); s.emit('joinRoom', { roomId }) })
     s.on('disconnect',     () => setConn(false))
-    s.on('messageHistory', ms => setMsgs((ms || []).filter(m => !['system','join','leave','kick','mute','ban','mod','warning','success','error'].includes(m.type))))
-    s.on('newMessage',     m  => { setMsgs(p => [...p, m]); Sounds.newMessage() })
+    s.on('messageHistory', ms => setMsgs(ms || []))
+    s.on('newMessage',     m  => {
+      setMsgs(p => [...p, m])
+      // Play correct sound: join/leave/kick/ban/mute = action sound, not newMessage
+      const sysTypes = ['join','leave','kick','mute','ban','mod','system','warning','success','error']
+      if (sysTypes.includes(m.type)) {
+        if (m.type === 'join')  Sounds.join?.()
+        else if (m.type === 'leave') Sounds.leave?.()
+        else Sounds.action?.()
+      } else {
+        Sounds.newMessage()
+      }
+    })
     s.on('roomUsers',      l  => setUsers(l || []))
     s.on('roomUserCount',  n  => setOnlineCount(n))
     s.on('systemMessage',  m  => {
-      // System messages suppressed from chat — only play sound cues
+      // Legacy systemMessage event (server sends some via this path too)
+      const sysId = m._id || ('sys_' + Date.now() + Math.random().toString(36).slice(2, 7))
+      setMsgs(p => {
+        const last = p[p.length - 1]
+        if (last && last.type === m.type && last.content === m.text && (Date.now() - new Date(last.createdAt).getTime()) < 2000) return p
+        return [...p, { _id: sysId, type: m.type || 'system', content: m.text, createdAt: new Date() }]
+      })
       if (m.type === 'join')  Sounds.join?.()
       if (m.type === 'leave') Sounds.leave?.()
     })
@@ -421,9 +438,14 @@ export default function ChatRoom() {
 
           {/* Scrollable messages */}
           <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '6px 0', minHeight: 0 }}>
-            {messages.map((m, i) => (
-              !hiddenMsgs.has(m._id) && !m._ignored &&
-              !(ignoredUsers.has(m.sender?._id) || ignoredUsers.has(m.sender?.userId)) && (
+            {messages.map((m, i) => {
+              // System messages always show — they have no sender to filter
+              const isSys = ['system','join','leave','kick','mute','ban','mod','dice','gift','warning','success','error'].includes(m.type)
+              if (!isSys) {
+                if (hiddenMsgs.has(m._id) || m._ignored) return null
+                if (ignoredUsers.has(m.sender?._id) || ignoredUsers.has(m.sender?.userId)) return null
+              }
+              return (
                 <Msg
                   key={m._id || i} msg={m} myId={me?._id} myLevel={myLevel} tObj={tObj}
                   onMiniCard={handleMiniCard} onMention={handleMention} onHide={handleHide}
@@ -434,7 +456,7 @@ export default function ChatRoom() {
                   socket={sockRef.current} roomId={roomId}
                 />
               )
-            ))}
+            })}
 
             {/* Typing indicator */}
             {typers.filter(t => t !== me?.username).length > 0 && (
