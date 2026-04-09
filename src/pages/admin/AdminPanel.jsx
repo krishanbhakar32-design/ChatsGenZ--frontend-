@@ -1741,6 +1741,526 @@ function ActionLogs() {
   );
 }
 
+// ══════════════════════════════════════════════════════════════
+// ENHANCED ACTION LOGS v2 — uses /api/admin/v2/logs
+// Full: date range, actionType, admin/target search, detail view, undo
+// ══════════════════════════════════════════════════════════════
+function ActionLogsV2() {
+  const [logs, setLogs]           = useState([]);
+  const [total, setTotal]         = useState(0);
+  const [pages, setPages]         = useState(1);
+  const [page, setPage]           = useState(1);
+  const [loading, setLoading]     = useState(true);
+  const [confirm, setConfirm]     = useState(null);
+  const [detail, setDetail]       = useState(null);
+  const [stats, setStats]         = useState([]);
+  // Filters
+  const [actionFilter, setActionFilter] = useState('');
+  const [adminSearch, setAdminSearch]   = useState('');
+  const [targetSearch, setTargetSearch] = useState('');
+  const [search, setSearch]             = useState('');
+  const [dateFrom, setDateFrom]         = useState('');
+  const [dateTo, setDateTo]             = useState('');
+  const [successFilter, setSuccessFilter] = useState('');
+
+  const apiV2 = useCallback(async (path, opts = {}) => {
+    const token = localStorage.getItem('token');
+    const r = await fetch(`${API}/api/admin/v2${path}`, {
+      headers: { 'Content-Type':'application/json', Authorization:`Bearer ${token}` },
+      ...opts,
+    });
+    if (!r.ok) { const e = await r.json().catch(()=>({error:'Request failed'})); throw new Error(e.error||'Error'); }
+    return r.json();
+  }, []);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    const p = new URLSearchParams({ page, limit:50, actionType:actionFilter, adminName:adminSearch, targetName:targetSearch, search, dateFrom, dateTo, success:successFilter });
+    apiV2(`/logs?${p}`)
+      .then(d => { setLogs(d.logs||[]); setTotal(d.total||0); setPages(d.pages||1); setStats(d.actionStats||[]); })
+      .catch(e => toast(e.message,'error'))
+      .finally(() => setLoading(false));
+  }, [page, actionFilter, adminSearch, targetSearch, search, dateFrom, dateTo, successFilter, apiV2]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleUndo = async (log) => {
+    try {
+      await apiV2(`/logs/${log._id}/undo`, { method:'POST' });
+      toast('Action undone ✓'); load();
+    } catch(e) { toast(e.message,'error'); }
+  };
+
+  const clearLogs = async () => {
+    try {
+      await apiV2('/logs', { method:'DELETE', body:JSON.stringify({}) });
+      toast('Logs cleared'); load();
+    } catch(e) { toast(e.message,'error'); }
+  };
+
+  const ACTION_META = {
+    'user.ban':        { color:'#ef4444', icon:'fa-hammer',              label:'Ban'          },
+    'user.unban':      { color:'#22c55e', icon:'fa-circle-check',        label:'Unban'        },
+    'user.mute':       { color:'#8b5cf6', icon:'fa-microphone-slash',    label:'Mute'         },
+    'user.unmute':     { color:'#22c55e', icon:'fa-microphone',          label:'Unmute'       },
+    'user.kick':       { color:'#f97316', icon:'fa-person-walking-arrow-right', label:'Kick'  },
+    'user.warn':       { color:'#f59e0b', icon:'fa-triangle-exclamation',label:'Warn'         },
+    'user.ghost':      { color:'#6b7280', icon:'fa-ghost',               label:'Ghost'        },
+    'user.unghost':    { color:'#22c55e', icon:'fa-ghost',               label:'Unghost'      },
+    'user.rank_change':{ color:'#3b82f6', icon:'fa-star',               label:'Rank Change'  },
+    'user.gold_manage':{ color:'#f59e0b', icon:'fa-coins',               label:'Gold'         },
+    'user.ruby_manage':{ color:'#e879f9', icon:'fa-gem',                 label:'Ruby'         },
+    'user.delete':     { color:'#dc2626', icon:'fa-trash',               label:'Delete User'  },
+    'user.edit':       { color:'#06b6d4', icon:'fa-pen-to-square',       label:'Edit Profile' },
+    'room.create':     { color:'#10b981', icon:'fa-plus',                label:'Room Create'  },
+    'room.edit':       { color:'#06b6d4', icon:'fa-pen',                 label:'Room Edit'    },
+    'room.delete':     { color:'#ef4444', icon:'fa-trash',               label:'Room Delete'  },
+    'room.clear_messages':{ color:'#f97316', icon:'fa-broom',            label:'Clear Room'   },
+    'report.handle':   { color:'#a78bfa', icon:'fa-flag',                label:'Report'       },
+    'settings.update': { color:'#64748b', icon:'fa-sliders',             label:'Settings'     },
+    'broadcast.send':  { color:'#60a5fa', icon:'fa-bullhorn',            label:'Broadcast'    },
+    'ip_ban.create':   { color:'#dc2626', icon:'fa-shield-halved',       label:'IP Ban'       },
+    'rbac.update':     { color:'#818cf8', icon:'fa-shield',              label:'RBAC Update'  },
+    'log.clear':       { color:'#6b7280', icon:'fa-eraser',              label:'Log Clear'    },
+    // Legacy compat
+    'ban':             { color:'#ef4444', icon:'fa-hammer',              label:'Ban'          },
+    'unban':           { color:'#22c55e', icon:'fa-circle-check',        label:'Unban'        },
+    'mute':            { color:'#8b5cf6', icon:'fa-microphone-slash',    label:'Mute'         },
+    'unmute':          { color:'#22c55e', icon:'fa-microphone',          label:'Unmute'       },
+    'kick':            { color:'#f97316', icon:'fa-person-walking-arrow-right', label:'Kick'  },
+    'warn':            { color:'#f59e0b', icon:'fa-triangle-exclamation',label:'Warn'         },
+    'rank_change':     { color:'#3b82f6', icon:'fa-star',               label:'Rank Change'  },
+    'ip_ban':          { color:'#dc2626', icon:'fa-shield-halved',       label:'IP Ban'       },
+    'clear_room':      { color:'#f97316', icon:'fa-broom',               label:'Clear Room'   },
+  };
+
+  const RANK_COLORS = { guest:'#888',user:'#aaa',moderator:'#00AAFF',admin:'#FF4444',superadmin:'#FF00FF',owner:'#FFD700' };
+  const UNDOABLE = ['user.ban','user.unban','user.rank_change','user.gold_add','user.mute'];
+
+  return (
+    <div className="ap-section">
+      {/* Header */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:8, marginBottom:16 }}>
+        <h2 className="ap-section-title" style={{ margin:0 }}>
+          <i className="fa-solid fa-shield-halved" style={{ color:'#f59e0b' }} /> Action Logs
+          <span className="ap-badge ap-badge--count" style={{ marginLeft:8 }}>{total}</span>
+        </h2>
+        <div style={{ display:'flex', gap:8 }}>
+          <button className="ap-btn ap-btn--ghost ap-btn--sm" onClick={load}>
+            <i className="fa-solid fa-rotate" /> Refresh
+          </button>
+          <button className="ap-btn ap-btn--danger ap-btn--sm"
+            onClick={() => setConfirm({ msg:'Clear ALL action logs? This cannot be undone.', cb: clearLogs })}>
+            <i className="fa-solid fa-trash" /> Clear All
+          </button>
+        </div>
+      </div>
+
+      {/* Quick stats */}
+      {stats.length > 0 && (
+        <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:12 }}>
+          {stats.slice(0,6).map(s => {
+            const meta = ACTION_META[s._id] || { color:'#6b7280', label:s._id };
+            return (
+              <div key={s._id}
+                onClick={() => { setActionFilter(s._id); setPage(1); }}
+                style={{ cursor:'pointer', background:'rgba(255,255,255,0.03)', border:`1px solid ${meta.color}33`, borderRadius:7, padding:'5px 10px', display:'flex', alignItems:'center', gap:6 }}>
+                <span style={{ width:6, height:6, borderRadius:'50%', background:meta.color, display:'inline-block' }} />
+                <span style={{ fontSize:11, color:'#94a3b8' }}>{meta.label||s._id}</span>
+                <span style={{ fontSize:11, fontWeight:700, color:meta.color }}>{s.count}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Filters */}
+      <div className="ap-card" style={{ marginBottom:12, padding:12 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(160px, 1fr))', gap:8 }}>
+          <div>
+            <label className="ap-label">Search All</label>
+            <input className="ap-input" placeholder="Username, IP, action…" value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1); }} />
+          </div>
+          <div>
+            <label className="ap-label">Admin Name</label>
+            <input className="ap-input" placeholder="Admin…" value={adminSearch}
+              onChange={e => { setAdminSearch(e.target.value); setPage(1); }} />
+          </div>
+          <div>
+            <label className="ap-label">Target User</label>
+            <input className="ap-input" placeholder="Target…" value={targetSearch}
+              onChange={e => { setTargetSearch(e.target.value); setPage(1); }} />
+          </div>
+          <div>
+            <label className="ap-label">Action Type</label>
+            <select className="ap-select" value={actionFilter} onChange={e => { setActionFilter(e.target.value); setPage(1); }}>
+              <option value="">All Actions</option>
+              {Object.entries(ACTION_META).filter(([k]) => !['ban','unban','mute','unmute','kick','warn','rank_change','ip_ban','clear_room'].includes(k)).map(([k,v]) =>
+                <option key={k} value={k}>{v.label}</option>
+              )}
+            </select>
+          </div>
+          <div>
+            <label className="ap-label">Date From</label>
+            <input className="ap-input" type="date" value={dateFrom}
+              onChange={e => { setDateFrom(e.target.value); setPage(1); }} />
+          </div>
+          <div>
+            <label className="ap-label">Date To</label>
+            <input className="ap-input" type="date" value={dateTo}
+              onChange={e => { setDateTo(e.target.value); setPage(1); }} />
+          </div>
+          <div>
+            <label className="ap-label">Status</label>
+            <select className="ap-select" value={successFilter} onChange={e => { setSuccessFilter(e.target.value); setPage(1); }}>
+              <option value="">All</option>
+              <option value="true">✓ Success</option>
+              <option value="false">✗ Failed/Denied</option>
+            </select>
+          </div>
+        </div>
+        {(search||adminSearch||targetSearch||actionFilter||dateFrom||dateTo||successFilter) && (
+          <button className="ap-btn ap-btn--xs ap-btn--ghost" style={{ marginTop:8 }}
+            onClick={() => { setSearch(''); setAdminSearch(''); setTargetSearch(''); setActionFilter(''); setDateFrom(''); setDateTo(''); setSuccessFilter(''); setPage(1); }}>
+            <i className="fa-solid fa-xmark" /> Clear Filters
+          </button>
+        )}
+      </div>
+
+      {loading && <div className="ap-loading"><i className="fa-solid fa-spinner fa-spin" /></div>}
+
+      {/* Log entries */}
+      <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+        {!loading && !logs.length && <div className="ap-empty">No action logs found</div>}
+        {logs.map(l => {
+          const meta = ACTION_META[l.actionType] || ACTION_META[l.action] || { color:'#6b7280', icon:'fa-circle-info', label: l.actionType||l.action };
+          const isDenied = !l.success || (l.actionType||'').startsWith('DENIED:');
+          return (
+            <div key={l._id} style={{
+              background: isDenied ? 'rgba(239,68,68,0.05)' : '#0d1020',
+              border:`1px solid ${isDenied ? '#ef444422' : meta.color+'22'}`,
+              borderLeft:`3px solid ${isDenied ? '#ef4444' : meta.color}`,
+              borderRadius:8, padding:'10px 14px',
+              display:'flex', gap:12, alignItems:'flex-start',
+            }}>
+              {/* Action icon */}
+              <div style={{ width:32, height:32, borderRadius:8, background: meta.color+'18', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:2 }}>
+                <i className={`fa-solid ${meta.icon||'fa-circle'}`} style={{ color: meta.color, fontSize:13 }} />
+              </div>
+
+              {/* Main content */}
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginBottom:4 }}>
+                  <span style={{ fontWeight:700, fontSize:13, color: meta.color }}>{meta.label || (l.actionType||l.action)}</span>
+                  {isDenied && <span style={{ fontSize:10, background:'rgba(239,68,68,0.15)', color:'#f87171', borderRadius:4, padding:'1px 6px', fontWeight:600 }}>DENIED</span>}
+                  {l.permissionUsed && !isDenied && <span style={{ fontSize:10, color:'#4b5563', fontFamily:'monospace' }}>{l.permissionUsed}</span>}
+                </div>
+                <div style={{ display:'flex', gap:10, flexWrap:'wrap', fontSize:12 }}>
+                  {/* Admin */}
+                  <span style={{ color: RANK_COLORS[l.adminRank]||'#60a5fa', fontWeight:600 }}>
+                    <i className="fa-solid fa-user-shield" style={{ marginRight:4, fontSize:10 }} />{l.adminUsername}
+                    {l.adminRank && <span style={{ fontSize:10, color:'#4b5563', marginLeft:4 }}>({l.adminRank})</span>}
+                  </span>
+                  {/* Target */}
+                  {l.targetUsername && (
+                    <span style={{ color:'#94a3b8' }}>
+                      <i className="fa-solid fa-arrow-right" style={{ color:'#374151', marginRight:4, fontSize:10 }} />
+                      <span style={{ color:'#e2e8f0', fontWeight:600 }}>{l.targetUsername}</span>
+                      {l.targetRank && <span style={{ fontSize:10, color:'#4b5563', marginLeft:4 }}>({l.targetRank})</span>}
+                    </span>
+                  )}
+                  {/* IP */}
+                  {l.adminIp && <span style={{ fontFamily:'monospace', fontSize:11, color:'#374151' }}><i className="fa-solid fa-network-wired" style={{ marginRight:3 }} />{l.adminIp}</span>}
+                </div>
+                {/* Details preview */}
+                {l.details && Object.keys(l.details).length > 0 && (
+                  <div style={{ marginTop:4, fontSize:11, color:'#6b7280' }}>
+                    {l.details.reason && <span style={{ marginRight:10 }}><i className="fa-solid fa-comment" style={{ marginRight:3 }} />"{l.details.reason}"</span>}
+                    {l.details.minutes && <span style={{ marginRight:10 }}><i className="fa-solid fa-clock" style={{ marginRight:3 }} />{l.details.minutes}min</span>}
+                    {l.details.newRank && <span><i className="fa-solid fa-star" style={{ marginRight:3 }} />{l.details.oldRank} → {l.details.newRank}</span>}
+                    {l.details.amount !== undefined && <span><i className="fa-solid fa-coins" style={{ marginRight:3 }} />{l.details.amount > 0 ? '+':''}{l.details.amount}</span>}
+                    {l.details.keys && <span style={{ fontFamily:'monospace' }}>{l.details.keys.slice(0,4).join(', ')}</span>}
+                  </div>
+                )}
+              </div>
+
+              {/* Timestamp + actions */}
+              <div style={{ flexShrink:0, textAlign:'right', display:'flex', flexDirection:'column', alignItems:'flex-end', gap:4 }}>
+                <span style={{ fontSize:11, color:'#374151' }}>{new Date(l.createdAt).toLocaleString()}</span>
+                <div style={{ display:'flex', gap:4 }}>
+                  <button className="ap-btn ap-btn--xs ap-btn--ghost" onClick={() => setDetail(l)} title="View details">
+                    <i className="fa-solid fa-eye" />
+                  </button>
+                  {l.undoData && UNDOABLE.includes(l.actionType) && (
+                    <button className="ap-btn ap-btn--xs ap-btn--warning"
+                      onClick={() => setConfirm({ msg:`Undo "${meta.label}" for ${l.targetUsername}?`, cb:()=>handleUndo(l) })}
+                      title="Undo this action">
+                      <i className="fa-solid fa-rotate-left" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Pagination */}
+      {pages > 1 && (
+        <div style={{ display:'flex', gap:8, justifyContent:'center', marginTop:16, alignItems:'center' }}>
+          <button className="ap-btn ap-btn--ghost" disabled={page<=1} onClick={()=>setPage(p=>p-1)}><i className="fa-solid fa-chevron-left" /></button>
+          <span style={{ fontSize:12, color:'#6b7280' }}>Page {page} of {pages} · {total} logs</span>
+          <button className="ap-btn ap-btn--ghost" disabled={page>=pages} onClick={()=>setPage(p=>p+1)}><i className="fa-solid fa-chevron-right" /></button>
+        </div>
+      )}
+
+      {/* Detail modal */}
+      {detail && (
+        <div className="ap-overlay" onClick={() => setDetail(null)}>
+          <div style={{ background:'#0d1117', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:24, maxWidth:520, width:'94vw', maxHeight:'80vh', overflowY:'auto' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display:'flex', justifyContent:'space-between', marginBottom:16 }}>
+              <span style={{ fontWeight:700, fontSize:15, color:'#e2e8f0' }}>Log Detail</span>
+              <button className="ap-close-btn" onClick={()=>setDetail(null)} style={{ position:'static' }}><i className="fa-solid fa-xmark" /></button>
+            </div>
+            {[
+              ['Action',     detail.actionType || detail.action],
+              ['Admin',      `${detail.adminUsername} (${detail.adminRank})`],
+              ['Admin IP',   detail.adminIp],
+              ['Target',     detail.targetUsername ? `${detail.targetUsername} (${detail.targetRank})` : '—'],
+              ['Permission', detail.permissionUsed || '—'],
+              ['Success',    detail.success ? '✓ Yes' : '✗ No'],
+              ['Error',      detail.errorMsg || '—'],
+              ['Time',       new Date(detail.createdAt).toLocaleString()],
+            ].map(([k,v]) => v && v !== '—' && (
+              <div key={k} style={{ display:'flex', gap:12, padding:'6px 0', borderBottom:'1px solid rgba(255,255,255,0.05)', fontSize:13 }}>
+                <span style={{ width:100, flexShrink:0, color:'#6b7280' }}>{k}</span>
+                <span style={{ color:'#e2e8f0', fontFamily: k==='Admin IP'?'monospace':undefined }}>{v}</span>
+              </div>
+            ))}
+            {detail.details && Object.keys(detail.details).length > 0 && (
+              <div style={{ marginTop:12 }}>
+                <div style={{ fontSize:11, color:'#6b7280', marginBottom:6 }}>DETAILS</div>
+                <pre style={{ background:'rgba(255,255,255,0.03)', borderRadius:8, padding:12, fontSize:11, color:'#94a3b8', overflowX:'auto', whiteSpace:'pre-wrap' }}>
+                  {JSON.stringify(detail.details, null, 2)}
+                </pre>
+              </div>
+            )}
+            {detail.undoData && (
+              <div style={{ marginTop:8 }}>
+                <div style={{ fontSize:11, color:'#6b7280', marginBottom:6 }}>UNDO DATA</div>
+                <pre style={{ background:'rgba(255,255,255,0.03)', borderRadius:8, padding:12, fontSize:11, color:'#94a3b8', overflowX:'auto', whiteSpace:'pre-wrap' }}>
+                  {JSON.stringify(detail.undoData, null, 2)}
+                </pre>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {confirm && <Confirm msg={confirm.msg} onYes={() => { confirm.cb(); setConfirm(null); }} onNo={() => setConfirm(null)} />}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+// RBAC PERMISSIONS MANAGER
+// Manage granular permissions per role (moderator/admin/superadmin)
+// ══════════════════════════════════════════════════════════════
+const PERM_GROUPS = {
+  'User Management': ['user.read','user.kick','user.mute','user.unmute','user.warn','user.ghost','user.ban','user.unban','user.edit','user.rank_change','user.gold_manage','user.ruby_manage','user.delete','user.password_reset','user.view_ip','user.ip_ban'],
+  'Room Management': ['room.read','room.create','room.edit','room.delete','room.clear_messages','room.kick_user','room.mute_user','room.ban_user'],
+  'Content & Reports': ['message.delete','report.read','report.handle'],
+  'Gifts & Badges': ['gift.manage','badge.manage'],
+  'Filters & News': ['filter.manage','news.manage','broadcast.send'],
+  'Settings & System': ['settings.read','settings.update','system.announce','system.maintenance','system.reload'],
+  'Logs & Analytics': ['logs.read','logs.clear','chat_logs.read'],
+  'Staff & Premium': ['staff.read','notes.manage','premium.manage','revenue.read','bots.manage'],
+};
+
+function RbacPermissionsManager() {
+  const [roles, setRoles]       = useState({});
+  const [allPerms, setAllPerms] = useState([]);
+  const [editing, setEditing]   = useState(null); // 'moderator' | 'admin' | 'superadmin'
+  const [draft, setDraft]       = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [saving, setSaving]     = useState(false);
+  const [confirm, setConfirm]   = useState(null);
+
+  const ROLES = ['moderator','admin','superadmin'];
+  const RANK_COLORS = { moderator:'#00AAFF', admin:'#FF4444', superadmin:'#FF00FF' };
+
+  const apiV2 = useCallback(async (path, opts = {}) => {
+    const token = localStorage.getItem('token');
+    const r = await fetch(`${API}/api/admin/v2${path}`, {
+      headers: { 'Content-Type':'application/json', Authorization:`Bearer ${token}` },
+      ...opts,
+    });
+    if (!r.ok) { const e = await r.json().catch(()=>({error:'Request failed'})); throw new Error(e.error||'Error'); }
+    return r.json();
+  }, []);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    apiV2('/rbac')
+      .then(d => { setRoles(d.roles||{}); setAllPerms(d.allPermissions||[]); })
+      .catch(e => toast(e.message,'error'))
+      .finally(() => setLoading(false));
+  }, [apiV2]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const startEdit = (role) => {
+    setEditing(role);
+    setDraft([...(roles[role]?.permissions || [])]);
+  };
+
+  const togglePerm = (perm) => {
+    setDraft(d => d.includes(perm) ? d.filter(p=>p!==perm) : [...d, perm]);
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await apiV2(`/rbac/${editing}`, { method:'PUT', body:JSON.stringify({ permissions:draft }) });
+      toast(`${editing} permissions saved ✓`);
+      setEditing(null); setDraft([]);
+      load();
+    } catch(e) { toast(e.message,'error'); }
+    finally { setSaving(false); }
+  };
+
+  const reset = async (role) => {
+    try {
+      await apiV2(`/rbac/${role}/reset`, { method:'POST' });
+      toast(`${role} reset to defaults ✓`); load();
+    } catch(e) { toast(e.message,'error'); }
+  };
+
+  if (loading) return <div className="ap-loading"><i className="fa-solid fa-spinner fa-spin" /></div>;
+
+  return (
+    <div className="ap-section">
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:18, flexWrap:'wrap', gap:8 }}>
+        <h2 className="ap-section-title" style={{ margin:0 }}>
+          <i className="fa-solid fa-shield" style={{ color:'#818cf8' }} /> RBAC Permission Manager
+        </h2>
+        <button className="ap-btn ap-btn--ghost ap-btn--sm" onClick={load}>
+          <i className="fa-solid fa-rotate" /> Refresh
+        </button>
+      </div>
+
+      <div style={{ background:'rgba(99,102,241,0.07)', border:'1px solid rgba(99,102,241,0.2)', borderRadius:9, padding:'10px 14px', marginBottom:18, fontSize:12, color:'#94a3b8' }}>
+        <i className="fa-solid fa-circle-info" style={{ color:'#818cf8', marginRight:6 }} />
+        Owner always has <strong style={{ color:'#FFD700' }}>ALL permissions</strong> and cannot be edited. Click a role to edit its permissions. Changes take effect within 5 minutes (cache TTL).
+      </div>
+
+      {/* Role cards */}
+      {!editing && (
+        <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+          {ROLES.map(role => {
+            const perms = roles[role]?.permissions || [];
+            const color = RANK_COLORS[role] || '#888';
+            return (
+              <div key={role} style={{ background:'rgba(255,255,255,0.02)', border:`1px solid ${color}22`, borderRadius:11, padding:16 }}>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12, flexWrap:'wrap', gap:8 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                    <div style={{ width:36, height:36, borderRadius:9, background:`${color}18`, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                      <i className="fa-solid fa-shield-halved" style={{ color, fontSize:16 }} />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight:700, fontSize:14, color, textTransform:'capitalize' }}>{role}</div>
+                      <div style={{ fontSize:11, color:'#6b7280' }}>{perms.length} permissions</div>
+                    </div>
+                  </div>
+                  <div style={{ display:'flex', gap:6 }}>
+                    <button className="ap-btn ap-btn--ghost ap-btn--sm" onClick={() => setConfirm({ msg:`Reset ${role} to default permissions?`, cb:()=>reset(role) })}>
+                      <i className="fa-solid fa-rotate-left" /> Reset
+                    </button>
+                    <button className="ap-btn ap-btn--primary ap-btn--sm" onClick={() => startEdit(role)}>
+                      <i className="fa-solid fa-pen" /> Edit
+                    </button>
+                  </div>
+                </div>
+                {/* Permission chips preview */}
+                <div style={{ display:'flex', flexWrap:'wrap', gap:5 }}>
+                  {perms.slice(0,12).map(p => (
+                    <span key={p} style={{ fontSize:10, background:`${color}12`, color, border:`1px solid ${color}33`, borderRadius:4, padding:'2px 7px', fontFamily:'monospace' }}>{p}</span>
+                  ))}
+                  {perms.length > 12 && <span style={{ fontSize:10, color:'#6b7280', alignSelf:'center' }}>+{perms.length-12} more</span>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Permission editor */}
+      {editing && (
+        <div>
+          <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
+            <button className="ap-btn ap-btn--ghost ap-btn--sm" onClick={() => { setEditing(null); setDraft([]); }}>
+              <i className="fa-solid fa-arrow-left" /> Back
+            </button>
+            <h3 style={{ margin:0, fontSize:15, color: RANK_COLORS[editing]||'#888', fontWeight:700, textTransform:'capitalize' }}>
+              Editing: {editing}
+            </h3>
+            <span style={{ fontSize:12, color:'#6b7280' }}>{draft.length} selected</span>
+            <div style={{ marginLeft:'auto', display:'flex', gap:8 }}>
+              <button className="ap-btn ap-btn--ghost ap-btn--sm" onClick={() => setDraft([])}>None</button>
+              <button className="ap-btn ap-btn--ghost ap-btn--sm" onClick={() => setDraft([...allPerms])}>All</button>
+              <button className="ap-btn ap-btn--primary ap-btn--sm" onClick={save} disabled={saving}>
+                {saving ? <><i className="fa-solid fa-spinner fa-spin" /> Saving…</> : <><i className="fa-solid fa-check" /> Save</>}
+              </button>
+            </div>
+          </div>
+
+          {Object.entries(PERM_GROUPS).map(([group, groupPerms]) => (
+            <div key={group} style={{ marginBottom:14 }}>
+              <div style={{ fontSize:11, fontWeight:700, color:'#6b7280', textTransform:'uppercase', letterSpacing:1, marginBottom:8, display:'flex', alignItems:'center', gap:8 }}>
+                {group}
+                <span style={{ fontSize:10, color:'#374151', fontWeight:400 }}>
+                  ({groupPerms.filter(p => draft.includes(p)).length}/{groupPerms.length})
+                </span>
+                <button style={{ background:'none', border:'none', color:'#4b5563', cursor:'pointer', fontSize:10, padding:'0 4px' }}
+                  onClick={() => {
+                    const allOn = groupPerms.every(p => draft.includes(p));
+                    setDraft(d => allOn ? d.filter(p=>!groupPerms.includes(p)) : [...new Set([...d,...groupPerms])]);
+                  }}>
+                  {groupPerms.every(p=>draft.includes(p)) ? 'Deselect all' : 'Select all'}
+                </button>
+              </div>
+              <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+                {groupPerms.map(perm => {
+                  const on = draft.includes(perm);
+                  const color = RANK_COLORS[editing]||'#818cf8';
+                  return (
+                    <button key={perm}
+                      onClick={() => togglePerm(perm)}
+                      style={{
+                        background: on ? `${color}18` : 'rgba(255,255,255,0.03)',
+                        border: `1px solid ${on ? color+'55' : 'rgba(255,255,255,0.08)'}`,
+                        borderRadius:6, padding:'5px 10px', cursor:'pointer',
+                        color: on ? color : '#6b7280', fontSize:11, fontFamily:'monospace',
+                        transition:'all 0.12s',
+                      }}>
+                      {on && <i className="fa-solid fa-check" style={{ marginRight:4, fontSize:9 }} />}
+                      {perm}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {confirm && <Confirm msg={confirm.msg} onYes={() => { confirm.cb(); setConfirm(null); }} onNo={() => setConfirm(null)} />}
+    </div>
+  );
+}
+
 // ── IP Bans ────────────────────────────────────────────────────
 
 // ══════════════════════════════════════════════════════════════
@@ -5574,6 +6094,7 @@ const SECTIONS = [
   { id: 'news',             label: 'News',              icon: 'fa-newspaper' },
   { id: 'broadcast',        label: 'Broadcast',         icon: 'fa-bullhorn' },
   { id: 'permissions',      label: 'Permissions',       icon: 'fa-shield-halved' },
+  { id: 'rbac',             label: 'RBAC Permissions',  icon: 'fa-shield' },
   { id: 'themes_by_rank',   label: 'Theme Permissions', icon: 'fa-palette' },
   { id: 'premium',          label: 'Premium',           icon: 'fa-crown' },
   { id: 'revenue',          label: 'Revenue',           icon: 'fa-chart-line' },
@@ -5692,7 +6213,8 @@ export default function AdminPanel() {
       case 'bots':            return isAdminPlus ? <BotsSection /> : <AccessDenied />;
       case 'appearance':      return isAdminPlus ? <Appearance /> : <AccessDenied />;
       case 'notes':           return <StaffNotes />;
-      case 'action_logs':     return <ActionLogs />;
+      case 'action_logs':     return <ActionLogsV2 />;
+      case 'rbac':              return isOwner ? <RbacPermissionsManager /> : <AccessDenied />;
       case 'logs':            return <ChatLogs />;
       case 'addons':          return isAdminPlus ? <AddonsWallet /> : <AccessDenied />;
       case 'settings':        return isAdminPlus ? <Settings /> : <AccessDenied />;
@@ -5707,7 +6229,7 @@ export default function AdminPanel() {
     if (s.id === 'revenue') return isOwner;
     if (['gifts','badges','ipbans','news','broadcast','permissions',
          'themes_by_rank','premium','bots','appearance','addons',
-         'settings'].includes(s.id)) return isAdminPlus;
+         'settings','rbac'].includes(s.id)) return isAdminPlus;
     return true;
   });
 
