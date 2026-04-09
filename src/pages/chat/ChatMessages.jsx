@@ -53,18 +53,26 @@ export function QuotedMessage({ replyTo, tObj }) {
   const thText   = tObj?.text   || '#ffffff'
   const thAccent = tObj?.accent || '#03add8'
   const senderName = replyTo.sender?.username || 'Unknown'
+  const senderAvatar = replyTo.sender?.avatar || '/default_images/avatar/default_guest.png'
   let preview = ''
-  if      (replyTo.type === 'image')   preview = '📷 Image'
+  let isImage = false
+  if      (replyTo.type === 'image')   { preview = replyTo.content; isImage = true }
   else if (replyTo.type === 'gif')     preview = '🖼️ GIF'
   else if (replyTo.type === 'voice')   preview = '🎤 Voice message'
   else if (replyTo.type === 'youtube') preview = '▶️ YouTube video'
-  else preview = (replyTo.content || '').length > 100 ? (replyTo.content || '').slice(0, 100) + '…' : (replyTo.content || '')
+  else preview = replyTo.content || ''
 
   return (
-    <div style={{ display: 'flex', gap: 8, background: thAccent + '18', borderLeft: `3px solid ${thAccent}`, borderRadius: '0 8px 8px 0', padding: '5px 10px', marginBottom: 5, maxWidth: '100%', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', gap: 8, background: thAccent + '15', borderLeft: `3px solid ${thAccent}`, borderRadius: '0 10px 10px 0', padding: '6px 10px', marginBottom: 6, maxWidth: '100%', overflow: 'hidden' }}>
+      <img src={senderAvatar} alt=""
+        style={{ width:26, height:26, borderRadius:'50%', objectFit:'cover', flexShrink:0, alignSelf:'flex-start', marginTop:2 }}
+        onError={e => { e.target.src = '/default_images/avatar/default_guest.png' }} />
       <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-        <div style={{ fontSize: '0.7rem', fontWeight: 800, color: thAccent, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>↩ {senderName}</div>
-        <div style={{ fontSize: '0.75rem', color: thText + '88', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{preview}</div>
+        <div style={{ fontSize: '0.7rem', fontWeight: 800, color: thAccent, marginBottom: 3 }}>↩ {senderName}</div>
+        {isImage
+          ? <img src={preview} alt="quoted" style={{ maxWidth:120, maxHeight:80, borderRadius:6, display:'block', objectFit:'cover' }} />
+          : <div style={{ fontSize: '0.78rem', color: thText + 'cc', lineHeight:1.45, wordBreak:'break-word', overflowWrap:'break-word' }}>{preview}</div>
+        }
       </div>
     </div>
   )
@@ -98,8 +106,11 @@ function Msg({ msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myL
     return <WhisperMessage msg={msg} myId={myId} onWhisperReply={onWhisper} />
   }
 
-  // FIX 1: System message — clean pill, no avatar; staff can delete
-  if (isSystem) {
+  // System messages suppressed — no join/leave/announce shown in chat
+  if (isSystem) return null
+
+  // (legacy path kept for reference but never reached)
+  if (false && isSystem) {
     const cfg = SYS_TEXT[msg.type] || SYS_TEXT.system
     const ts = formatTs(msg.createdAt)
     const canDelSys = myLevel >= 11
