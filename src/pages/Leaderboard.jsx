@@ -6,11 +6,13 @@ import { RANKS } from '../constants.js'
 const API = API_URL
 
 const TABS = [
-  { key: 'xp',       label: '⚡ XP',        color: '#8b5cf6', field: 'xp' },
-  { key: 'level',    label: '🏆 Level',     color: '#f59e0b', field: 'level' },
-  { key: 'gold',     label: '💰 Gold',      color: '#eab308', field: 'gold' },
-  { key: 'gifts',    label: '🎁 Gifts',     color: '#ec4899', field: 'totalGiftsReceived' },
-  { key: 'messages', label: '💬 Messages',  color: '#22c55e', field: 'totalMessages' },
+  { key: 'xp',       label: '⚡ XP',           color: '#8b5cf6', field: 'xp' },
+  { key: 'level',    label: '🏆 Level',         color: '#f59e0b', field: 'level' },
+  { key: 'gold',     label: '💰 Gold',          color: '#eab308', field: 'gold' },
+  { key: 'gifts',    label: '🎁 Gifts',         color: '#ec4899', field: 'totalGiftsReceived' },
+  { key: 'likes',    label: '❤️ Likes',         color: '#f43f5e', field: 'totalLikes' },
+  { key: 'views',    label: '👁️ Profile Views', color: '#f97316', field: 'profileViews' },
+  { key: 'messages', label: '💬 Messages',      color: '#22c55e', field: 'totalMessages' },
 ]
 const PERIODS = [
   { key: 'all',     label: 'All Time' },
