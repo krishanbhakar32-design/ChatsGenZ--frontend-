@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { apiFetch } from '../utils/apiHelper'
 
 const API = import.meta.env.VITE_API_URL || 'https://chatsgenz-backend-production.up.railway.app'
 const AuthContext = createContext(null)
@@ -11,14 +12,13 @@ export function AuthProvider({ children }) {
     const token = localStorage.getItem('cgz_token')
     if (!token) { setLoading(false); return }
     try {
-      const res = await fetch(`${API}/api/auth/me`, {
+      const res = await apiFetch(`${API}/api/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (res.ok) {
         const d = await res.json()
         if (d.user) {
           setUser({ ...d.user, token })
-          // Extend session — keep token fresh
           return
         }
       }
@@ -26,7 +26,7 @@ export function AuthProvider({ children }) {
       localStorage.removeItem('cgz_token')
       setUser(null)
     } catch {
-      // Network error — keep token, try next time
+      // Network error — keep token, try next time (do NOT clear token on network failure)
     } finally {
       setLoading(false)
     }
@@ -35,13 +35,10 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     fetchMe()
 
-    // Auto-refresh user data every 5 minutes (keeps session alive)
+    // Auto-refresh every 5 minutes
     const interval = setInterval(fetchMe, 5 * 60 * 1000)
     return () => clearInterval(interval)
   }, [fetchMe])
-
-  // Auto-login: when user visits site with existing token, redirect to /chat
-  // This is handled by individual pages checking auth state
 
   function logout() {
     const token = localStorage.getItem('cgz_token')
