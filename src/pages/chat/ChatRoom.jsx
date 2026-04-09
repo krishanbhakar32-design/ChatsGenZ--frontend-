@@ -146,29 +146,30 @@ export default function ChatRoom() {
     s.on('disconnect',     () => setConn(false))
     s.on('messageHistory', ms => setMsgs(ms || []))
     s.on('newMessage',     m  => {
-      setMsgs(p => [...p, m])
-      // Play correct sound: join/leave/kick/ban/mute = action sound, not newMessage
-      const sysTypes = ['join','leave','kick','mute','ban','mod','system','warning','success','error']
-      if (sysTypes.includes(m.type)) {
+      // Suppress join/leave/kick/mute/ban announcements from chat feed — play sounds only
+      const suppressTypes = ['join','leave','kick','mute','ban','mod']
+      if (suppressTypes.includes(m.type)) {
         if (m.type === 'join')  Sounds.join?.()
         else if (m.type === 'leave') Sounds.leave?.()
         else Sounds.action?.()
-      } else {
-        Sounds.newMessage()
+        return // don't add to chat feed
       }
+      setMsgs(p => [...p, m])
+      Sounds.newMessage()
     })
     s.on('roomUsers',      l  => setUsers(l || []))
     s.on('roomUserCount',  n  => setOnlineCount(n))
     s.on('systemMessage',  m  => {
-      // Legacy systemMessage event (server sends some via this path too)
+      // Suppress join/leave announcements — play sounds only, don't add to chat feed
+      if (m.type === 'join')  { Sounds.join?.(); return }
+      if (m.type === 'leave') { Sounds.leave?.(); return }
+      if (m.type === 'kick' || m.type === 'ban' || m.type === 'mute') { Sounds.action?.(); return }
       const sysId = m._id || ('sys_' + Date.now() + Math.random().toString(36).slice(2, 7))
       setMsgs(p => {
         const last = p[p.length - 1]
         if (last && last.type === m.type && last.content === m.text && (Date.now() - new Date(last.createdAt).getTime()) < 2000) return p
         return [...p, { _id: sysId, type: m.type || 'system', content: m.text, createdAt: new Date() }]
       })
-      if (m.type === 'join')  Sounds.join?.()
-      if (m.type === 'leave') Sounds.leave?.()
     })
     s.on('messageDeleted',  ({ messageId }) => setMsgs(p => p.filter(m => m._id !== messageId)))
     s.on('typing',          ({ username, isTyping: t }) => setTypers(p => t ? [...new Set([...p, username])] : p.filter(n => n !== username)))
@@ -283,6 +284,7 @@ export default function ChatRoom() {
     setShowNotif(false); setShowDM(false); setShowFriends(false)
     setShowPlus(false);  setShowEmoji(false); setShowGif(false)
     setShowYT(false);    setShowPaint(false); setShowSpotify(false)
+    // Don't close sidebars here — user explicitly opens them
   }, [])
 
   if (!loading && roomErr) return (
@@ -439,8 +441,9 @@ export default function ChatRoom() {
           {/* Scrollable messages */}
           <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '6px 0', minHeight: 0 }}>
             {messages.map((m, i) => {
-              // System messages always show — they have no sender to filter
-              const isSys = ['system','join','leave','kick','mute','ban','mod','dice','gift','warning','success','error'].includes(m.type)
+              // Suppress join/leave/kick/mute/ban/mod from chat display entirely
+              if (['join','leave','kick','mute','ban','mod'].includes(m.type)) return null
+              const isSys = ['system','dice','gift','warning','success','error'].includes(m.type)
               if (!isSys) {
                 if (hiddenMsgs.has(m._id) || m._ignored) return null
                 if (ignoredUsers.has(m.sender?._id) || ignoredUsers.has(m.sender?.userId)) return null
@@ -516,9 +519,9 @@ export default function ChatRoom() {
               </div>
             )}
 
-            {/* FIX 7: + popup menu — no new page */}
+            {/* + popup menu */}
             {showPlus && (
-              <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', bottom: 'calc(100% + 5px)', left: 6, background: thHeader, border: `1px solid ${thBorder}33`, borderRadius: 12, padding: 8, display: 'flex', gap: 6, boxShadow: '0 4px 20px rgba(0,0,0,0.5)', zIndex: 50 }}>
+              <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', bottom: 'calc(100% + 5px)', left: 6, background: thHeader, borderRadius: 12, padding: 8, display: 'flex', gap: 6, boxShadow: '0 4px 20px rgba(0,0,0,0.5)', zIndex: 200 }}>
                 {[
                   { type: 'img',    icon: '/default_images/icons/upload.svg',  fallback: 'fa-solid fa-image',    label: 'Image',   action: () => { document.getElementById('cgz-img-input').click(); setShowPlus(false) } },
                   { type: 'img',    icon: '/default_images/icons/giphy.svg',   fallback: 'fa-solid fa-image',    label: 'GIF',     action: () => { setShowGif(p => !p); setShowPlus(false) } },
@@ -531,7 +534,7 @@ export default function ChatRoom() {
                   }},
                 ].map((b, i) => (
                   <button key={i} onClick={b.action} title={b.label}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '7px 8px', background: b.active ? `${thAccent}22` : 'rgba(255,255,255,0.05)', border: `1px solid ${b.active ? thAccent : 'rgba(255,255,255,0.08)'}`, borderRadius: 9, cursor: 'pointer', minWidth: 44, transition: 'all .15s' }}>
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '7px 8px', background: b.active ? `${thAccent}22` : 'rgba(255,255,255,0.05)', border: 'none', borderRadius: 9, cursor: 'pointer', minWidth: 44, transition: 'all .15s' }}>
                     {b.type === 'spotify'
                       ? <svg width="22" height="22" viewBox="0 0 24 24" fill="#1DB954"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424a.623.623 0 0 1-.857.207c-2.348-1.435-5.304-1.76-8.785-.964a.623.623 0 1 1-.277-1.215c3.809-.87 7.076-.496 9.712 1.115a.623.623 0 0 1 .207.857zm1.223-2.722a.78.78 0 0 1-1.072.257c-2.687-1.652-6.785-2.131-9.965-1.166a.78.78 0 0 1-.973-.52.779.779 0 0 1 .52-.972c3.633-1.102 8.147-.568 11.234 1.329a.78.78 0 0 1 .256 1.072zm.105-2.835C14.69 8.95 9.375 8.775 6.297 9.71a.937.937 0 1 1-.543-1.795c3.528-1.068 9.393-.861 13.098 1.332a.937.937 0 0 1-.938 1.62z" /></svg>
                       : b.type === 'emoji'
@@ -569,7 +572,7 @@ export default function ChatRoom() {
 
               <button type="button" onClick={e => { e.stopPropagation(); setShowEmoji(p => !p); setShowPlus(false) }}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: showEmoji ? thAccent : '#666', fontSize: 20, padding: '0 1px', flexShrink: 0, display: 'flex', alignItems: 'center', lineHeight: 1 }}>
-                <img src="/icons/emoticon/happy.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block' }} />
+                <img src="/icons/emoticons/happy.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block' }} />
                 <i className="fa-regular fa-face-smile" style={{ display: 'none' }} />
               </button>
 
