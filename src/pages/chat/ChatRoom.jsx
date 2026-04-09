@@ -76,6 +76,7 @@ export default function ChatRoom() {
   const [miniCardData, setMiniCardData]= useState(null)
   // FIX 9: Whisper inline — no separate popup, target stored here, send from main input
   const [whisperTarget, setWhisper]   = useState(null)
+  const [autoScroll,    setAutoScroll] = useState(false)
 
   const sockRef = useRef(null), bottomRef = useRef(null), inputRef = useRef(null)
   const dmBtnRef = useRef(null), friendsBtnRef = useRef(null), notifBtnRef = useRef(null)
@@ -103,7 +104,7 @@ export default function ChatRoom() {
     return () => { if (!intentionalLeaveRef.current) sockRef.current?.disconnect() }
   }, [roomSlug])
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
+  useEffect(() => { if (autoScroll) bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, autoScroll])
 
   async function loadRoom() {
     setLoad(true); setErr('')
@@ -124,7 +125,7 @@ export default function ChatRoom() {
       if (!rr.ok) { setErr(rd.error || 'Room not found'); setLoad(false); return }
       setRoom(rd.room)
       fetch(`${API}/api/rooms/${roomSlug}/messages?limit=50`, { headers: { Authorization: `Bearer ${token}` } })
-        .then(r => r.json()).then(d => { if (d.messages) setMsgs(d.messages) }).catch(() => {})
+        .then(r => r.json()).then(d => { if (d.messages) setMsgs(d.messages.filter(m => !['system','join','leave','kick','mute','ban','mod','warning','success','error'].includes(m.type))) }).catch(() => {})
     } catch { setErr('Connection failed.') }
     setLoad(false)
   }
@@ -143,19 +144,13 @@ export default function ChatRoom() {
     const s = io(API, { auth: { token }, transports: ['websocket', 'polling'] })
     s.on('connect',        () => { setConn(true); s.emit('joinRoom', { roomId }) })
     s.on('disconnect',     () => setConn(false))
-    s.on('messageHistory', ms => setMsgs(ms || []))
+    s.on('messageHistory', ms => setMsgs((ms || []).filter(m => !['system','join','leave','kick','mute','ban','mod','warning','success','error'].includes(m.type))))
     s.on('newMessage',     m  => { setMsgs(p => [...p, m]); Sounds.newMessage() })
     s.on('roomUsers',      l  => setUsers(l || []))
     s.on('roomUserCount',  n  => setOnlineCount(n))
     s.on('systemMessage',  m  => {
-      // FIX 1: deduplicate system messages; only show leave on intentional leave (server handles)
-      const sysId = m._id || ('sys_' + Date.now() + Math.random().toString(36).slice(2, 7))
-      setMsgs(p => {
-        const last = p[p.length - 1]
-        if (last && last.type === m.type && last.content === m.text && (Date.now() - new Date(last.createdAt).getTime()) < 2000) return p
-        return [...p, { _id: sysId, type: m.type || 'system', content: m.text, createdAt: new Date() }]
-      })
-      if (m.type === 'join')  Sounds.join()
+      // System messages suppressed from chat — only play sound cues
+      if (m.type === 'join')  Sounds.join?.()
       if (m.type === 'leave') Sounds.leave?.()
     })
     s.on('messageDeleted',  ({ messageId }) => setMsgs(p => p.filter(m => m._id !== messageId)))
@@ -180,20 +175,11 @@ export default function ChatRoom() {
     s.on('badgeEarned',      () => Sounds.badge?.())
     s.on('messageReaction',  ({ messageId, reactions }) => setMsgs(p => p.map(m => m._id === messageId ? { ...m, reactions } : m)))
     s.on('messagePinned',    ({ messageId }) => setMsgs(p => p.map(m => m._id === messageId ? { ...m, isPinned: true } : m)))
-    s.on('userMuted',        ({ by, minutes }) => setMsgs(p => [...p, { _id: Date.now() + 'mu', type: 'mute', content: `${by} muted a user for ${minutes} minutes`, createdAt: new Date() }]))
-    s.on('userKicked',       ({ by }) => setMsgs(p => [...p, { _id: Date.now() + 'ki', type: 'kick', content: `${by} kicked a user`, createdAt: new Date() }]))
-    // ── Admin Broadcast — appears as system message in every room ──
+    s.on('userMuted',        ({ by, minutes }) => { /* suppressed from chat feed */ })
+    s.on('userKicked',       ({ by }) => { /* suppressed from chat feed */ })
+    // ── Admin Broadcast — show as toast only, not in chat feed ──
     s.on('broadcastMessage', ({ message, type }) => {
-      const typeMap = { info: 'system', warning: 'warning', success: 'success', danger: 'error' }
-      const msgType = typeMap[type] || 'system'
-      setMsgs(p => [...p, {
-        _id: 'bc_' + Date.now() + Math.random().toString(36).slice(2,7),
-        type: msgType,
-        content: `📢 ${message}`,
-        createdAt: new Date(),
-        sender: null,
-      }])
-      Sounds.newMessage?.()
+      toast?.show(`📢 ${message}`, type === 'danger' ? 'error' : type || 'info', 6000)
     })
     // ── Live settings/rank style updates from admin panel ──
     s.on('siteSettingsUpdated', () => {
@@ -466,6 +452,17 @@ export default function ChatRoom() {
 
           {/* ════ INPUT BAR ════ */}
           <div style={{ borderTop: `1px solid ${thBorder}22`, padding: '5px 8px', background: thHeader, flexShrink: 0, position: 'relative', zIndex: 10 }}>
+
+            {/* Auto-scroll toggle */}
+            <div style={{ display:'flex', justifyContent:'flex-end', marginBottom: 3 }}>
+              <button
+                onClick={() => setAutoScroll(p => !p)}
+                title={autoScroll ? 'Auto-scroll ON — click to disable' : 'Auto-scroll OFF — click to enable'}
+                style={{ display:'flex', alignItems:'center', gap:4, padding:'2px 8px', borderRadius:20, border:`1px solid ${autoScroll ? thAccent + '55' : 'rgba(255,255,255,0.1)'}`, background: autoScroll ? thAccent + '18' : 'transparent', color: autoScroll ? thAccent : '#555', fontSize:'0.65rem', fontWeight:700, cursor:'pointer', transition:'all .15s' }}>
+                <i className={`fa-solid fa-arrow-down-long`} style={{ fontSize:9 }} />
+                {autoScroll ? 'Auto-scroll ON' : 'Auto-scroll OFF'}
+              </button>
+            </div>
 
             {/* FIX 9: Whisper mode banner above input */}
             {whisperTarget && (
