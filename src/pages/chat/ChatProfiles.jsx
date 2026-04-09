@@ -652,12 +652,12 @@ export function ProfileModal({ user, myLevel, myId, socket, roomId, onClose, onG
               {/* Level + Likes */}
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
                 {user.level != null && (
-                  <span style={{ background: 'rgba(0,0,0,.5)', color: '#60a5fa', fontSize: '0.65rem', fontWeight: 800, padding: '3px 7px', borderRadius: 8, backdropFilter: 'blur(4px)' }}>
+                  <span style={{ background: 'rgba(0,0,0,.5)', color: '#60a5fa', fontSize: '0.65rem', fontWeight: 800, padding: '3px 7px', borderRadius: 8 }}>
                     <i className="fa fa-star" style={{ fontSize: 9, marginRight: 3 }} />Lv.{user.level}
                   </span>
                 )}
                 {user.totalLikes != null && (
-                  <span style={{ background: 'rgba(0,0,0,.5)', color: '#ec4899', fontSize: '0.65rem', fontWeight: 800, padding: '3px 7px', borderRadius: 8, backdropFilter: 'blur(4px)' }}>
+                  <span style={{ background: 'rgba(0,0,0,.5)', color: '#ec4899', fontSize: '0.65rem', fontWeight: 800, padding: '3px 7px', borderRadius: 8 }}>
                     <i className="fa fa-heart" style={{ fontSize: 9, marginRight: 3 }} />{user.totalLikes}
                   </span>
                 )}
@@ -827,7 +827,7 @@ export function ProfileModal({ user, myLevel, myId, socket, roomId, onClose, onG
 function CoverBtn({ icon, onClick, title, active }) {
   return (
     <button onClick={onClick} title={title}
-      style={{ width: 28, height: 28, borderRadius: 7, border: 'none', background: active ? 'rgba(255,255,255,.25)' : 'rgba(0,0,0,.45)', color: '#fff', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', flexShrink: 0, transition: 'background .12s' }}
+      style={{ width: 28, height: 28, borderRadius: 7, border: 'none', background: active ? 'rgba(255,255,255,.25)' : 'rgba(0,0,0,.45)', color: '#fff', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',  flexShrink: 0, transition: 'background .12s' }}
       onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,.22)'}
       onMouseLeave={e => e.currentTarget.style.background = active ? 'rgba(255,255,255,.25)' : 'rgba(0,0,0,.45)'}
     >
