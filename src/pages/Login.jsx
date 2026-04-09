@@ -124,7 +124,7 @@ function LoginModal({ onClose }) {
   async function doLogin(e) {
     e.preventDefault();setLoad(true);reset()
     try {
-      const res=await apiFetch(`${API}/api/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login:form.login.trim(),password:form.password})})
+      const res=await apiFetch(`${API}/api/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:form.login.trim(),password:form.password})})
       const d=await res.json()
       if(res.ok&&d.token){localStorage.setItem('cgz_token',d.token);window.location.href='/chat'}
       else if(res.ok&&d.needsVerification){setOtpData({userId:d.userId,email:form.login.trim(),username:d.username});setStep('otp')}
