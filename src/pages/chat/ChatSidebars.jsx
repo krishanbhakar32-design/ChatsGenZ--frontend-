@@ -1,8 +1,19 @@
 // ============================================================
-// ChatSidebars.jsx — ChatsGenZ v3
-// LEFT SIDEBAR: full menu with flyout subpanels (Games, Leaderboard, Store, Premium)
+// ChatSidebars.jsx — ChatsGenZ v4
+// LEFT SIDEBAR: full menu with flyout subpanels overlaying chatroom
 // RIGHT SIDEBAR: user list with tabs
-// RTL fix: all inputs use dir="ltr"
+// CHANGES v4:
+//  - Left sidebar flyouts open AS OVERLAY on chatroom (not push-aside)
+//  - Right sidebar: staff tab shows total (online+offline) with breakdown
+//  - Right sidebar: friends tab same — all shown, online/offline breakdown
+//  - UserList: filter = icon only (no text "filter" button)
+//  - UserList: mood shown under username
+//  - UserList: status icons shown; invisible users hidden from list
+//  - Search: gender dropdown, rank dropdown, activity dropdown
+//  - Username change costs 500 gold coins (shown in UI)
+//  - Leaderboard has sub-menu (top XP, gold, gifts, likes, profile views)
+//  - Room list styled like lobby cards
+//  - System messages suppressed (no join/leave/announce in feed)
 // ============================================================
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { API, R, RL, GBR, RANKS, isStaff, isAdmin, resolveNameColor } from './chatConstants.js'
@@ -67,7 +78,9 @@ function UserItem({ u, onClick, onWhisper, showMood = true, myId }) {
             maxWidth:110, color:'#ffffff', ...nameStyle }}>{u.username}</span>
         </div>
         {showMood && u.mood && (
-          <div style={{ fontSize:'0.65rem', color:'#666666', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', marginTop:1 }}>{u.mood}</div>
+          <div style={{ fontSize:'0.62rem', color:'#888', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', marginTop:1, fontStyle:'italic' }}>
+            {u.mood}
+          </div>
         )}
       </div>
       <RIcon rank={u.rank} size={14} />
@@ -92,14 +105,17 @@ function RightSidebar({ users, myLevel, myId, onUserClick, onWhisper, onClose, t
   const [tab, setTab]       = useState('users')
   const [search, setSearch] = useState('')
   const [genderF, setGF]    = useState('all')
+  const [rankF, setRF]      = useState('all')
+  const [activityF, setAF]  = useState('newest')
   const [camOnly, setCam]   = useState(false)
-  const [friendTab, setFT]  = useState('online')
-  const [staffTab, setST]   = useState('online')
+  const [friendTab, setFT]  = useState('all')
+  const [staffTab, setST]   = useState('all')
   const [friends, setFriends]   = useState([])
   const [staffAll, setStaff]    = useState([])
   const searchTimer = useRef(null)
   const [searchResults, setSearchResults] = useState([])
   const [searching, setSearching] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
     if (tab !== 'friends') return
@@ -122,13 +138,16 @@ function RightSidebar({ users, myLevel, myId, onUserClick, onWhisper, onClose, t
       setSearching(true)
       const t = localStorage.getItem('cgz_token')
       const gq = genderF !== 'all' ? `&gender=${genderF}` : ''
-      fetch(`${API}/api/users/search?q=${encodeURIComponent(search)}${gq}&limit=30`, { headers: { Authorization: `Bearer ${t}` } })
+      const rq = rankF !== 'all' ? `&rank=${rankF}` : ''
+      const aq = activityF !== 'newest' ? `&sort=${activityF}` : ''
+      fetch(`${API}/api/users/search?q=${encodeURIComponent(search)}${gq}${rq}${aq}&limit=30`, { headers: { Authorization: `Bearer ${t}` } })
         .then(r => r.json()).then(d => setSearchResults(d.users || [])).catch(() => {})
         .finally(() => setSearching(false))
     }, 350)
     return () => clearTimeout(searchTimer.current)
-  }, [search, genderF, tab])
+  }, [search, genderF, rankF, activityF, tab])
 
+  // Filter out invisible users from lists
   const visible = users.filter(u => u.status !== 'invisible')
   const sorted = [...visible].sort((a, b) => RL(b.rank) - RL(a.rank) || (a.username || '').localeCompare(b.username || ''))
   const onlineF = sorted.filter(u => {
@@ -139,23 +158,65 @@ function RightSidebar({ users, myLevel, myId, onUserClick, onWhisper, onClose, t
   const onlineFriendsIds = new Set(visible.map(u => String(u._id || u.userId)))
   const friendsOnline  = friends.filter(f => onlineFriendsIds.has(String(f._id || f.userId)))
   const friendsOffline = friends.filter(f => !onlineFriendsIds.has(String(f._id || f.userId)))
-  const staffFromRoom  = sorted.filter(u => RL(u.rank) >= 11)
   const onlineStaffIds = new Set(visible.filter(u => RL(u.rank) >= 11).map(u => String(u._id || u.userId)))
   const staffOnline    = staffAll.filter(s => onlineStaffIds.has(String(s._id || s.userId)))
   const staffOffline   = staffAll.filter(s => !onlineStaffIds.has(String(s._id || s.userId)))
+  const staffFromRoom  = sorted.filter(u => RL(u.rank) >= 11)
 
   function renderList(list, fallback) {
     if (!list.length) return <p style={{ textAlign:'center', color:'#666', fontSize:'0.76rem', padding:'16px 10px' }}>{fallback}</p>
     return list.map((u, i) => <UserItem key={u.userId || u._id || i} u={u} onClick={onUserClick} onWhisper={onWhisper} myId={myId} />)
   }
 
-  function SubTab({ label, active, count, onClick }) {
+  // Staff: show all (online + offline) with section dividers
+  function renderStaffAll() {
+    const onlineList = staffOnline.length ? staffOnline : staffFromRoom
+    const offlineList = staffOffline
+    if (!onlineList.length && !offlineList.length) return <p style={{ textAlign:'center', color:'#666', fontSize:'0.76rem', padding:'16px 10px' }}>No staff found</p>
     return (
-      <button onClick={onClick} style={{ padding:'4px 12px', borderRadius:20, border:'none', cursor:'pointer',
-        fontSize:'0.72rem', fontWeight:600, background: active ? 'rgba(255,255,255,0.1)' : 'transparent',
-        color: active ? '#ffffff' : '#666', transition:'all .12s' }}>
-        {label}{count !== undefined ? ` (${count})` : ''}
-      </button>
+      <>
+        {onlineList.length > 0 && (
+          <>
+            <div style={{ padding:'4px 10px', fontSize:'0.65rem', fontWeight:700, color:'#22c55e', textTransform:'uppercase', letterSpacing:1, background:'rgba(34,197,94,0.07)', borderBottom:'1px solid rgba(34,197,94,0.1)' }}>
+              🟢 Online ({onlineList.length})
+            </div>
+            {onlineList.map((u, i) => <UserItem key={u.userId || u._id || 'so'+i} u={u} onClick={onUserClick} onWhisper={onWhisper} myId={myId} />)}
+          </>
+        )}
+        {offlineList.length > 0 && (
+          <>
+            <div style={{ padding:'4px 10px', fontSize:'0.65rem', fontWeight:700, color:'#888', textTransform:'uppercase', letterSpacing:1, background:'rgba(136,136,136,0.07)', borderBottom:'1px solid rgba(136,136,136,0.1)' }}>
+              ⚫ Offline ({offlineList.length})
+            </div>
+            {offlineList.map((u, i) => <UserItem key={u.userId || u._id || 'sf'+i} u={{...u, status:'offline'}} onClick={onUserClick} onWhisper={onWhisper} myId={myId} />)}
+          </>
+        )}
+      </>
+    )
+  }
+
+  // Friends: show all with section dividers
+  function renderFriendsAll() {
+    if (!friends.length) return <p style={{ textAlign:'center', color:'#666', fontSize:'0.76rem', padding:'16px 10px' }}>No friends yet</p>
+    return (
+      <>
+        {friendsOnline.length > 0 && (
+          <>
+            <div style={{ padding:'4px 10px', fontSize:'0.65rem', fontWeight:700, color:'#22c55e', textTransform:'uppercase', letterSpacing:1, background:'rgba(34,197,94,0.07)', borderBottom:'1px solid rgba(34,197,94,0.1)' }}>
+              🟢 Online ({friendsOnline.length})
+            </div>
+            {friendsOnline.map((u, i) => <UserItem key={u.userId || u._id || 'fo'+i} u={u} onClick={onUserClick} onWhisper={onWhisper} myId={myId} />)}
+          </>
+        )}
+        {friendsOffline.length > 0 && (
+          <>
+            <div style={{ padding:'4px 10px', fontSize:'0.65rem', fontWeight:700, color:'#888', textTransform:'uppercase', letterSpacing:1, background:'rgba(136,136,136,0.07)', borderBottom:'1px solid rgba(136,136,136,0.1)' }}>
+              ⚫ Offline ({friendsOffline.length})
+            </div>
+            {friendsOffline.map((u, i) => <UserItem key={u.userId || u._id || 'ff'+i} u={{...u, status:'offline'}} onClick={onUserClick} onWhisper={onWhisper} myId={myId} />)}
+          </>
+        )}
+      </>
     )
   }
 
@@ -166,12 +227,25 @@ function RightSidebar({ users, myLevel, myId, onUserClick, onWhisper, onClose, t
     { id:'search',  icon:'fa-solid fa-magnifying-glass', title:'Search' },
   ]
 
+  const RANK_OPTIONS = [
+    { value:'all', label:'All Ranks' },
+    ...Object.entries(RANKS || {}).map(([k,v]) => ({ value:k, label:v.label || k }))
+  ]
+
+  const totalFriends = friends.length
+  const totalStaff = (staffOnline.length || staffFromRoom.length) + staffOffline.length
+
   return (
     <div style={{ width:220, flexShrink:0, display:'flex', flexDirection:'column',
       background:'#080808', borderLeft:'1px solid rgba(255,255,255,0.05)', overflow:'hidden', height:'100%' }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
         padding:'10px 12px', borderBottom:'1px solid rgba(255,255,255,0.05)', background:'#111111', flexShrink:0 }}>
-        <span style={{ fontSize:'0.82rem', fontWeight:700, color:'#ffffff' }}>Users ({visible.length})</span>
+        <span style={{ fontSize:'0.82rem', fontWeight:700, color:'#ffffff' }}>
+          {tab === 'users'   && `Users (${visible.length})`}
+          {tab === 'friends' && `Friends (${totalFriends})`}
+          {tab === 'staff'   && `Staff (${totalStaff})`}
+          {tab === 'search'  && 'Search'}
+        </span>
         <button onClick={onClose} style={{ background:'none', border:'none', color:'#666', cursor:'pointer', fontSize:16, padding:4, borderRadius:5 }}>
           <i className="fa-solid fa-xmark" />
         </button>
@@ -187,49 +261,78 @@ function RightSidebar({ users, myLevel, myId, onUserClick, onWhisper, onClose, t
           </button>
         ))}
       </div>
-      {(tab === 'users' || tab === 'search') && (
+
+      {/* Users tab filter bar — icon only filter button */}
+      {tab === 'users' && (
+        <div style={{ padding:'5px 8px', borderBottom:'1px solid rgba(255,255,255,0.03)', flexShrink:0, background:'#111' }}>
+          <div style={{ display:'flex', gap:4, alignItems:'center', flexWrap:'wrap' }}>
+            {['all','male','female'].map(g => (
+              <button key={g} onClick={() => setGF(g)}
+                style={{ padding:'2px 8px', borderRadius:20, border:'none', cursor:'pointer', fontSize:'0.68rem', fontWeight:600,
+                  background: genderF===g ? 'rgba(3,173,216,0.2)' : 'rgba(255,255,255,0.05)',
+                  color: genderF===g ? 'var(--accent)' : '#666' }}>
+                {g === 'all' ? 'All' : g === 'male' ? '♂' : '♀'}
+              </button>
+            ))}
+            <button onClick={() => setCam(p => !p)}
+              style={{ padding:'2px 8px', borderRadius:20, border:'none', cursor:'pointer', fontSize:'0.7rem', fontWeight:600,
+                background: camOnly ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.05)',
+                color: camOnly ? '#ef4444' : '#666' }}>📷</button>
+            {/* Filter icon only */}
+            <button onClick={() => setShowFilters(p => !p)} title="Filter"
+              style={{ marginLeft:'auto', padding:'3px 6px', borderRadius:6, border:'none', cursor:'pointer', fontSize:13,
+                background: showFilters ? 'rgba(3,173,216,0.2)' : 'rgba(255,255,255,0.05)',
+                color: showFilters ? 'var(--accent)' : '#666' }}>
+              <i className="fa-solid fa-sliders" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Search tab */}
+      {tab === 'search' && (
         <div style={{ padding:'6px 8px', borderBottom:'1px solid rgba(255,255,255,0.03)', flexShrink:0, background:'#111' }}>
-          {tab === 'search' && (
-            <input dir="ltr" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search users..."
-              style={{ width:'100%', padding:'6px 10px', background:'#191919', border:'1px solid #222',
-                borderRadius:20, color:'#ffffff', fontSize:'0.78rem', direction:'ltr', textAlign:'left',
-                outline:'none', boxSizing:'border-box' }} />
-          )}
-          {tab === 'users' && (
-            <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
-              {['all','male','female'].map(g => (
-                <button key={g} onClick={() => setGF(g)}
-                  style={{ padding:'2px 10px', borderRadius:20, border:'none', cursor:'pointer', fontSize:'0.7rem', fontWeight:600,
-                    background: genderF===g ? 'rgba(3,173,216,0.2)' : 'rgba(255,255,255,0.05)',
-                    color: genderF===g ? 'var(--accent)' : '#666' }}>
-                  {g.charAt(0).toUpperCase()+g.slice(1)}
-                </button>
-              ))}
-              <button onClick={() => setCam(p => !p)}
-                style={{ padding:'2px 10px', borderRadius:20, border:'none', cursor:'pointer', fontSize:'0.7rem', fontWeight:600,
-                  background: camOnly ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.05)',
-                  color: camOnly ? '#ef4444' : '#666' }}>📷</button>
-            </div>
-          )}
+          <input dir="ltr" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search users..."
+            style={{ width:'100%', padding:'6px 10px', background:'#191919', border:'1px solid #222',
+              borderRadius:20, color:'#ffffff', fontSize:'0.78rem', direction:'ltr', textAlign:'left',
+              outline:'none', boxSizing:'border-box', marginBottom:6 }} />
+          {/* Gender dropdown */}
+          <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
+            <select value={genderF} onChange={e => setGF(e.target.value)}
+              style={{ flex:1, padding:'4px 6px', borderRadius:6, border:'1px solid #333', background:'#191919',
+                color:'#ccc', fontSize:'0.7rem', outline:'none', cursor:'pointer' }}>
+              <option value="all">All Genders</option>
+              <option value="male">Male ♂</option>
+              <option value="female">Female ♀</option>
+            </select>
+          </div>
+          <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginTop:4 }}>
+            {/* Rank dropdown */}
+            <select value={rankF} onChange={e => setRF(e.target.value)}
+              style={{ flex:1, padding:'4px 6px', borderRadius:6, border:'1px solid #333', background:'#191919',
+                color:'#ccc', fontSize:'0.7rem', outline:'none', cursor:'pointer' }}>
+              {RANK_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+            {/* Activity dropdown */}
+            <select value={activityF} onChange={e => setAF(e.target.value)}
+              style={{ flex:1, padding:'4px 6px', borderRadius:6, border:'1px solid #333', background:'#191919',
+                color:'#ccc', fontSize:'0.7rem', outline:'none', cursor:'pointer' }}>
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="last_active">Last Active</option>
+              <option value="staff">Staff First</option>
+            </select>
+          </div>
         </div>
       )}
-      {(tab === 'friends' || tab === 'staff') && (
-        <div style={{ display:'flex', gap:4, padding:'6px 8px', background:'#111', borderBottom:'1px solid rgba(255,255,255,0.03)', flexShrink:0 }}>
-          <SubTab label="Online"  active={tab==='friends' ? friendTab==='online'  : staffTab==='online'}
-            onClick={() => tab==='friends' ? setFT('online') : setST('online')}
-            count={tab==='friends' ? friendsOnline.length : (staffOnline.length || staffFromRoom.length)} />
-          <SubTab label="Offline" active={tab==='friends' ? friendTab==='offline' : staffTab==='offline'}
-            onClick={() => tab==='friends' ? setFT('offline') : setST('offline')}
-            count={tab==='friends' ? friendsOffline.length : staffOffline.length} />
-        </div>
-      )}
+
       <div style={{ flex:1, overflowY:'auto', overflowX:'hidden' }}>
         {tab==='users'   && renderList(onlineF, 'No users online')}
         {tab==='search'  && (searching
           ? <p style={{ textAlign:'center', color:'#666', fontSize:'0.76rem', padding:16 }}>Searching...</p>
           : renderList(searchResults, search ? 'No results found' : 'Type to search'))}
-        {tab==='friends' && (friendTab==='online' ? renderList(friendsOnline, 'No friends online') : renderList(friendsOffline, 'No offline friends'))}
-        {tab==='staff'   && (staffTab==='online'  ? renderList(staffOnline.length ? staffOnline : staffFromRoom, 'No staff online') : renderList(staffOffline, 'No offline staff'))}
+        {tab==='friends' && renderFriendsAll()}
+        {tab==='staff'   && renderStaffAll()}
       </div>
     </div>
   )
@@ -239,6 +342,7 @@ function RightSidebar({ users, myLevel, myId, onUserClick, onWhisper, onClose, t
 // FLYOUT SUBPANELS
 // ═══════════════════════════════════════════════════════════════
 
+// Room list styled like ChatLobby cards
 function RoomListPanel({ onClose, nav, tObj }) {
   const [rooms, setRooms] = useState([])
   const [loading, setLoading] = useState(true)
@@ -254,11 +358,11 @@ function RoomListPanel({ onClose, nav, tObj }) {
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100%', background:bg }}>
       <FlyoutHeader icon="fa-solid fa-list" title="Room List" onClose={onClose} accent={accent} header={header} text={text} border={border} />
-      <div style={{ flex:1, overflowY:'auto', padding:'6px 0' }}>
+      <div style={{ flex:1, overflowY:'auto', padding:'8px' }}>
         {loading && <LoadingMsg />}
         {!loading && rooms.length === 0 && <EmptyMsg text="No rooms found" />}
         {rooms.map((room, i) => (
-          <RoomListCard key={room._id || i} room={room} accent={accent} text={text} border={border}
+          <LobbyRoomCard key={room._id || i} room={room} accent={accent} text={text} border={border} bg={bg}
             onClick={() => { nav(`/chat/${room.slug || room._id}`); onClose() }} />
         ))}
       </div>
@@ -266,32 +370,47 @@ function RoomListPanel({ onClose, nav, tObj }) {
   )
 }
 
-function RoomListCard({ room, accent, text, border, onClick }) {
+// Lobby-style room card (matches ChatLobby RoomCard style)
+function LobbyRoomCard({ room, accent, text, border, bg, onClick }) {
   const [hov, setHov] = useState(false)
+  const ROOM_TYPE_COLORS = {
+    public:  { color:'#22c55e', bg:'rgba(34,197,94,0.12)',  icon:'fa-solid fa-globe',      label:'Public' },
+    private: { color:'#f59e0b', bg:'rgba(245,158,11,0.12)', icon:'fa-solid fa-lock',       label:'Private' },
+    vip:     { color:'#a78bfa', bg:'rgba(167,139,250,0.12)',icon:'fa-solid fa-crown',      label:'VIP' },
+    staff:   { color:'#ef4444', bg:'rgba(239,68,68,0.12)',  icon:'fa-solid fa-user-shield',label:'Staff' },
+  }
+  const typeInfo = ROOM_TYPE_COLORS[room.type] || ROOM_TYPE_COLORS.public
   return (
     <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} onClick={onClick}
-      style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', cursor:'pointer',
-        background: hov ? 'rgba(255,255,255,0.05)' : 'transparent',
-        borderBottom:`1px solid ${border}22`, transition:'background .12s' }}>
-      <div style={{ width:44, height:44, borderRadius:10, overflow:'hidden', flexShrink:0,
-        border:`1.5px solid ${hov ? accent : border}33`, transition:'border-color .12s' }}>
-        <img src={room.icon || '/default_images/rooms/default_room.png'} alt=""
-          style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}
-          onError={e => { e.target.src = '/default_images/rooms/default_room.png' }} />
-      </div>
-      <div style={{ flex:1, minWidth:0 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:5, marginBottom:2 }}>
-          {room.isPinned && <i className="fa-solid fa-thumbtack" style={{ fontSize:9, color:'#f59e0b' }} />}
-          {room.password && <i className="fa-solid fa-lock" style={{ fontSize:9, color:'#9ca3af' }} />}
-          <span style={{ fontSize:'0.83rem', fontWeight:700, color:text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{room.name}</span>
+      style={{ background: hov ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)',
+        border:`1.5px solid ${hov ? accent : border+'33'}`,
+        borderRadius:12, cursor:'pointer', transition:'all .18s', marginBottom:8,
+        boxShadow: hov ? `0 4px 18px ${accent}22` : '0 1px 4px rgba(0,0,0,.2)',
+        transform: hov ? 'translateY(-1px)' : 'none' }}>
+      <div style={{ display:'flex', alignItems:'center', padding:'10px 12px', gap:10 }}>
+        <div style={{ width:50, height:50, borderRadius:10, overflow:'hidden', flexShrink:0,
+          border:`1.5px solid ${hov ? accent : border+'44'}`, transition:'border-color .15s' }}>
+          <img src={room.icon || '/default_images/rooms/default_room.png'} alt=""
+            style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}
+            onError={e => { e.target.src = '/default_images/rooms/default_room.png' }} />
         </div>
-        {room.description && <div style={{ fontSize:'0.68rem', color:'#666', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', marginBottom:3 }}>{room.description}</div>}
-        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <span style={{ fontSize:'0.68rem', fontWeight:700, color:(room.currentUsers||0)>0?'#22c55e':'#555', display:'flex', alignItems:'center', gap:3 }}>
-            <i className="fa-solid fa-user" style={{ fontSize:9 }} />{room.currentUsers||0}
-          </span>
-          {room.category && <span style={{ fontSize:'0.65rem', background:'rgba(3,173,216,0.1)', color:'#03add8', padding:'1px 6px', borderRadius:20, fontWeight:600 }}>{room.category}</span>}
-          {room.minRank && room.minRank!=='guest' && <span style={{ fontSize:'0.65rem', background:'rgba(255,255,255,0.06)', color:'#888', padding:'1px 6px', borderRadius:20, fontWeight:600 }}>{room.minRank}</span>}
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:5, marginBottom:2 }}>
+            {room.isPinned && <i className="fa-solid fa-thumbtack" style={{ fontSize:9, color:'#f59e0b', flexShrink:0 }} />}
+            {room.password && <i className="fa-solid fa-lock" style={{ fontSize:9, color:'#9ca3af', flexShrink:0 }} />}
+            <span style={{ fontSize:'0.88rem', fontWeight:800, color:text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1 }}>{room.name}</span>
+          </div>
+          {room.description && <div style={{ fontSize:'0.7rem', color:'#888', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', marginBottom:4 }}>{room.description}</div>}
+          <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
+            <span style={{ display:'inline-flex', alignItems:'center', gap:3, background:typeInfo.bg, color:typeInfo.color, fontSize:'0.62rem', fontWeight:700, padding:'2px 6px', borderRadius:20 }}>
+              <i className={typeInfo.icon} style={{ fontSize:8 }} />{typeInfo.label}
+            </span>
+            {room.category && <span style={{ fontSize:'0.62rem', background:'rgba(3,173,216,0.1)', color:'#03add8', padding:'2px 6px', borderRadius:20, fontWeight:600 }}>{room.category}</span>}
+            <div style={{ flex:1 }} />
+            <span style={{ display:'inline-flex', alignItems:'center', gap:3, fontSize:'0.75rem', fontWeight:800, color:(room.currentUsers||0)>0?'#22c55e':'#555' }}>
+              <i className="fa-solid fa-user" style={{ fontSize:10 }} />{room.currentUsers||0}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -415,13 +534,13 @@ function GamesFlyoutPanel({ onClose, socket, roomId, me, tObj }) {
   )
 }
 
+// ── LEADERBOARD with sub-menu ─────────────────────────────────
 const LB_TABS = [
-  { key:'gold',   label:'Top Gold',         icon:'fa-solid fa-coins',          color:'#f59e0b', field:'gold' },
   { key:'xp',     label:'Top XP',           icon:'fa-solid fa-bolt',           color:'#8b5cf6', field:'xp' },
-  { key:'likes',  label:'Top Likes',        icon:'fa-solid fa-heart',          color:'#ec4899', field:'totalLikes' },
-  { key:'gifts',  label:'Top Gifts',        icon:'fa-solid fa-gift',           color:'#22c55e', field:'totalGiftsReceived' },
-  { key:'quiz',   label:'Top Quiz',         icon:'fa-solid fa-graduation-cap', color:'#06b6d4', field:'quizScore' },
-  { key:'views',  label:'Top Views',        icon:'fa-solid fa-eye',            color:'#f97316', field:'profileViews' },
+  { key:'gold',   label:'Top Gold',          icon:'fa-solid fa-coins',          color:'#f59e0b', field:'gold' },
+  { key:'gifts',  label:'Top Gifts',         icon:'fa-solid fa-gift',           color:'#22c55e', field:'totalGiftsReceived' },
+  { key:'likes',  label:'Top Likes',         icon:'fa-solid fa-heart',          color:'#ec4899', field:'totalLikes' },
+  { key:'views',  label:'Top Views',         icon:'fa-solid fa-eye',            color:'#f97316', field:'profileViews' },
 ]
 const LB_PERIODS = [
   { key:'all',     label:'All Time' },
@@ -430,7 +549,7 @@ const LB_PERIODS = [
 ]
 
 function LeaderboardPanel({ onClose, tObj }) {
-  const [lbTab, setLbTab] = useState('gold')
+  const [lbTab, setLbTab] = useState('xp')
   const [period, setPrd]  = useState('all')
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -450,34 +569,35 @@ function LeaderboardPanel({ onClose, tObj }) {
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100%', background:bg }}>
       <FlyoutHeader icon="fa-solid fa-trophy" title="Leaderboard" onClose={onClose} accent={'#f59e0b'} header={header} text={text} border={border} />
-      {/* category tabs */}
-      <div style={{ display:'flex', gap:4, padding:'8px 10px', overflowX:'auto', flexShrink:0,
-        borderBottom:`1px solid ${border}22`, background:header, scrollbarWidth:'none' }}>
-        {LB_TABS.map(t => (
-          <button key={t.key} onClick={() => setLbTab(t.key)}
-            style={{ display:'flex', alignItems:'center', gap:4, padding:'5px 10px', borderRadius:20,
-              border:`1px solid ${lbTab===t.key ? t.color : border+'44'}`,
-              background: lbTab===t.key ? `${t.color}22` : 'transparent',
-              color: lbTab===t.key ? t.color : '#666', fontSize:'0.68rem', fontWeight:700,
-              cursor:'pointer', whiteSpace:'nowrap', flexShrink:0, transition:'all .15s' }}>
-            <i className={t.icon} style={{ fontSize:9 }} />{t.label}
-          </button>
-        ))}
+      {/* Sub-menu tabs */}
+      <div style={{ overflowX:'auto', scrollbarWidth:'none', flexShrink:0, borderBottom:`1px solid ${border}22`, background:header }}>
+        <div style={{ display:'flex', gap:2, padding:'6px 8px', minWidth:'max-content' }}>
+          {LB_TABS.map(t => (
+            <button key={t.key} onClick={() => setLbTab(t.key)}
+              style={{ display:'flex', alignItems:'center', gap:4, padding:'5px 10px', borderRadius:20,
+                border:`1px solid ${lbTab===t.key ? t.color : border+'44'}`,
+                background: lbTab===t.key ? `${t.color}22` : 'transparent',
+                color: lbTab===t.key ? t.color : '#666', fontSize:'0.68rem', fontWeight:700,
+                cursor:'pointer', whiteSpace:'nowrap', flexShrink:0, transition:'all .15s' }}>
+              <i className={t.icon} style={{ fontSize:10 }} />{t.label}
+            </button>
+          ))}
+        </div>
       </div>
-      {/* period tabs */}
-      <div style={{ display:'flex', gap:4, padding:'6px 10px', flexShrink:0, borderBottom:`1px solid ${border}22` }}>
+      {/* Period sub-menu */}
+      <div style={{ display:'flex', gap:3, padding:'5px 8px', flexShrink:0, borderBottom:`1px solid ${border}22` }}>
         {LB_PERIODS.map(p => (
           <button key={p.key} onClick={() => setPrd(p.key)}
-            style={{ padding:'4px 12px', borderRadius:20, border:'none', cursor:'pointer', fontSize:'0.7rem', fontWeight:600,
-              background: period===p.key ? `${accent}22` : 'rgba(255,255,255,0.05)',
-              color: period===p.key ? accent : '#666', transition:'all .12s' }}>{p.label}</button>
+            style={{ padding:'3px 10px', borderRadius:20, border:'none', cursor:'pointer', fontSize:'0.68rem', fontWeight:600,
+              background: period===p.key ? `${activeTab.color}22` : 'rgba(255,255,255,0.05)',
+              color: period===p.key ? activeTab.color : '#666', transition:'all .12s' }}>{p.label}</button>
         ))}
       </div>
-      <div style={{ flex:1, overflowY:'auto', padding:'6px 0' }}>
+      <div style={{ flex:1, overflowY:'auto', padding:'4px 0' }}>
         {loading && <LoadingMsg />}
         {!loading && users.length===0 && <EmptyMsg text="No data yet" />}
         {users.map((u, i) => (
-          <div key={u._id||i} style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 12px',
+          <div key={u._id||i} style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 12px',
             borderBottom:`1px solid ${border}11`, transition:'background .1s' }}
             onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.03)'}
             onMouseLeave={e => e.currentTarget.style.background='transparent'}>
@@ -632,7 +752,6 @@ function StorePanel({ onClose, tObj, me }) {
 
   const isCoins = view==='coins'
   const pkgColor = isCoins ? '#f59e0b' : '#ef4444'
-
   const titleMap = { main:'Store', coins:'Buy Gold Coins', ruby:'Buy Ruby' }
 
   return (
@@ -708,6 +827,7 @@ function StorePanel({ onClose, tObj, me }) {
   )
 }
 
+// Username Change — costs 500 gold coins
 function UsernameChangePanel({ onClose, tObj, me, onUpdated }) {
   const [username, setUsername] = useState(me?.username||'')
   const [loading, setLoading]   = useState(false)
@@ -717,6 +837,7 @@ function UsernameChangePanel({ onClose, tObj, me, onUpdated }) {
   const [available, setAvail]   = useState(null)
   const checkTimer = useRef(null)
   const { accent, bg, header, text, border } = useTheme(tObj)
+  const COST = 500
 
   function handleChange(val) {
     setUsername(val); setError(''); setSuccess(''); setAvail(null)
@@ -736,6 +857,7 @@ function UsernameChangePanel({ onClose, tObj, me, onUpdated }) {
     if (val.length<3) { setError('Min 3 characters'); return }
     if (val.length>20) { setError('Max 20 characters'); return }
     if (!/^[a-zA-Z0-9_]+$/.test(val)) { setError('Letters, numbers and _ only'); return }
+    if ((me?.gold||0) < COST) { setError(`You need ${COST} gold coins to change your username`); return }
     setLoading(true); setError('')
     const t = localStorage.getItem('cgz_token')
     try {
@@ -745,7 +867,7 @@ function UsernameChangePanel({ onClose, tObj, me, onUpdated }) {
       })
       const d = await r.json()
       if (!r.ok) throw new Error(d.error||'Failed')
-      setSuccess('Username updated!'); onUpdated?.({ username:val })
+      setSuccess('Username updated! 500 gold deducted.'); onUpdated?.({ username:val })
       setTimeout(()=>onClose(), 1800)
     } catch(e) { setError(e.message) }
     setLoading(false)
@@ -753,11 +875,22 @@ function UsernameChangePanel({ onClose, tObj, me, onUpdated }) {
 
   const unchanged = username.trim()===me?.username
   const isValid = username.length>=3 && username.length<=20 && /^[a-zA-Z0-9_]+$/.test(username)
+  const canAfford = (me?.gold||0) >= COST
 
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100%', background:bg }}>
       <FlyoutHeader icon="fa-solid fa-user-pen" title="Change Username" onClose={onClose} accent={accent} header={header} text={text} border={border} />
       <div style={{ flex:1, padding:'14px', overflow:'auto' }}>
+        {/* Cost banner */}
+        <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(245,158,11,0.1)', border:'1px solid rgba(245,158,11,0.3)', borderRadius:10, padding:'10px 14px', marginBottom:14 }}>
+          <i className="fa-solid fa-coins" style={{ color:'#f59e0b', fontSize:16 }} />
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:'0.82rem', fontWeight:800, color:'#f59e0b' }}>Costs 500 Gold Coins</div>
+            <div style={{ fontSize:'0.7rem', color:'#888' }}>Your balance: 🪙 {(me?.gold||0).toLocaleString()}</div>
+          </div>
+          {!canAfford && <span style={{ fontSize:'0.7rem', color:'#ef4444', fontWeight:700 }}>Insufficient</span>}
+        </div>
+
         <div style={{ background:'rgba(255,255,255,0.04)', borderRadius:10, border:`1px solid ${border}33`, padding:'10px 14px', marginBottom:14 }}>
           <div style={{ fontSize:'0.68rem', color:'#666', textTransform:'uppercase', letterSpacing:1, fontWeight:700, marginBottom:3 }}>Current</div>
           <div style={{ fontSize:'0.95rem', fontWeight:800, color:text }}>{me?.username}</div>
@@ -791,6 +924,7 @@ function UsernameChangePanel({ onClose, tObj, me, onUpdated }) {
             { ok:username.length<=20,                  label:'Max 20 characters' },
             { ok:/^[a-zA-Z0-9_]*$/.test(username)||!username, label:'Letters, numbers, _ only' },
             { ok:!unchanged||!username,                label:'Different from current' },
+            { ok:canAfford,                            label:`500 Gold (you have ${(me?.gold||0).toLocaleString()})` },
           ].map((r,i) => (
             <div key={i} style={{ display:'flex', alignItems:'center', gap:7, fontSize:'0.74rem',
               color:r.ok?'#22c55e':'#555', marginBottom:3 }}>
@@ -798,13 +932,13 @@ function UsernameChangePanel({ onClose, tObj, me, onUpdated }) {
             </div>
           ))}
         </div>
-        <button onClick={save} disabled={loading||!isValid||unchanged||available===false}
+        <button onClick={save} disabled={loading||!isValid||unchanged||available===false||!canAfford}
           style={{ width:'100%', padding:'11px', borderRadius:10, border:'none', fontWeight:800, fontSize:'0.88rem',
-            cursor:(loading||!isValid||unchanged||available===false)?'not-allowed':'pointer',
-            background:(!isValid||unchanged||available===false)?'rgba(255,255,255,0.06)':accent,
-            color:(!isValid||unchanged||available===false)?'#444':'#fff', transition:'all .2s',
+            cursor:(loading||!isValid||unchanged||available===false||!canAfford)?'not-allowed':'pointer',
+            background:(!isValid||unchanged||available===false||!canAfford)?'rgba(255,255,255,0.06)':accent,
+            color:(!isValid||unchanged||available===false||!canAfford)?'#444':'#fff', transition:'all .2s',
             display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
-          {loading ? <><i className="fa-solid fa-spinner fa-spin"/> Saving...</> : <><i className="fa-solid fa-check"/> Save Username</>}
+          {loading ? <><i className="fa-solid fa-spinner fa-spin"/> Saving...</> : <><i className="fa-solid fa-coins" style={{color:'#f59e0b'}}/> Spend 500 Gold & Save</>}
         </button>
       </div>
     </div>
@@ -849,14 +983,13 @@ function MsgBanner({ msg }) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// LEFT SIDEBAR — complete redesign
+// LEFT SIDEBAR — flyout opens as overlay over chatroom
 // ═══════════════════════════════════════════════════════════════
 function LeftSidebar({ room, nav, socket, roomId, onClose, me, tObj, onStyleSaved, onOpenProfile, onOpenSettings }) {
   const [flyout, setFlyout] = useState(null)
   const { accent, bg, header, text, border } = useTheme(tObj)
   const SIDEBAR_W = 230
-  const FLYOUT_W  = 280
-  const isMobile  = typeof window !== 'undefined' && window.innerWidth < 768
+  const FLYOUT_W  = 300
 
   function openFlyout(id) { setFlyout(prev => prev===id ? null : id) }
   function closeFlyout() { setFlyout(null) }
@@ -867,7 +1000,7 @@ function LeftSidebar({ room, nav, socket, roomId, onClose, me, tObj, onStyleSave
     { icon:'fa-solid fa-users',         label:'Friend Wall',     flyoutId:'friendwall',  chevron:true },
     { icon:'fa-solid fa-comments',      label:'Forum',           fn:()=>{ window.open('/forum','_blank') } },
     { icon:'fa-solid fa-envelope',      label:'Contact Us',      fn:()=>{ window.open('/contact','_blank') } },
-    { icon:'fa-solid fa-user-pen',      label:'Username Change', flyoutId:'username',    chevron:true },
+    { icon:'fa-solid fa-user-pen',      label:'Username Change', flyoutId:'username',    chevron:true, badge:'🪙500' },
     { icon:'fa-solid fa-gamepad',       label:'Games',           flyoutId:'games',       chevron:true },
     { icon:'fa-solid fa-trophy',        label:'Leaderboard',     flyoutId:'leaderboard', chevron:true },
     { icon:'fa-solid fa-crown',         label:'Buy Premium',     flyoutId:'premium',     chevron:true, rankIcon:true },
@@ -916,9 +1049,10 @@ function LeftSidebar({ room, nav, socket, roomId, onClose, me, tObj, onStyleSave
                 onMouseLeave={e=>{ e.currentTarget.style.background = isActive ? `${accent}12` : 'transparent' }}>
                 <i className={item.icon} style={{ fontSize:15, color: isActive ? accent : `${accent}bb`, width:20, textAlign:'center', flexShrink:0 }} />
                 <span style={{ flex:1, fontSize:'0.85rem', fontWeight:600, color: isActive ? text : `${text}cc` }}>{item.label}</span>
+                {item.badge && <span style={{ fontSize:'0.62rem', fontWeight:800, color:'#f59e0b', background:'rgba(245,158,11,0.12)', padding:'1px 5px', borderRadius:10, flexShrink:0 }}>{item.badge}</span>}
                 {item.rankIcon && <i className="fa-solid fa-crown" style={{ fontSize:11, color:'#f59e0b', marginRight:4, flexShrink:0 }} />}
                 {item.chevron && (
-                  <i className={`fa-solid fa-chevron-${isActive ? 'left' : 'right'}`}
+                  <i className={`fa-solid fa-chevron-${isActive ? 'down' : 'right'}`}
                     style={{ fontSize:10, color:'#444', flexShrink:0, transition:'transform .15s' }} />
                 )}
               </div>
@@ -937,25 +1071,38 @@ function LeftSidebar({ room, nav, socket, roomId, onClose, me, tObj, onStyleSave
         )}
       </div>
 
-      {/* Flyout panel */}
+      {/* Flyout panel — OVERLAY on top of chatroom (position:fixed) */}
       {flyout && (
-        <div style={{ width:FLYOUT_W, flexShrink:0, display:'flex', flexDirection:'column',
-          background:bg, borderRight:`1px solid ${border}33`, height:'100%',
-          position: isMobile ? 'fixed' : 'relative',
-          left: isMobile ? SIDEBAR_W : 'auto',
-          top: isMobile ? 50 : 'auto',
-          bottom: 0,
-          zIndex: isMobile ? 310 : 49,
-          boxShadow:'4px 0 20px rgba(0,0,0,0.4)', overflow:'hidden' }}>
-          {flyout==='rooms'       && <RoomListPanel onClose={closeFlyout} nav={nav} tObj={tObj} />}
-          {flyout==='news'        && <NewsPanel onClose={closeFlyout} tObj={tObj} />}
-          {flyout==='friendwall'  && <FriendWallPanel onClose={closeFlyout} tObj={tObj} />}
-          {flyout==='games'       && <GamesFlyoutPanel onClose={closeFlyout} socket={socket} roomId={roomId} me={me} tObj={tObj} />}
-          {flyout==='leaderboard' && <LeaderboardPanel onClose={closeFlyout} tObj={tObj} />}
-          {flyout==='premium'     && <PremiumPanel onClose={closeFlyout} tObj={tObj} me={me} />}
-          {flyout==='store'       && <StorePanel onClose={closeFlyout} tObj={tObj} me={me} />}
-          {flyout==='username'    && <UsernameChangePanel onClose={closeFlyout} tObj={tObj} me={me} onUpdated={u=>{ onStyleSaved?.(u); closeFlyout() }} />}
-        </div>
+        <>
+          {/* Click-away backdrop */}
+          <div
+            onClick={closeFlyout}
+            style={{ position:'fixed', inset:0, zIndex:290, background:'rgba(0,0,0,0.4)' }}
+          />
+          <div style={{
+            position: 'fixed',
+            left: SIDEBAR_W,
+            top: 50, // below header
+            bottom: 0,
+            width: FLYOUT_W,
+            zIndex: 295,
+            display: 'flex',
+            flexDirection: 'column',
+            background: bg,
+            borderRight: `1px solid ${border}33`,
+            boxShadow: '6px 0 24px rgba(0,0,0,0.5)',
+            overflow: 'hidden',
+          }}>
+            {flyout==='rooms'       && <RoomListPanel onClose={closeFlyout} nav={nav} tObj={tObj} />}
+            {flyout==='news'        && <NewsPanel onClose={closeFlyout} tObj={tObj} />}
+            {flyout==='friendwall'  && <FriendWallPanel onClose={closeFlyout} tObj={tObj} />}
+            {flyout==='games'       && <GamesFlyoutPanel onClose={closeFlyout} socket={socket} roomId={roomId} me={me} tObj={tObj} />}
+            {flyout==='leaderboard' && <LeaderboardPanel onClose={closeFlyout} tObj={tObj} />}
+            {flyout==='premium'     && <PremiumPanel onClose={closeFlyout} tObj={tObj} me={me} />}
+            {flyout==='store'       && <StorePanel onClose={closeFlyout} tObj={tObj} me={me} />}
+            {flyout==='username'    && <UsernameChangePanel onClose={closeFlyout} tObj={tObj} me={me} onUpdated={u=>{ onStyleSaved?.(u); closeFlyout() }} />}
+          </div>
+        </>
       )}
     </>
   )
