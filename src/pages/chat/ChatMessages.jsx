@@ -106,17 +106,15 @@ function Msg({ msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myL
     return <WhisperMessage msg={msg} myId={myId} onWhisperReply={onWhisper} />
   }
 
-  // System messages suppressed — no join/leave/announce shown in chat
-  if (isSystem) return null
-
-  // (legacy path kept for reference but never reached)
-  if (false && isSystem) {
+  // ── SYSTEM MESSAGE — CodyChatPHP pill style ──────────────
+  if (isSystem) {
     const cfg = SYS_TEXT[msg.type] || SYS_TEXT.system
     const ts = formatTs(msg.createdAt)
     const canDelSys = myLevel >= 11
 
     function renderSysContent(content) {
       if (!content) return null
+      // Bold the username part (before "has/was/joined/left")
       const m = content.match(/^(.+?)\s+(has|was|have|joined|left)\b(.*)$/i)
       if (m) return (
         <>
@@ -150,6 +148,7 @@ function Msg({ msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myL
       </div>
     )
   }
+
 
   // ── REGULAR MESSAGE ──
   const ri  = R(msg.sender?.rank)
