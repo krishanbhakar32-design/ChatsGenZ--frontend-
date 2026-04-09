@@ -1776,6 +1776,11 @@ function MemberProfile({ u, onClose, onAction, setConfirmDialog, onSelectUser })
   const [sameIpUsers, setSameIpUsers] = React.useState([]);
   const [oldNames, setOldNames] = React.useState([]);
   const [loadingIp, setLoadingIp] = React.useState(false);
+  const [ipHistory, setIpHistory] = React.useState([]);
+  const [ipHistoryTotal, setIpHistoryTotal] = React.useState(0);
+  const [ipHistoryShared, setIpHistoryShared] = React.useState({});
+  const [loadingIpHistory, setLoadingIpHistory] = React.useState(false);
+  const [ipHistoryPage, setIpHistoryPage] = React.useState(1);
 
     React.useEffect(() => {
       // Load same-IP accounts
@@ -1800,54 +1805,26 @@ function MemberProfile({ u, onClose, onAction, setConfirmDialog, onSelectUser })
       if (!u.ipAddress) return;
       setLoadingIp(true);
       try {
-        let geoData = null;
-        let proxyData = null;
-
-        // Step 1: ipapi.co
-        try {
-          const r = await fetch(`https://ipapi.co/${u.ipAddress}/json/`);
-          if (r.ok) {
-            const d = await r.json();
-            if (!d.error) geoData = d;
-          }
-        } catch {}
-
-        // Step 2: ip-api.com fallback
-        if (!geoData) {
-          try {
-            const r2 = await fetch(`https://ip-api.com/json/${u.ipAddress}?fields=status,country,countryCode,regionName,city,isp,org,proxy,hosting,timezone,query`);
-            const d2 = await r2.json();
-            if (d2.status === 'success') geoData = d2;
-          } catch {}
-        }
-
-        // Step 3: proxycheck.io
-        try {
-          const r3 = await fetch(`https://proxycheck.io/v2/${u.ipAddress}?vpn=1&asn=1&risk=1`);
-          if (r3.ok) {
-            const d3 = await r3.json();
-            if (d3.status === 'ok' && d3[u.ipAddress]) proxyData = d3[u.ipAddress];
-          }
-        } catch {}
-
-        if (!geoData && !proxyData) {
-          setIpDetails({ error: 'Could not fetch IP details' });
+        // Use backend proxy route — avoids CORS issues with ipapi/proxycheck
+        const d = await api(`/ip-info/${u.ipAddress}`);
+        if (d.error) {
+          setIpDetails({ error: d.error });
           return;
         }
-
         setIpDetails({
-          country_name: geoData?.country_name || geoData?.country,
-          country_code: geoData?.country_code || geoData?.countryCode,
-          city:         geoData?.city,
-          region:       geoData?.region || geoData?.regionName,
-          org:          proxyData?.provider || geoData?.org || geoData?.isp,
-          timezone:     geoData?.timezone,
-          proxy:        proxyData?.proxy === 'yes' ? true : (proxyData?.proxy === 'no' ? false : (geoData?.proxy ?? null)),
-          hosting:      proxyData?.type === 'Hosting' || proxyData?.type === 'VPN' || geoData?.hosting,
-          vpn:          proxyData?.type === 'VPN',
-          proxyType:    proxyData?.type || null,
-          risk:         proxyData?.risk ?? null,
-          isp:          proxyData?.provider || geoData?.org || geoData?.isp,
+          country_name: d.country,
+          country_code: d.countryCode,
+          city:         d.city,
+          region:       d.region,
+          org:          d.org || d.isp,
+          timezone:     d._raw?.geo?.timezone || '',
+          proxy:        d.proxy,
+          hosting:      d.hosting,
+          vpn:          d.vpn,
+          proxyType:    d.proxyType,
+          risk:         d.risk,
+          isp:          d.isp,
+          asn:          d.asn,
         });
       } catch {
         setIpDetails({ error: 'Could not fetch IP details' });
@@ -1861,12 +1838,31 @@ function MemberProfile({ u, onClose, onAction, setConfirmDialog, onSelectUser })
       }
     }, [tab, u.ipAddress, ipDetails, loadingIp, fetchIpDetails]);
 
+    const fetchIpHistory = React.useCallback(async (page = 1) => {
+      setLoadingIpHistory(true);
+      try {
+        const d = await api(`/users/${u._id}/ip-history?page=${page}&limit=30`);
+        setIpHistory(d.entries || []);
+        setIpHistoryTotal(d.total || 0);
+        setIpHistoryShared(d.sharedAccounts || {});
+        setIpHistoryPage(page);
+      } catch { setIpHistory([]); }
+      finally { setLoadingIpHistory(false); }
+    }, [u._id]);
+
+    React.useEffect(() => {
+      if (tab === 'iphistory' && ipHistory.length === 0 && !loadingIpHistory) {
+        fetchIpHistory(1);
+      }
+    }, [tab, ipHistory.length, loadingIpHistory, fetchIpHistory]);
+
     const TABS = [
-      { id: 'bio',     label: 'Bio',     icon: 'fa-user' },
-      { id: 'about',   label: 'About',   icon: 'fa-align-left' },
-      { id: 'actions', label: 'Actions', icon: 'fa-bolt' },
-      { id: 'edit',    label: 'Edit',    icon: 'fa-pen-to-square' },
-      { id: 'lookup',  label: 'Lookup',  icon: 'fa-magnifying-glass' },
+      { id: 'bio',       label: 'Bio',        icon: 'fa-user' },
+      { id: 'about',     label: 'About',      icon: 'fa-align-left' },
+      { id: 'actions',   label: 'Actions',    icon: 'fa-bolt' },
+      { id: 'edit',      label: 'Edit',       icon: 'fa-pen-to-square' },
+      { id: 'lookup',    label: 'Lookup',     icon: 'fa-magnifying-glass' },
+      { id: 'iphistory', label: 'IP History', icon: 'fa-timeline' },
     ];
 
     return (
@@ -2197,6 +2193,9 @@ function MemberProfile({ u, onClose, onAction, setConfirmDialog, onSelectUser })
                       <span style={{ fontFamily:'monospace', fontSize:14, color:'#c4b5fd', fontWeight:700, letterSpacing:0.5 }}>
                         {u.ipAddress || 'No IP recorded'}
                       </span>
+                      {/* Stored VPN/Proxy badge from DB — shows instantly without a scan */}
+                      {u.ipVPN   && <span style={{ fontSize:10, background:'rgba(251,191,36,0.15)', color:'#fbbf24', border:'1px solid rgba(251,191,36,0.3)', borderRadius:4, padding:'1px 6px', fontWeight:600 }}>VPN</span>}
+                      {u.ipProxy && !u.ipVPN && <span style={{ fontSize:10, background:'rgba(249,115,22,0.15)', color:'#fb923c', border:'1px solid rgba(249,115,22,0.3)', borderRadius:4, padding:'1px 6px', fontWeight:600 }}>PROXY</span>}
                     </div>
                     <div style={{ display:'flex', gap:6 }}>
                       {u.ipAddress && (
@@ -2211,9 +2210,19 @@ function MemberProfile({ u, onClose, onAction, setConfirmDialog, onSelectUser })
                       )}
                     </div>
                   </div>
+                  {/* Stored DB data row — available immediately */}
+                  {(u.ipCity || u.ipISP || u.lastLoginAt) && (
+                    <div style={{ marginTop:8, display:'flex', gap:12, flexWrap:'wrap', fontSize:11, color:'#94a3b8' }}>
+                      {u.ipCity && <span><i className="fa-solid fa-city" style={{ marginRight:4 }} />{u.ipCity}</span>}
+                      {u.ipISP  && <span><i className="fa-solid fa-building" style={{ marginRight:4 }} />{u.ipISP}</span>}
+                      {u.ipASN  && <span style={{ color:'#64748b' }}>{u.ipASN}</span>}
+                      {u.lastLoginAt && <span><i className="fa-solid fa-clock" style={{ marginRight:4 }} />Last login: {fmtDateTime(u.lastLoginAt)}</span>}
+                      {u.loginCount > 0 && <span><i className="fa-solid fa-arrow-right-to-bracket" style={{ marginRight:4 }} />{u.loginCount} logins</span>}
+                    </div>
+                  )}
                 </div>
 
-                {/* ── Geo Results ── */}
+                {/* ── Geo Results (from live scan) ── */}
                 {!u.ipAddress ? (
                   <div className="ap-empty"><i className="fa-solid fa-circle-exclamation" style={{ color:'#f59e0b' }} /> No IP address on record for this user.</div>
                 ) : loadingIp ? (
@@ -2228,14 +2237,15 @@ function MemberProfile({ u, onClose, onAction, setConfirmDialog, onSelectUser })
                 ) : ipDetails ? (
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:14 }}>
                     {[
-                      { icon:'fa-flag',          label:'Country',    val: ipDetails.country_name,                                              color:'#60a5fa' },
-                      { icon:'fa-city',           label:'City',       val: ipDetails.city,                                                      color:'#34d399' },
-                      { icon:'fa-map',            label:'Region',     val: ipDetails.region,                                                    color:'#34d399' },
-                      { icon:'fa-globe',          label:'Country Code',val: ipDetails.country_code,                                             color:'#60a5fa' },
-                      { icon:'fa-building',       label:'ISP',        val: ipDetails.isp || ipDetails.org,                                      color:'#94a3b8' },
-                      { icon:'fa-clock',          label:'Timezone',   val: ipDetails.timezone,                                                  color:'#94a3b8' },
-                      { icon:'fa-mask',           label:'Proxy / VPN',val: ipDetails.proxy === true ? `⚠ Detected${ipDetails.proxyType ? ` (${ipDetails.proxyType})` : ''}` : ipDetails.proxy === false ? '✓ Clean' : String(ipDetails.proxy ?? '—'), color: ipDetails.proxy ? '#fbbf24' : '#22c55e' },
-                      { icon:'fa-server',         label:'Hosting',    val: ipDetails.hosting === true ? '⚠ Datacenter' : ipDetails.hosting === false ? '✓ Residential' : '—', color: ipDetails.hosting ? '#f97316' : '#22c55e' },
+                      { icon:'fa-flag',                  label:'Country',     val: ipDetails.country_name,                                                                                          color:'#60a5fa' },
+                      { icon:'fa-city',                  label:'City',        val: ipDetails.city,                                                                                                  color:'#34d399' },
+                      { icon:'fa-map',                   label:'Region',      val: ipDetails.region,                                                                                                color:'#34d399' },
+                      { icon:'fa-globe',                 label:'Country Code',val: ipDetails.country_code,                                                                                          color:'#60a5fa' },
+                      { icon:'fa-building',              label:'ISP',         val: ipDetails.isp || ipDetails.org,                                                                                  color:'#94a3b8' },
+                      { icon:'fa-barcode',               label:'ASN',         val: ipDetails.asn,                                                                                                   color:'#64748b' },
+                      { icon:'fa-clock',                 label:'Timezone',    val: ipDetails.timezone,                                                                                              color:'#94a3b8' },
+                      { icon:'fa-mask',                  label:'Proxy / VPN', val: (ipDetails.vpn || ipDetails.proxy) ? `⚠ Detected${ipDetails.proxyType ? ` (${ipDetails.proxyType})` : ''}` : '✓ Clean', color: (ipDetails.vpn || ipDetails.proxy) ? '#fbbf24' : '#22c55e' },
+                      { icon:'fa-server',                label:'Hosting',     val: ipDetails.hosting === true ? '⚠ Datacenter' : '✓ Residential',                                                 color: ipDetails.hosting ? '#f97316' : '#22c55e' },
                       ipDetails.risk != null ? { icon:'fa-triangle-exclamation', label:'Risk Score', val: `${ipDetails.risk}/100`, color: ipDetails.risk > 50 ? '#ef4444' : ipDetails.risk > 25 ? '#f59e0b' : '#22c55e' } : null,
                     ].filter(r => r && r.val && r.val !== '—').map(r => (
                       <div key={r.label} style={{ background:'rgba(255,255,255,0.03)', borderRadius:7, padding:'8px 10px', border:'1px solid rgba(255,255,255,0.06)' }}>
@@ -2289,11 +2299,494 @@ function MemberProfile({ u, onClose, onAction, setConfirmDialog, onSelectUser })
                 }
               </div>
             )}
+
+            {/* ════ IP HISTORY TAB ════ */}
+            {tab === 'iphistory' && (
+              <div className="mem-section">
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color:'#a78bfa' }}>
+                    <i className="fa-solid fa-timeline" style={{ marginRight:6 }} />
+                    Full IP Login History
+                    {ipHistoryTotal > 0 && <span style={{ marginLeft:8, fontSize:11, background:'rgba(139,92,246,0.15)', color:'#c4b5fd', borderRadius:99, padding:'2px 8px' }}>{ipHistoryTotal} events</span>}
+                  </div>
+                  <button className="ap-btn ap-btn--xs ap-btn--ghost" onClick={() => fetchIpHistory(1)} disabled={loadingIpHistory}>
+                    <i className={`fa-solid ${loadingIpHistory ? 'fa-spinner fa-spin' : 'fa-rotate'}`} /> Refresh
+                  </button>
+                </div>
+
+                {loadingIpHistory && (
+                  <div style={{ textAlign:'center', padding:'24px 0', color:'#6b7280' }}>
+                    <i className="fa-solid fa-spinner fa-spin" style={{ fontSize:22, marginBottom:8, display:'block' }} />
+                    Loading IP history…
+                  </div>
+                )}
+
+                {!loadingIpHistory && ipHistory.length === 0 && (
+                  <div className="ap-empty"><i className="fa-solid fa-circle-info" /> No IP history recorded yet. History is saved on every login.</div>
+                )}
+
+                {!loadingIpHistory && ipHistory.length > 0 && (
+                  <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                    {ipHistory.map((entry, i) => {
+                      const shared = ipHistoryShared[entry.ipAddress] || [];
+                      const isVpn  = entry.isVPN || entry.isProxy;
+                      const loginTypeColor = { login:'#60a5fa', register:'#34d399', guest:'#f59e0b', token_refresh:'#94a3b8' };
+                      return (
+                        <div key={entry._id || i} style={{
+                          background: isVpn ? 'rgba(251,191,36,0.05)' : 'rgba(255,255,255,0.03)',
+                          border: `1px solid ${isVpn ? 'rgba(251,191,36,0.25)' : 'rgba(255,255,255,0.07)'}`,
+                          borderRadius:9, padding:'10px 12px',
+                        }}>
+                          {/* Row 1: IP + flags */}
+                          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6, flexWrap:'wrap' }}>
+                            <span style={{ fontFamily:'monospace', fontSize:13, fontWeight:700, color:'#c4b5fd', letterSpacing:0.5 }}>
+                              {entry.ipAddress}
+                            </span>
+                            {entry.isVPN    && <span style={{ fontSize:10, background:'rgba(251,191,36,0.15)', color:'#fbbf24', border:'1px solid rgba(251,191,36,0.3)', borderRadius:4, padding:'1px 6px', fontWeight:600 }}>VPN</span>}
+                            {entry.isProxy  && !entry.isVPN && <span style={{ fontSize:10, background:'rgba(249,115,22,0.15)', color:'#fb923c', border:'1px solid rgba(249,115,22,0.3)', borderRadius:4, padding:'1px 6px', fontWeight:600 }}>PROXY</span>}
+                            {entry.isHosting && <span style={{ fontSize:10, background:'rgba(99,102,241,0.15)', color:'#818cf8', border:'1px solid rgba(99,102,241,0.3)', borderRadius:4, padding:'1px 6px' }}>HOSTING</span>}
+                            {entry.riskScore > 50 && <span style={{ fontSize:10, background:'rgba(239,68,68,0.12)', color:'#f87171', border:'1px solid rgba(239,68,68,0.3)', borderRadius:4, padding:'1px 6px', fontWeight:600 }}>⚠ Risk {entry.riskScore}</span>}
+                            <span style={{ marginLeft:'auto', fontSize:10, color: loginTypeColor[entry.loginType]||'#94a3b8', textTransform:'uppercase', letterSpacing:0.5 }}>
+                              <i className="fa-solid fa-arrow-right-to-bracket" style={{ marginRight:3 }} />{entry.loginType}
+                            </span>
+                            <span style={{ fontSize:10, color:'#6b7280' }}>
+                              {entry.deviceType === 'mobile' ? '📱' : entry.deviceType === 'tablet' ? '📟' : '🖥️'} {entry.deviceType}
+                            </span>
+                          </div>
+
+                          {/* Row 2: Geo info */}
+                          <div style={{ display:'flex', gap:12, flexWrap:'wrap', fontSize:11, color:'#94a3b8', marginBottom:4 }}>
+                            {(entry.countryCode || entry.country) && (
+                              <span>
+                                {entry.countryCode && <img src={`https://flagcdn.com/16x12/${entry.countryCode.toLowerCase()}.png`} alt={entry.countryCode} style={{ marginRight:4, verticalAlign:'middle' }} onError={e=>e.target.style.display='none'} />}
+                                {entry.country || entry.countryCode}
+                              </span>
+                            )}
+                            {entry.city     && <span><i className="fa-solid fa-city" style={{ marginRight:3, fontSize:10 }} />{entry.city}</span>}
+                            {entry.region   && <span style={{ color:'#6b7280' }}>{entry.region}</span>}
+                            {entry.isp      && <span><i className="fa-solid fa-building" style={{ marginRight:3, fontSize:10 }} />{entry.isp.length>30 ? entry.isp.slice(0,30)+'…' : entry.isp}</span>}
+                            {entry.timezone && <span><i className="fa-solid fa-clock" style={{ marginRight:3, fontSize:10 }} />{entry.timezone}</span>}
+                            {(entry.latitude && entry.longitude) && (
+                              <a href={`https://maps.google.com/?q=${entry.latitude},${entry.longitude}`} target="_blank" rel="noreferrer" style={{ color:'#60a5fa', textDecoration:'none' }}>
+                                <i className="fa-solid fa-location-dot" style={{ marginRight:3 }} />Map
+                              </a>
+                            )}
+                          </div>
+
+                          {/* Row 3: Timestamp + actions */}
+                          <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+                            <span style={{ fontSize:11, color:'#4b5563' }}>
+                              <i className="fa-solid fa-clock" style={{ marginRight:4 }} />
+                              {new Date(entry.createdAt).toLocaleString()}
+                            </span>
+                            {shared.length > 0 && (
+                              <span title={shared.map(s=>s.username).join(', ')} style={{ fontSize:11, background:'rgba(239,68,68,0.1)', color:'#f87171', borderRadius:4, padding:'1px 7px', border:'1px solid rgba(239,68,68,0.2)', cursor:'default' }}>
+                                <i className="fa-solid fa-users" style={{ marginRight:4 }} />{shared.length} shared account{shared.length>1?'s':''}
+                              </span>
+                            )}
+                            <button className="ap-btn ap-btn--xs ap-btn--ghost" style={{ marginLeft:'auto', fontSize:10 }}
+                              onClick={() => { navigator.clipboard?.writeText(entry.ipAddress); toast('IP copied ✓'); }}>
+                              <i className="fa-solid fa-copy" />
+                            </button>
+                            <button className="ap-btn ap-btn--xs ap-btn--danger" style={{ fontSize:10 }}
+                              onClick={() => setConfirmDialog({ msg: `IP-ban ${entry.ipAddress}?`, cb: () => onAction('/ip-bans', 'POST', { ip: entry.ipAddress, reason: `IP ban via history — ${u.username}` }, 'IP banned ✓') })}>
+                              <i className="fa-solid fa-ban" />
+                            </button>
+                          </div>
+
+                          {/* Shared accounts (collapsible) */}
+                          {shared.length > 0 && (
+                            <div style={{ marginTop:8, paddingTop:8, borderTop:'1px solid rgba(255,255,255,0.06)' }}>
+                              <div style={{ fontSize:10, color:'#6b7280', marginBottom:6 }}>Accounts sharing this IP:</div>
+                              <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+                                {shared.slice(0,8).map((s, si) => (
+                                  <div key={si} onClick={() => onSelectUser && onSelectUser(s)} style={{ cursor:'pointer', display:'flex', alignItems:'center', gap:5, background:'rgba(255,255,255,0.04)', borderRadius:6, padding:'3px 8px', border:'1px solid rgba(255,255,255,0.08)' }}>
+                                    <span style={{ width:6, height:6, borderRadius:'50%', background: rankColor(s.rank || s.userRank || 'guest'), display:'inline-block' }} />
+                                    <span style={{ fontSize:11, color:'#cbd5e1' }}>{s.username}</span>
+                                    <span style={{ fontSize:9, color:'#6b7280' }}>{s.rank||s.userRank||'guest'}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Pagination */}
+                {ipHistoryTotal > 30 && (
+                  <div style={{ display:'flex', gap:8, justifyContent:'center', marginTop:14 }}>
+                    <button className="ap-btn ap-btn--xs ap-btn--ghost" disabled={ipHistoryPage <= 1} onClick={() => fetchIpHistory(ipHistoryPage - 1)}>
+                      <i className="fa-solid fa-chevron-left" /> Prev
+                    </button>
+                    <span style={{ fontSize:12, color:'#6b7280', alignSelf:'center' }}>Page {ipHistoryPage} of {Math.ceil(ipHistoryTotal/30)}</span>
+                    <button className="ap-btn ap-btn--xs ap-btn--ghost" disabled={ipHistoryPage >= Math.ceil(ipHistoryTotal/30)} onClick={() => fetchIpHistory(ipHistoryPage + 1)}>
+                      Next <i className="fa-solid fa-chevron-right" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
     );
   }
+
+
+// ══════════════════════════════════════════════════════════════
+// LIVE USERS — real-time online users with live IPs & locations
+// ══════════════════════════════════════════════════════════════
+function LiveUsers() {
+  const [users, setUsers]       = React.useState([]);
+  const [total, setTotal]       = React.useState(0);
+  const [loading, setLoading]   = React.useState(true);
+  const [search, setSearch]     = React.useState('');
+  const [filter, setFilter]     = React.useState('all'); // all | guests | registered | vpn | staff
+  const [selected, setSelected] = React.useState(null);
+  const [ipPopup, setIpPopup]   = React.useState(null);
+  const [autoRefresh, setAutoRefresh] = React.useState(true);
+  const [lastUpdated, setLastUpdated] = React.useState(null);
+
+  const RANK_LEVELS = { guest:1,user:2,vipfemale:3,vipmale:4,butterfly:5,ninja:6,fairy:7,legend:8,bot:9,premium:10,moderator:11,admin:12,superadmin:13,owner:14 };
+  const RANK_COLORS = { guest:'#888',user:'#aaa',vipfemale:'#FF4488',vipmale:'#4488FF',butterfly:'#FF66AA',ninja:'#777',fairy:'#FF88CC',legend:'#FF8800',bot:'#00cc88',premium:'#aa44ff',moderator:'#00AAFF',admin:'#FF4444',superadmin:'#FF00FF',owner:'#FFD700' };
+
+  const fetchUsers = React.useCallback(async () => {
+    try {
+      const d = await api('/live-users');
+      setUsers(d.users || []);
+      setTotal(d.total || 0);
+      setLastUpdated(new Date());
+    } catch {}
+    finally { setLoading(false); }
+  }, []);
+
+  React.useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  React.useEffect(() => {
+    if (!autoRefresh) return;
+    const t = setInterval(fetchUsers, 8000);
+    return () => clearInterval(t);
+  }, [autoRefresh, fetchUsers]);
+
+  const filtered = React.useMemo(() => {
+    let list = users;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(u =>
+        u.username?.toLowerCase().includes(q) ||
+        u.ipAddress?.includes(q) ||
+        u.ipCity?.toLowerCase().includes(q) ||
+        u.country?.toLowerCase().includes(q) ||
+        u.roomId?.includes(q)
+      );
+    }
+    if (filter === 'guests')     list = list.filter(u => u.isGuest);
+    if (filter === 'registered') list = list.filter(u => !u.isGuest);
+    if (filter === 'vpn')        list = list.filter(u => u.ipVPN || u.ipProxy);
+    if (filter === 'staff')      list = list.filter(u => RANK_LEVELS[u.rank] >= 11);
+    return list;
+  }, [users, search, filter]);
+
+  const guestCount = users.filter(u => u.isGuest).length;
+  const regCount   = users.filter(u => !u.isGuest).length;
+  const vpnCount   = users.filter(u => u.ipVPN || u.ipProxy).length;
+  const staffCount = users.filter(u => RANK_LEVELS[u.rank] >= 11).length;
+
+  return (
+    <div className="ap-section">
+      {/* Header */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:18, flexWrap:'wrap', gap:10 }}>
+        <div>
+          <h2 style={{ margin:0, fontSize:18, fontWeight:700, color:'#e2e8f0' }}>
+            <i className="fa-solid fa-satellite-dish" style={{ color:'#22c55e', marginRight:8 }} />
+            Live Users
+            <span style={{ marginLeft:10, fontSize:13, background:'rgba(34,197,94,0.15)', color:'#22c55e', borderRadius:99, padding:'2px 10px', fontWeight:600 }}>
+              {total} online
+            </span>
+          </h2>
+          {lastUpdated && <div style={{ fontSize:11, color:'#4b5563', marginTop:3 }}>Last updated: {lastUpdated.toLocaleTimeString()}</div>}
+        </div>
+        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+          <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:'#6b7280', cursor:'pointer' }}>
+            <input type="checkbox" checked={autoRefresh} onChange={e => setAutoRefresh(e.target.checked)} style={{ cursor:'pointer' }} />
+            Auto-refresh
+          </label>
+          <button className="ap-btn ap-btn--ghost" onClick={fetchUsers} disabled={loading}>
+            <i className={`fa-solid ${loading ? 'fa-spinner fa-spin' : 'fa-rotate'}`} /> Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* Stats strip */}
+      <div style={{ display:'flex', gap:10, marginBottom:16, flexWrap:'wrap' }}>
+        {[
+          { label:'Total Online', val:total,      color:'#22c55e', icon:'fa-circle-dot' },
+          { label:'Registered',   val:regCount,   color:'#60a5fa', icon:'fa-user-check' },
+          { label:'Guests',       val:guestCount, color:'#f59e0b', icon:'fa-user-secret' },
+          { label:'Staff Online', val:staffCount, color:'#a78bfa', icon:'fa-shield' },
+          { label:'VPN / Proxy',  val:vpnCount,   color:'#f87171', icon:'fa-mask' },
+        ].map(s => (
+          <div key={s.label} style={{ flex:'1 1 100px', minWidth:100, background:'rgba(255,255,255,0.03)', borderRadius:9, padding:'10px 14px', border:'1px solid rgba(255,255,255,0.07)', textAlign:'center' }}>
+            <i className={`fa-solid ${s.icon}`} style={{ color:s.color, fontSize:16, marginBottom:4, display:'block' }} />
+            <div style={{ fontSize:20, fontWeight:700, color:s.color }}>{s.val}</div>
+            <div style={{ fontSize:10, color:'#6b7280', marginTop:2 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Search + filter */}
+      <div style={{ display:'flex', gap:8, marginBottom:14, flexWrap:'wrap' }}>
+        <input
+          className="ap-input" placeholder="Search by username, IP, city, country…"
+          value={search} onChange={e => setSearch(e.target.value)}
+          style={{ flex:1, minWidth:200 }}
+        />
+        {[
+          { id:'all',         label:'All' },
+          { id:'registered',  label:'Registered' },
+          { id:'guests',      label:'Guests' },
+          { id:'staff',       label:'Staff' },
+          { id:'vpn',         label:'⚠ VPN/Proxy' },
+        ].map(f => (
+          <button key={f.id}
+            className={`ap-btn ap-btn--xs ${filter===f.id ? 'ap-btn--primary' : 'ap-btn--ghost'}`}
+            onClick={() => setFilter(f.id)}
+          >{f.label}</button>
+        ))}
+      </div>
+
+      {/* Users table */}
+      {loading ? (
+        <div style={{ textAlign:'center', padding:'40px 0', color:'#6b7280' }}>
+          <i className="fa-solid fa-spinner fa-spin" style={{ fontSize:24, marginBottom:10, display:'block' }} />
+          Loading live users…
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="ap-empty">
+          <i className="fa-solid fa-circle-info" /> {total === 0 ? 'No users online right now.' : 'No users match your filter.'}
+        </div>
+      ) : (
+        <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+          {filtered.map(u => (
+            <div key={u.userId} style={{
+              background: u.ipVPN||u.ipProxy ? 'rgba(251,191,36,0.04)' : 'rgba(255,255,255,0.025)',
+              border: `1px solid ${u.ipVPN||u.ipProxy ? 'rgba(251,191,36,0.2)' : 'rgba(255,255,255,0.07)'}`,
+              borderRadius:10, padding:'10px 14px',
+              display:'flex', alignItems:'flex-start', gap:12, flexWrap:'wrap',
+            }}>
+              {/* Avatar */}
+              <div style={{ position:'relative', flexShrink:0 }}>
+                <img src={u.avatar||'/default_images/avatar/default_avatar.png'}
+                  style={{ width:40, height:40, borderRadius:'50%', objectFit:'cover', border:`2px solid ${RANK_COLORS[u.rank]||'#333'}` }}
+                  alt="" onError={e => e.target.src='/default_images/avatar/default_avatar.png'}
+                />
+                <span style={{ position:'absolute', bottom:0, right:0, width:10, height:10, borderRadius:'50%', background:'#22c55e', border:'2px solid #0d1117' }} />
+              </div>
+
+              {/* Name + rank + room */}
+              <div style={{ flex:'1 1 160px', minWidth:0 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap', marginBottom:3 }}>
+                  <span style={{ fontWeight:700, fontSize:13, color: RANK_COLORS[u.rank]||'#ccc' }}>{u.username}</span>
+                  <span style={{ fontSize:10, padding:'1px 7px', borderRadius:99, background:(RANK_COLORS[u.rank]||'#888')+'22', color:RANK_COLORS[u.rank]||'#888', border:`1px solid ${RANK_COLORS[u.rank]||'#888'}44` }}>
+                    {u.rank}
+                  </span>
+                  {u.isGuest  && <span style={{ fontSize:9, background:'rgba(245,158,11,0.15)', color:'#fbbf24', borderRadius:4, padding:'1px 5px' }}>GUEST</span>}
+                  {u.isMuted  && <span style={{ fontSize:9, background:'rgba(239,68,68,0.12)', color:'#f87171', borderRadius:4, padding:'1px 5px' }}>MUTED</span>}
+                  {u.isGhosted && <span style={{ fontSize:9, background:'rgba(139,92,246,0.12)', color:'#a78bfa', borderRadius:4, padding:'1px 5px' }}>GHOST</span>}
+                </div>
+                {u.roomId && (
+                  <div style={{ fontSize:11, color:'#4b5563' }}>
+                    <i className="fa-solid fa-door-open" style={{ marginRight:4, color:'#60a5fa' }} />Room: <span style={{ color:'#94a3b8' }}>{u.roomId}</span>
+                  </div>
+                )}
+                {u.mood && <div style={{ fontSize:11, color:'#6b7280', fontStyle:'italic' }}>"{u.mood}"</div>}
+              </div>
+
+              {/* IP + Location */}
+              <div style={{ flex:'1 1 200px', minWidth:0 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:4, flexWrap:'wrap' }}>
+                  <span style={{
+                    fontFamily:'monospace', fontSize:12, fontWeight:600,
+                    color: u.ipVPN||u.ipProxy ? '#fbbf24' : '#c4b5fd',
+                    cursor:'pointer', textDecoration:'underline', textDecorationStyle:'dotted',
+                  }} onClick={() => setIpPopup(u)} title="Click to lookup IP">
+                    {u.ipAddress || '—'}
+                  </span>
+                  {u.ipVPN    && <span style={{ fontSize:9, background:'rgba(251,191,36,0.15)', color:'#fbbf24', border:'1px solid rgba(251,191,36,0.3)', borderRadius:3, padding:'1px 5px', fontWeight:700 }}>VPN</span>}
+                  {u.ipProxy && !u.ipVPN && <span style={{ fontSize:9, background:'rgba(249,115,22,0.15)', color:'#fb923c', border:'1px solid rgba(249,115,22,0.3)', borderRadius:3, padding:'1px 5px', fontWeight:700 }}>PROXY</span>}
+                  {u.ipRisk > 50 && <span style={{ fontSize:9, background:'rgba(239,68,68,0.12)', color:'#f87171', borderRadius:3, padding:'1px 5px' }}>Risk:{u.ipRisk}</span>}
+                  {u.ipAddress && (
+                    <button style={{ background:'none', border:'none', color:'#4b5563', cursor:'pointer', padding:0, fontSize:11 }}
+                      onClick={() => { navigator.clipboard?.writeText(u.ipAddress); toast('IP copied ✓'); }}
+                      title="Copy IP">
+                      <i className="fa-solid fa-copy" />
+                    </button>
+                  )}
+                </div>
+                {(u.ipCity || u.countryCode || u.ipISP) && (
+                  <div style={{ fontSize:11, color:'#6b7280', display:'flex', gap:8, flexWrap:'wrap' }}>
+                    {u.countryCode && (
+                      <span>
+                        <img src={`https://flagcdn.com/16x12/${u.countryCode.toLowerCase()}.png`} alt={u.countryCode}
+                          style={{ marginRight:4, verticalAlign:'middle' }} onError={e=>e.target.style.display='none'} />
+                        {u.country || u.countryCode}
+                      </span>
+                    )}
+                    {u.ipCity && <span><i className="fa-solid fa-city" style={{ marginRight:3, fontSize:10 }} />{u.ipCity}</span>}
+                    {u.ipISP && <span style={{ color:'#4b5563', maxWidth:140, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }} title={u.ipISP}><i className="fa-solid fa-building" style={{ marginRight:3, fontSize:10 }} />{u.ipISP}</span>}
+                  </div>
+                )}
+              </div>
+
+              {/* Stats */}
+              <div style={{ fontSize:11, color:'#6b7280', flexShrink:0, textAlign:'right', display:'flex', flexDirection:'column', gap:3 }}>
+                <span><i className="fa-solid fa-coins" style={{ color:'#f59e0b', marginRight:3 }} />{u.gold||0}</span>
+                <span><i className="fa-solid fa-trophy" style={{ color:'#22c55e', marginRight:3 }} />Lv {u.level||1}</span>
+                {u.status !== 'online' && <span style={{ color:'#f59e0b' }}><i className="fa-solid fa-clock" style={{ marginRight:3 }} />{u.status}</span>}
+              </div>
+
+              {/* Actions */}
+              <div style={{ display:'flex', gap:5, alignSelf:'center', flexShrink:0, flexWrap:'wrap' }}>
+                <button className="ap-btn ap-btn--xs ap-btn--ghost" onClick={() => setIpPopup(u)} title="IP Lookup">
+                  <i className="fa-solid fa-magnifying-glass" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* IP Lookup popup */}
+      {ipPopup && (
+        <IpLookupModal user={ipPopup} onClose={() => setIpPopup(null)} onAction={async (url, method, body, msg) => {
+          try { await api(url, { method, body: JSON.stringify(body) }); toast(msg); }
+          catch(e) { toast(e.message, 'error'); }
+        }} />
+      )}
+    </div>
+  );
+}
+
+// ── IP Lookup Modal (used by LiveUsers + Members) ──────────────
+function IpLookupModal({ user: u, onClose, onAction }) {
+  const [details, setDetails]   = React.useState(null);
+  const [loading, setLoading]   = React.useState(true);
+  const [history, setHistory]   = React.useState([]);
+  const [loadingHist, setLoadingHist] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!u.ipAddress) { setLoading(false); return; }
+    api(`/ip-info/${u.ipAddress}`)
+      .then(d => setDetails(d))
+      .catch(() => setDetails({ error: 'Lookup failed' }))
+      .finally(() => setLoading(false));
+
+    // Also load who else used this IP
+    setLoadingHist(true);
+    api(`/ip-history-lookup/${encodeURIComponent(u.ipAddress)}`)
+      .then(d => setHistory(d.historyUsers || []))
+      .catch(() => {})
+      .finally(() => setLoadingHist(false));
+  }, [u.ipAddress]);
+
+  const RANK_COLORS = { guest:'#888',user:'#aaa',vipfemale:'#FF4488',vipmale:'#4488FF',butterfly:'#FF66AA',ninja:'#777',fairy:'#FF88CC',legend:'#FF8800',bot:'#00cc88',premium:'#aa44ff',moderator:'#00AAFF',admin:'#FF4444',superadmin:'#FF00FF',owner:'#FFD700' };
+
+  return (
+    <div className="ap-overlay" onClick={onClose}>
+      <div style={{ background:'#0d1117', border:'1px solid rgba(139,92,246,0.3)', borderRadius:14, padding:24, maxWidth:520, width:'94vw', maxHeight:'85vh', overflowY:'auto', position:'relative' }}
+        onClick={e => e.stopPropagation()}>
+        <button className="ap-close-btn" onClick={onClose} style={{ position:'absolute', top:12, right:12 }}><i className="fa-solid fa-xmark" /></button>
+
+        <div style={{ marginBottom:16 }}>
+          <div style={{ fontSize:11, color:'#6b7280', marginBottom:4 }}>IP ADDRESS</div>
+          <div style={{ fontFamily:'monospace', fontSize:18, fontWeight:800, color:'#c4b5fd', letterSpacing:1 }}>
+            {u.ipAddress || 'No IP'}
+          </div>
+          <div style={{ fontSize:12, color:'#6b7280', marginTop:4 }}>
+            User: <span style={{ color: RANK_COLORS[u.rank]||'#ccc', fontWeight:600 }}>{u.username}</span>
+            {' · '}<span style={{ color:'#6b7280' }}>{u.rank}</span>
+            {u.isGuest && <span style={{ marginLeft:6, fontSize:10, background:'rgba(245,158,11,0.15)', color:'#fbbf24', borderRadius:4, padding:'1px 6px' }}>GUEST</span>}
+          </div>
+        </div>
+
+        {loading ? (
+          <div style={{ textAlign:'center', padding:'20px 0', color:'#6b7280' }}>
+            <i className="fa-solid fa-spinner fa-spin" style={{ fontSize:20, display:'block', marginBottom:8 }} />
+            Scanning IP…
+          </div>
+        ) : !u.ipAddress ? (
+          <div className="ap-empty">No IP address on record.</div>
+        ) : details?.error ? (
+          <div style={{ color:'#f87171', background:'rgba(239,68,68,0.08)', borderRadius:8, padding:'10px 14px', marginBottom:14 }}>
+            <i className="fa-solid fa-triangle-exclamation" style={{ marginRight:6 }} />{details.error}
+          </div>
+        ) : details ? (
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:16 }}>
+            {[
+              { icon:'fa-flag',                label:'Country',     val:`${details.country||''}${details.countryCode?' ('+details.countryCode+')':''}`,     color:'#60a5fa' },
+              { icon:'fa-city',                label:'City',        val:details.city,                           color:'#34d399' },
+              { icon:'fa-map',                 label:'Region',      val:details.region,                         color:'#94a3b8' },
+              { icon:'fa-building',            label:'ISP',         val:details.isp||details.org,               color:'#94a3b8' },
+              { icon:'fa-barcode',             label:'ASN',         val:details.asn,                            color:'#64748b' },
+              { icon:'fa-clock',               label:'Timezone',    val:details.timezone||details._raw?.geo?.timezone, color:'#94a3b8' },
+              { icon:'fa-mask',                label:'Proxy/VPN',   val:(details.vpn||details.proxy)?`⚠ ${details.proxyType||'Detected'}`:'✓ Clean', color:(details.vpn||details.proxy)?'#fbbf24':'#22c55e' },
+              { icon:'fa-server',              label:'Hosting',     val:details.hosting?'⚠ Datacenter':'✓ Residential', color:details.hosting?'#f97316':'#22c55e' },
+              details.risk!=null ? { icon:'fa-triangle-exclamation', label:'Risk Score', val:`${details.risk}/100`, color:details.risk>50?'#ef4444':details.risk>25?'#f59e0b':'#22c55e' } : null,
+              (details.lat&&details.lon) ? { icon:'fa-location-dot', label:'Coordinates', val:`${details.lat}, ${details.lon}`, color:'#60a5fa', link:`https://maps.google.com/?q=${details.lat},${details.lon}` } : null,
+            ].filter(r => r && r.val).map(r => (
+              <div key={r.label} style={{ background:'rgba(255,255,255,0.03)', borderRadius:7, padding:'8px 10px', border:'1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ fontSize:10, color:'#6b7280', marginBottom:3, display:'flex', alignItems:'center', gap:4 }}>
+                  <i className={`fa-solid ${r.icon}`} style={{ fontSize:9 }} />{r.label}
+                </div>
+                {r.link
+                  ? <a href={r.link} target="_blank" rel="noreferrer" style={{ fontSize:12, fontWeight:600, color:r.color, textDecoration:'none' }}>{r.val}</a>
+                  : <div style={{ fontSize:12, fontWeight:600, color:r.color }}>{r.val}</div>
+                }
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {/* Action buttons */}
+        {u.ipAddress && (
+          <div style={{ display:'flex', gap:8, marginBottom:16 }}>
+            <button className="ap-btn ap-btn--ghost" style={{ flex:1 }} onClick={() => { navigator.clipboard?.writeText(u.ipAddress); toast('IP copied ✓'); }}>
+              <i className="fa-solid fa-copy" /> Copy IP
+            </button>
+            <button className="ap-btn ap-btn--danger" style={{ flex:1 }} onClick={() => { onAction('/ip-bans','POST',{ ip:u.ipAddress, reason:`IP ban from live panel — ${u.username}` },'IP banned ✓'); onClose(); }}>
+              <i className="fa-solid fa-ban" /> Ban This IP
+            </button>
+          </div>
+        )}
+
+        {/* Shared accounts */}
+        {!loadingHist && history.length > 0 && (
+          <>
+            <div style={{ fontSize:11, fontWeight:700, color:'#f87171', marginBottom:8 }}>
+              <i className="fa-solid fa-users" style={{ marginRight:6 }} />
+              {history.length} account{history.length>1?'s':''} used this IP:
+            </div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:4 }}>
+              {history.map((h, i) => (
+                <div key={i} style={{ display:'flex', alignItems:'center', gap:5, background:'rgba(255,255,255,0.04)', borderRadius:7, padding:'4px 10px', border:'1px solid rgba(255,255,255,0.08)' }}>
+                  <span style={{ width:7, height:7, borderRadius:'50%', background: RANK_COLORS[h.rank||h.userRank||'guest'], display:'inline-block' }} />
+                  <span style={{ fontSize:12, color:'#cbd5e1', fontWeight:600 }}>{h.username}</span>
+                  <span style={{ fontSize:10, color:'#6b7280' }}>{h.rank||h.userRank||'guest'}</span>
+                  {h.isGuest && <span style={{ fontSize:9, background:'rgba(245,158,11,0.1)', color:'#fbbf24', borderRadius:3, padding:'0 4px' }}>guest</span>}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 // ══════════════════════════════════════════════════════════════
 function Members() {
@@ -2371,59 +2864,29 @@ function Members() {
     } catch (e) { toast(e.message, 'error'); }
   };
 
-  // Fetch IP geolocation using ipapi + proxycheck combo
+  // Fetch IP geolocation — uses backend proxy to avoid CORS issues with ipapi/proxycheck
   const fetchIpGeo = async (ip) => {
-    let geoData = null;
-    let proxyData = null;
-
-    // Step 1: ipapi.co for geo
     try {
-      const r = await fetch(`https://ipapi.co/${ip}/json/`);
-      if (r.ok) {
-        const d = await r.json();
-        if (!d.error) geoData = d;
-      }
-    } catch {}
-
-    // Step 2: Fallback to ip-api.com if ipapi failed
-    if (!geoData) {
-      try {
-        const r2 = await fetch(`https://ip-api.com/json/${ip}?fields=status,country,countryCode,regionName,city,isp,org,proxy,hosting,timezone,query`);
-        const d2 = await r2.json();
-        if (d2.status === 'success') geoData = d2;
-      } catch {}
+      const d = await api(`/ip-info/${ip}`);
+      if (d.error) return { error: d.error };
+      return {
+        country_name: d.country,
+        country_code: d.countryCode,
+        city:         d.city,
+        region:       d.region,
+        org:          d.org || d.isp,
+        timezone:     d._raw?.geo?.timezone || '',
+        proxy:        d.proxy,
+        hosting:      d.hosting,
+        vpn:          d.vpn,
+        proxyType:    d.proxyType,
+        risk:         d.risk,
+        asn:          d.asn,
+        isp:          d.isp,
+      };
+    } catch {
+      return { error: 'Lookup failed' };
     }
-
-    // Step 3: proxycheck.io for proxy/VPN detection (free tier, no key needed)
-    try {
-      const r3 = await fetch(`https://proxycheck.io/v2/${ip}?vpn=1&asn=1&risk=1`);
-      if (r3.ok) {
-        const d3 = await r3.json();
-        if (d3.status === 'ok' && d3[ip]) {
-          proxyData = d3[ip];
-        }
-      }
-    } catch {}
-
-    if (!geoData && !proxyData) return { error: 'Lookup failed' };
-
-    // Merge results
-    return {
-      country_name: geoData?.country_name || geoData?.country,
-      country_code: geoData?.country_code || geoData?.countryCode,
-      city:         geoData?.city,
-      region:       geoData?.region || geoData?.regionName,
-      org:          geoData?.org || geoData?.isp,
-      timezone:     geoData?.timezone,
-      // proxycheck is the most accurate for proxy/VPN
-      proxy:        proxyData?.proxy === 'yes' ? true : (proxyData?.proxy === 'no' ? false : (geoData?.proxy ?? null)),
-      hosting:      proxyData?.type === 'Hosting' || proxyData?.type === 'VPN' || geoData?.hosting,
-      vpn:          proxyData?.type === 'VPN',
-      proxyType:    proxyData?.type || null,
-      risk:         proxyData?.risk ?? null,
-      asn:          proxyData?.asn || null,
-      isp:          proxyData?.provider || geoData?.org || geoData?.isp,
-    };
   };
 
   const openIpPopup = async (e, u) => {
@@ -2599,6 +3062,16 @@ function Members() {
                           ONLINE NOW
                         </span>
                       )}
+                      {/* Stored IP meta badges — show instantly from DB */}
+                      {(u.ipVPN || u.ipProxy || u.ipCity || u.ipISP) && (
+                        <div style={{ display:'flex', flexWrap:'wrap', gap:3, marginTop:1 }}>
+                          {u.ipVPN   && <span style={{ fontSize:9, background:'rgba(251,191,36,0.15)', color:'#fbbf24', border:'1px solid rgba(251,191,36,0.3)', borderRadius:3, padding:'1px 5px', fontWeight:700 }}>VPN</span>}
+                          {u.ipProxy && !u.ipVPN && <span style={{ fontSize:9, background:'rgba(249,115,22,0.15)', color:'#fb923c', border:'1px solid rgba(249,115,22,0.3)', borderRadius:3, padding:'1px 5px', fontWeight:700 }}>PROXY</span>}
+                          {u.ipHosting && <span style={{ fontSize:9, background:'rgba(99,102,241,0.15)', color:'#818cf8', border:'1px solid rgba(99,102,241,0.3)', borderRadius:3, padding:'1px 5px' }}>DC</span>}
+                          {u.ipCity  && <span style={{ fontSize:9, color:'#6b7280' }}>{u.ipCity}</span>}
+                          {u.ipISP   && <span style={{ fontSize:9, color:'#4b5563', maxWidth:100, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }} title={u.ipISP}>{u.ipISP}</span>}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <span style={{ color:'#374151', fontSize:11, fontStyle:'italic' }}>No IP recorded</span>
@@ -2703,18 +3176,20 @@ function Members() {
           ) : ipPopup.data ? (
             <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
               {[
-                { icon:'fa-flag',         label:'Country',  val: ipPopup.data.country_name || ipPopup.data.country },
-                { icon:'fa-city',         label:'City',     val: ipPopup.data.city },
-                { icon:'fa-map',          label:'Region',   val: ipPopup.data.region || ipPopup.data.regionName },
-                { icon:'fa-building',     label:'ISP',      val: ipPopup.data.isp || ipPopup.data.org },
-                { icon:'fa-clock',        label:'Timezone', val: ipPopup.data.timezone },
-                { icon:'fa-mask',         label:'Proxy/VPN',val: ipPopup.data.proxy === true ? `⚠ Detected${ipPopup.data.proxyType ? ` (${ipPopup.data.proxyType})` : ''}` : ipPopup.data.proxy === false ? 'Clean' : ipPopup.data.proxy },
+                { icon:'fa-flag',                 label:'Country',   val: ipPopup.data.country_name || ipPopup.data.country },
+                { icon:'fa-city',                 label:'City',      val: ipPopup.data.city },
+                { icon:'fa-map',                  label:'Region',    val: ipPopup.data.region || ipPopup.data.regionName },
+                { icon:'fa-building',             label:'ISP',       val: ipPopup.data.isp || ipPopup.data.org },
+                { icon:'fa-barcode',              label:'ASN',       val: ipPopup.data.asn },
+                { icon:'fa-clock',                label:'Timezone',  val: ipPopup.data.timezone },
+                { icon:'fa-mask',                 label:'Proxy/VPN', val: (ipPopup.data.vpn || ipPopup.data.proxy) ? `⚠ Detected${ipPopup.data.proxyType ? ` (${ipPopup.data.proxyType})` : ''}` : 'Clean' },
+                { icon:'fa-server',               label:'Hosting',   val: ipPopup.data.hosting ? '⚠ Datacenter' : null },
                 ipPopup.data.risk != null ? { icon:'fa-triangle-exclamation', label:'Risk', val: `${ipPopup.data.risk}/100` } : null,
               ].filter(r => r && r.val).map(r => (
                 <div key={r.label} style={{ display:'flex', alignItems:'flex-start', gap:8, fontSize:11 }}>
                   <i className={`fa-solid ${r.icon}`} style={{ color:'#6b7280', width:12, marginTop:1, flexShrink:0 }} />
                   <span style={{ color:'#9ca3af', flexShrink:0, minWidth:58 }}>{r.label}</span>
-                  <span style={{ color: r.label === 'Proxy/VPN' && r.val.startsWith('⚠') ? '#fbbf24' : '#e2e8f0', fontWeight:500 }}>{r.val}</span>
+                  <span style={{ color: (r.label === 'Proxy/VPN' && r.val.startsWith('⚠')) || (r.label === 'Hosting' && r.val.startsWith('⚠')) ? '#fbbf24' : r.label === 'Risk' && parseInt(r.val) > 50 ? '#ef4444' : '#e2e8f0', fontWeight:500 }}>{r.val}</span>
                 </div>
               ))}
               {/* Quick ban from popup */}
@@ -2756,28 +3231,23 @@ function Members() {
 // IP BANS — with full banned user profile cards
 // ══════════════════════════════════════════════════════════════
 function IpBans() {
-  const [bans, setBans] = React.useState([]);
-  const [ip, setIp] = React.useState('');
-  const [reason, setReason] = React.useState('');
-  const [search, setSearch] = React.useState('');
+  const [bans,        setBans]        = React.useState([]);
+  const [ip,          setIp]          = React.useState('');
+  const [reason,      setReason]      = React.useState('');
+  const [search,      setSearch]      = React.useState('');
   const [expandedBan, setExpandedBan] = React.useState(null);
-  const [confirm, setConfirm] = React.useState(null);
-  const [loading, setLoading] = React.useState(false);
+  const [confirm,     setConfirm]     = React.useState(null);
+  const [loading,     setLoading]     = React.useState(false);
+  const [geoCache,    setGeoCache]    = React.useState({}); // ip -> geo data
+  const [geoLoading,  setGeoLoading]  = React.useState({}); // ip -> bool
+  const [adding,      setAdding]      = React.useState(false);
 
   const load = React.useCallback(async () => {
     setLoading(true);
     try {
+      // Backend now returns enriched bans with accounts[] in one call
       const d = await api('/ip-bans');
-      // Enrich with user details for each ban
-      const enriched = await Promise.all((d.bans || []).map(async ban => {
-        try {
-          const ud = await api(`/users?ipAddress=${ban.ip}&limit=5`);
-          return { ...ban, accounts: ud.users || [] };
-        } catch {
-          return { ...ban, accounts: [] };
-        }
-      }));
-      setBans(enriched);
+      setBans(d.bans || []);
     } catch { toast('Failed to load IP bans', 'error'); }
     finally { setLoading(false); }
   }, []);
@@ -2785,14 +3255,42 @@ function IpBans() {
   React.useEffect(() => { load(); }, [load]);
 
   const add = async () => {
-    if (!ip.trim()) return;
-    try { await api('/ip-bans', { method: 'POST', body: JSON.stringify({ ip, reason }) }); toast('IP banned ✓'); setIp(''); setReason(''); load(); }
-    catch (e) { toast(e.message, 'error'); }
+    const cleanIp = ip.trim();
+    if (!cleanIp) return toast('IP address is required', 'error');
+    setAdding(true);
+    try {
+      await api('/ip-bans', { method: 'POST', body: JSON.stringify({ ip: cleanIp, reason }) });
+      toast('IP banned ✓');
+      setIp('');
+      setReason('');
+      load();
+    } catch (e) { toast(e.message, 'error'); }
+    finally { setAdding(false); }
   };
 
   const del = async id => {
     try { await api(`/ip-bans/${id}`, { method: 'DELETE' }); toast('IP ban removed ✓'); load(); }
     catch (e) { toast(e.message, 'error'); }
+  };
+
+  // Fetch geo info for a ban's IP (lazy — only when expanded)
+  const fetchGeo = async (ipAddr) => {
+    if (geoCache[ipAddr] || geoLoading[ipAddr]) return;
+    setGeoLoading(prev => ({ ...prev, [ipAddr]: true }));
+    try {
+      const d = await api(`/ip-info/${ipAddr}`);
+      setGeoCache(prev => ({ ...prev, [ipAddr]: d.error ? null : d }));
+    } catch {
+      setGeoCache(prev => ({ ...prev, [ipAddr]: null }));
+    } finally {
+      setGeoLoading(prev => ({ ...prev, [ipAddr]: false }));
+    }
+  };
+
+  const toggleBan = (id, ipAddr) => {
+    const nowOpen = expandedBan !== id;
+    setExpandedBan(p => p === id ? null : id);
+    if (nowOpen && ipAddr) fetchGeo(ipAddr);
   };
 
   const filtered = bans.filter(b =>
@@ -2802,7 +3300,7 @@ function IpBans() {
     (b.accounts || []).some(u => u.username?.toLowerCase().includes(search.toLowerCase()))
   );
 
-  const genderIcon = g => g === 'male' ? 'fa-mars' : g === 'female' ? 'fa-venus' : g === 'couple' ? 'fa-heart' : 'fa-genderless';
+  const genderIcon  = g => g === 'male' ? 'fa-mars' : g === 'female' ? 'fa-venus' : g === 'couple' ? 'fa-heart' : 'fa-genderless';
   const genderColor = g => g === 'male' ? '#4488FF' : g === 'female' ? '#FF4488' : g === 'couple' ? '#FF88CC' : '#888';
 
   return (
@@ -2811,18 +3309,31 @@ function IpBans() {
 
       {/* Add Ban Form */}
       <div className="ap-card">
-        <h3 className="ap-card-title"><i className="fa-solid fa-plus" /> Ban New IP</h3>
+        <h3 className="ap-card-title"><i className="fa-solid fa-plus" /> Ban New IP / Range</h3>
         <div className="ap-row" style={{ flexWrap:'wrap' }}>
-          <input className="ap-input" placeholder="IP Address (e.g. 192.168.1.1)" value={ip} onChange={e => setIp(e.target.value)} style={{ flex: '1 1 180px' }} />
-          <input className="ap-input" placeholder="Reason (optional)" value={reason} onChange={e => setReason(e.target.value)} style={{ flex: '2 1 200px' }} />
-          <button className="ap-btn ap-btn--danger" onClick={add}><i className="fa-solid fa-shield-halved" /> Ban IP</button>
+          <input className="ap-input" placeholder="IP Address or CIDR range (e.g. 192.168.1.1 or 10.0.0.0/24)"
+            value={ip} onChange={e => setIp(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && add()}
+            style={{ flex: '2 1 240px' }} />
+          <input className="ap-input" placeholder="Reason (optional)" value={reason}
+            onChange={e => setReason(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && add()}
+            style={{ flex: '2 1 200px' }} />
+          <button className="ap-btn ap-btn--danger" onClick={add} disabled={adding}>
+            {adding ? <i className="fa-solid fa-spinner fa-spin" /> : <i className="fa-solid fa-shield-halved" />} Ban IP
+          </button>
         </div>
+        <p style={{ fontSize:11, color:'#6b7280', marginTop:8 }}>
+          <i className="fa-solid fa-circle-info" style={{ marginRight:4 }} />
+          Supports IPv4, IPv6, and CIDR ranges. Duplicate IPs are rejected automatically.
+        </p>
       </div>
 
       {/* Search */}
       <div className="mem-search-wrap" style={{ marginBottom: 12 }}>
         <i className="fa-solid fa-magnifying-glass mem-search-icon" />
-        <input className="ap-input" placeholder="Search IP, reason, or username…" value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: 32 }} />
+        <input className="ap-input" placeholder="Search IP, reason, or username…" value={search}
+          onChange={e => setSearch(e.target.value)} style={{ paddingLeft: 32 }} />
         {search && <button className="mem-search-clear" onClick={() => setSearch('')}><i className="fa-solid fa-xmark" /></button>}
       </div>
 
@@ -2832,18 +3343,39 @@ function IpBans() {
         <div className="ap-empty"><i className="fa-solid fa-circle-check" style={{ color:'#22c55e', marginRight:8 }} />No IP bans{search ? ' matching search' : ''}</div>
       ) : (
         <div className="ipban-list">
-          {filtered.map(b => (
-            <div key={b._id} className={`ipban-card ${expandedBan === b._id ? 'ipban-card--open' : ''}`}>
+          {filtered.map(b => {
+            const geo   = geoCache[b.ip];
+            const geoLd = geoLoading[b.ip];
+            const isOpen = expandedBan === b._id;
+            return (
+            <div key={b._id} className={`ipban-card ${isOpen ? 'ipban-card--open' : ''}`}>
 
               {/* Header row */}
-              <div className="ipban-header" onClick={() => setExpandedBan(p => p === b._id ? null : b._id)}>
+              <div className="ipban-header" onClick={() => toggleBan(b._id, b.ip)}>
                 <div className="ipban-ip-badge">
                   <i className="fa-solid fa-network-wired" />
                   <strong>{b.ip}</strong>
+                  {geo?.countryCode && (
+                    <img src={`https://flagcdn.com/16x12/${geo.countryCode.toLowerCase()}.png`}
+                      alt={geo.country || ''} title={[geo.city, geo.country].filter(Boolean).join(', ')}
+                      style={{ width:16, height:12, borderRadius:2, verticalAlign:'middle', marginLeft:4 }}
+                      onError={e => e.target.style.display='none'} />
+                  )}
                 </div>
 
                 <div className="ipban-meta">
                   {b.reason && <span className="ipban-reason"><i className="fa-solid fa-circle-info" /> {b.reason}</span>}
+                  {geo && !geo.error && (
+                    <span style={{ fontSize:11, color:'#6b7280' }}>
+                      <i className="fa-solid fa-location-dot" style={{ marginRight:3 }} />
+                      {[geo.city, geo.region, geo.country].filter(Boolean).join(', ') || '—'}
+                    </span>
+                  )}
+                  {(geo?.vpn || geo?.proxy) && (
+                    <span style={{ fontSize:10, background:'rgba(251,191,36,0.15)', color:'#fbbf24', border:'1px solid rgba(251,191,36,0.3)', borderRadius:4, padding:'1px 6px', fontWeight:700 }}>
+                      ⚠ {geo.vpn ? 'VPN' : 'PROXY'}
+                    </span>
+                  )}
                   <span className="ipban-date"><i className="fa-regular fa-clock" /> {fmtDate(b.createdAt)}</span>
                   {b.accounts?.length > 0 && (
                     <span className="ipban-acct-count"><i className="fa-solid fa-users" /> {b.accounts.length} account{b.accounts.length !== 1 ? 's' : ''}</span>
@@ -2854,13 +3386,50 @@ function IpBans() {
                   <button className="ap-btn ap-btn--xs ap-btn--danger" onClick={e => { e.stopPropagation(); setConfirm({ msg: `Unban IP ${b.ip}?`, cb: () => del(b._id) }); }}>
                     <i className="fa-solid fa-trash" /> Remove
                   </button>
-                  <i className={`fa-solid fa-chevron-${expandedBan === b._id ? 'up' : 'down'}`} style={{ color:'#6b7280', fontSize:12 }} />
+                  <i className={`fa-solid fa-chevron-${isOpen ? 'up' : 'down'}`} style={{ color:'#6b7280', fontSize:12 }} />
                 </div>
               </div>
 
-              {/* Expanded — Linked accounts with full profile */}
-              {expandedBan === b._id && (
+              {/* Expanded body */}
+              {isOpen && (
                 <div className="ipban-body">
+
+                  {/* IP Intelligence */}
+                  <div className="ipban-section-title" style={{ marginBottom:8 }}><i className="fa-solid fa-magnifying-glass" /> IP Intelligence</div>
+                  {geoLd ? (
+                    <div style={{ padding:'10px 0', color:'#6b7280', fontSize:12 }}><i className="fa-solid fa-spinner fa-spin" style={{ marginRight:6 }} />Looking up {b.ip}…</div>
+                  ) : geo && !geo.error ? (
+                    <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))', gap:8, marginBottom:16 }}>
+                      {[
+                        { icon:'fa-flag',                 label:'Country',   val: geo.country     || '—', color:'#60a5fa' },
+                        { icon:'fa-city',                 label:'City',      val: geo.city        || '—', color:'#34d399' },
+                        { icon:'fa-map',                  label:'Region',    val: geo.region      || '—', color:'#34d399' },
+                        { icon:'fa-building',             label:'ISP',       val: geo.isp||geo.org|| '—', color:'#94a3b8' },
+                        { icon:'fa-barcode',              label:'ASN',       val: geo.asn         || '—', color:'#64748b' },
+                        { icon:'fa-clock',                label:'Timezone',  val: geo.timezone    || '—', color:'#94a3b8' },
+                        { icon:'fa-mask',                 label:'VPN/Proxy', val: (geo.vpn||geo.proxy)?`⚠ Detected${geo.proxyType?` (${geo.proxyType})`:''}`:'✓ Clean', color:(geo.vpn||geo.proxy)?'#fbbf24':'#22c55e' },
+                        { icon:'fa-server',               label:'Hosting',   val: geo.hosting?'⚠ Datacenter':'✓ Residential', color:geo.hosting?'#f97316':'#22c55e' },
+                        geo.risk != null ? { icon:'fa-triangle-exclamation', label:'Risk Score', val:`${geo.risk}/100`, color:geo.risk>50?'#ef4444':geo.risk>25?'#f59e0b':'#22c55e' } : null,
+                      ].filter(Boolean).map(row => (
+                        <div key={row.label} style={{ background:'#111827', borderRadius:8, padding:'8px 10px', display:'flex', flexDirection:'column', gap:3 }}>
+                          <span style={{ fontSize:10, color:'#4b5563', display:'flex', alignItems:'center', gap:5 }}>
+                            <i className={`fa-solid ${row.icon}`} style={{ color:row.color, width:12 }} />{row.label}
+                          </span>
+                          <span style={{ fontSize:12, fontWeight:600, color:row.color }}>{row.val}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : geo === null ? (
+                    <div style={{ fontSize:12, color:'#6b7280', marginBottom:12 }}>Could not retrieve IP details (private or invalid IP).</div>
+                  ) : (
+                    <div style={{ marginBottom:12 }}>
+                      <button className="ap-btn ap-btn--xs ap-btn--ghost" onClick={() => fetchGeo(b.ip)}>
+                        <i className="fa-solid fa-magnifying-glass" /> Lookup IP Details
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Linked Accounts */}
                   <div className="ipban-section-title"><i className="fa-solid fa-users" /> Accounts Linked to This IP</div>
 
                   {b.accounts?.length === 0 ? (
@@ -2868,7 +3437,6 @@ function IpBans() {
                   ) : (
                     b.accounts.map(u => (
                       <div key={u._id} className="ipban-user-card">
-                        {/* User Header */}
                         <div className="ipban-user-header">
                           <div style={{ position:'relative', flexShrink:0 }}>
                             <img src={u.avatar || '/default_images/avatar/default_avatar.png'} className="ipban-avatar" alt="" />
@@ -2886,15 +3454,16 @@ function IpBans() {
                               <span className="ap-rank-tag" style={{ color: rankColor(u.rank), borderColor: rankColor(u.rank)+'44', fontSize:10 }}>{u.rank}</span>
                               <span style={{ fontSize:11, color: genderColor(u.gender) }}><i className={`fa-solid ${genderIcon(u.gender)}`} /></span>
                             </div>
-                            <div style={{ display:'flex', gap:3 }}>
+                            <div style={{ display:'flex', gap:3, flexWrap:'wrap', justifyContent:'flex-end' }}>
                               {u.isBanned  && <span className="mem-badge mem-badge--danger" style={{ fontSize:9 }}><i className="fa-solid fa-ban" /> Banned</span>}
-                              {u.isMuted   && <span className="mem-badge mem-badge--warn" style={{ fontSize:9 }}><i className="fa-solid fa-microphone-slash" /> Muted</span>}
-                              {u.isGhosted && <span className="mem-badge mem-badge--ghost" style={{ fontSize:9 }}><i className="fa-solid fa-ghost" /> Ghosted</span>}
+                              {u.isMuted   && <span className="mem-badge mem-badge--warn"   style={{ fontSize:9 }}><i className="fa-solid fa-microphone-slash" /> Muted</span>}
+                              {u.isGhosted && <span className="mem-badge mem-badge--ghost"  style={{ fontSize:9 }}><i className="fa-solid fa-ghost" /> Ghosted</span>}
+                              {u.ipVPN     && <span style={{ fontSize:9, background:'rgba(251,191,36,0.15)', color:'#fbbf24', border:'1px solid rgba(251,191,36,0.3)', borderRadius:3, padding:'1px 5px', fontWeight:700 }}>VPN</span>}
+                              {u.ipProxy && !u.ipVPN && <span style={{ fontSize:9, background:'rgba(249,115,22,0.15)', color:'#fb923c', border:'1px solid rgba(249,115,22,0.3)', borderRadius:3, padding:'1px 5px', fontWeight:700 }}>PROXY</span>}
                             </div>
                           </div>
                         </div>
 
-                        {/* Profile Details Grid */}
                         <div className="ipban-detail-grid">
                           <div className="ipban-detail-item"><i className="fa-solid fa-id-badge" /><span>ID</span><strong style={{ fontSize:10, wordBreak:'break-all' }}>{u._id}</strong></div>
                           <div className="ipban-detail-item"><i className="fa-solid fa-coins" style={{ color:'#f59e0b' }} /><span>Gold</span><strong>{u.gold ?? 0}</strong></div>
@@ -2908,11 +3477,10 @@ function IpBans() {
                           <div className="ipban-detail-item"><i className="fa-solid fa-star" style={{ color:'#3b82f6' }} /><span>XP</span><strong>{u.xp ?? 0}</strong></div>
                         </div>
 
-                        {/* About / Mood */}
                         {(u.about || u.mood) && (
                           <div className="ipban-about-row">
-                            {u.mood && <span className="ipban-mood"><i className="fa-solid fa-face-smile" /> {u.mood}</span>}
-                            {u.about && <span className="ipban-about"><i className="fa-solid fa-align-left" /> {u.about.slice(0, 80)}{u.about.length > 80 ? '…' : ''}</span>}
+                            {u.mood  && <span className="ipban-mood"><i className="fa-solid fa-face-smile" /> {u.mood}</span>}
+                            {u.about && <span className="ipban-about"><i className="fa-solid fa-align-left" /> {u.about.slice(0,80)}{u.about.length > 80 ? '…' : ''}</span>}
                           </div>
                         )}
                       </div>
@@ -2921,10 +3489,147 @@ function IpBans() {
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
+      {confirm && <Confirm msg={confirm.msg} onYes={() => { confirm.cb(); setConfirm(null); }} onNo={() => setConfirm(null)} />}
+    </div>
+  );
+}
+
+// ── Access Denied (shown to moderators trying to access admin-only sections) ─
+function AccessDenied() {
+  return (
+    <div className="ap-section">
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'60px 20px', gap:16, color:'#6b7280' }}>
+        <i className="fa-solid fa-lock" style={{ fontSize:48, color:'#ef4444' }} />
+        <p style={{ fontSize:18, fontWeight:700, color:'#f1f5f9', margin:0 }}>Access Denied</p>
+        <p style={{ fontSize:14, margin:0 }}>This section requires Admin rank or higher.</p>
+      </div>
+    </div>
+  );
+}
+
+// ── Contact Messages ───────────────────────────────────────────
+function ContactMessages() {
+  const [contacts, setContacts] = React.useState([]);
+  const [loading,  setLoading]  = React.useState(false);
+  const [expanded, setExpanded] = React.useState(null);
+  const [confirm,  setConfirm]  = React.useState(null);
+  const [filter,   setFilter]   = React.useState('all'); // all | unread | read
+
+  const load = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const d = await api('/contacts');
+      setContacts(d.contacts || []);
+    } catch (e) { toast(e.message, 'error'); }
+    finally { setLoading(false); }
+  }, []);
+
+  React.useEffect(() => { load(); }, [load]);
+
+  const markRead = async (id) => {
+    try {
+      await api(`/contacts/${id}/read`, { method: 'PUT' });
+      setContacts(prev => prev.map(c => c._id === id ? { ...c, isRead: true } : c));
+    } catch (e) { toast(e.message, 'error'); }
+  };
+
+  const del = async (id) => {
+    try {
+      await api(`/contacts/${id}`, { method: 'DELETE' });
+      toast('Message deleted');
+      setContacts(prev => prev.filter(c => c._id !== id));
+    } catch (e) { toast(e.message, 'error'); }
+  };
+
+  const toggle = async (id) => {
+    setExpanded(p => p === id ? null : id);
+    const c = contacts.find(x => x._id === id);
+    if (c && !c.isRead) await markRead(id);
+  };
+
+  const unreadCount = contacts.filter(c => !c.isRead).length;
+  const filtered = filter === 'unread' ? contacts.filter(c => !c.isRead)
+                 : filter === 'read'   ? contacts.filter(c =>  c.isRead)
+                 : contacts;
+
+  return (
+    <div className="ap-section">
+      <h2 className="ap-section-title">
+        <i className="fa-solid fa-envelope" style={{ color:'#06b6d4' }} /> Contact Messages
+        {unreadCount > 0 && <span className="ap-badge ap-badge--danger ap-badge--count">{unreadCount} unread</span>}
+      </h2>
+
+      {/* Filter tabs */}
+      <div className="ap-tabs" style={{ marginBottom:16 }}>
+        {[['all','All'],['unread','Unread'],['read','Read']].map(([val,label]) => (
+          <button key={val} className={`ap-tab-btn ${filter === val ? 'ap-tab-btn--active' : ''}`} onClick={() => setFilter(val)}>
+            {label}
+            {val === 'unread' && unreadCount > 0 && <span className="ap-badge ap-badge--danger" style={{ marginLeft:6, fontSize:10 }}>{unreadCount}</span>}
+          </button>
+        ))}
+        <button className="ap-btn ap-btn--ghost ap-btn--sm" style={{ marginLeft:'auto' }} onClick={load}>
+          <i className="fa-solid fa-rotate" />
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="ap-loading"><i className="fa-solid fa-spinner fa-spin" /></div>
+      ) : filtered.length === 0 ? (
+        <div className="ap-empty"><i className="fa-solid fa-inbox" style={{ marginRight:8 }} />No messages{filter !== 'all' ? ' in this filter' : ''}</div>
+      ) : (
+        <div className="ap-list">
+          {filtered.map(c => (
+            <div key={c._id} className="ap-list-item" style={{
+              borderLeft: `3px solid ${c.isRead ? '#374151' : '#06b6d4'}`,
+              background: c.isRead ? '' : 'rgba(6,182,212,0.04)',
+              flexDirection: 'column', alignItems: 'stretch', cursor:'pointer'
+            }} onClick={() => toggle(c._id)}>
+
+              {/* Header row */}
+              <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+                    <span style={{ fontWeight: c.isRead ? 500 : 700, color:'#f1f5f9', fontSize:14 }}>
+                      {c.name || 'Anonymous'}
+                    </span>
+                    {!c.isRead && <span className="ap-badge" style={{ background:'#06b6d433', color:'#06b6d4', border:'1px solid #06b6d444', fontSize:10 }}>NEW</span>}
+                    {c.subject && <span style={{ fontSize:12, color:'#9ca3af' }}>— {c.subject}</span>}
+                  </div>
+                  <div style={{ fontSize:11, color:'#6b7280', marginTop:2, display:'flex', gap:12 }}>
+                    {c.email && <span><i className="fa-solid fa-envelope" style={{ marginRight:4 }} />{c.email}</span>}
+                    <span><i className="fa-regular fa-clock" style={{ marginRight:4 }} />{fmtDateTime(c.createdAt)}</span>
+                  </div>
+                </div>
+                <div style={{ display:'flex', gap:6 }}>
+                  {!c.isRead && (
+                    <button className="ap-btn ap-btn--xs ap-btn--ghost" title="Mark read"
+                      onClick={e => { e.stopPropagation(); markRead(c._id); }}>
+                      <i className="fa-solid fa-check" />
+                    </button>
+                  )}
+                  <button className="ap-btn ap-btn--xs ap-btn--danger" title="Delete"
+                    onClick={e => { e.stopPropagation(); setConfirm({ msg: 'Delete this message?', cb: () => del(c._id) }); }}>
+                    <i className="fa-solid fa-trash" />
+                  </button>
+                  <i className={`fa-solid fa-chevron-${expanded === c._id ? 'up' : 'down'}`} style={{ color:'#6b7280', fontSize:12, marginLeft:4 }} />
+                </div>
+              </div>
+
+              {/* Expanded message body */}
+              {expanded === c._id && (
+                <div style={{ marginTop:12, padding:'12px 14px', background:'#111827', borderRadius:8, fontSize:13, color:'#d1d5db', lineHeight:1.6, whiteSpace:'pre-wrap', wordBreak:'break-word' }}>
+                  {c.message || c.content || <span style={{ color:'#6b7280' }}>No message body</span>}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
       {confirm && <Confirm msg={confirm.msg} onYes={() => { confirm.cb(); setConfirm(null); }} onNo={() => setConfirm(null)} />}
     </div>
   );
@@ -3191,7 +3896,7 @@ function ChatLogs() {
       if (roomId) params.set('roomId', roomId);
       if (type)   params.set('type',   type);
       if (search) params.set('search', search);
-      const d = await api(`/logs?${params}`);
+      const d = await api(`/chat-logs?${params}`);
       setLogs(d.logs || []);
       setTotal(d.total || 0);
       setPages(d.pages || 1);
@@ -4857,9 +5562,11 @@ const ADDONS_CSS = `
 const SECTIONS = [
   { id: 'dashboard',        label: 'Dashboard',         icon: null, img: '/dashboard.png' },
   { id: 'active_rooms',     label: 'Active Rooms',      icon: 'fa-tower-broadcast' },
+  { id: 'live_users',       label: 'Live Users / IPs',  icon: 'fa-satellite-dish' },
   { id: 'members',          label: 'Members',           icon: 'fa-users' },
   { id: 'rooms',            label: 'Rooms',             icon: 'fa-door-open' },
   { id: 'reports',          label: 'Reports',           icon: 'fa-flag' },
+  { id: 'contacts',         label: 'Contact Messages',  icon: 'fa-envelope' },
   { id: 'gifts',            label: 'Gifts',             icon: 'fa-gift' },
   { id: 'badges',           label: 'Badges',            icon: 'fa-award' },
   { id: 'filters',          label: 'Filters',           icon: 'fa-filter' },
@@ -4904,8 +5611,8 @@ export default function AdminPanel() {
       })
       .then(d => {
         const rank = d?.user?.rank || d?.rank || '';
-        const adminRanks = ['admin', 'superadmin', 'owner'];
-        if (!adminRanks.includes(rank)) {
+        const staffRanks = ['moderator', 'admin', 'superadmin', 'owner'];
+        if (!staffRanks.includes(rank)) {
           setAuthState('fail');
           return;
         }
@@ -4959,35 +5666,50 @@ export default function AdminPanel() {
     );
   }
 
-  const navigate = (id) => { setActive(id); setSideOpen(false); };
+  const isOwner      = userRank === 'owner';
+  const isAdminPlus  = ['admin','superadmin','owner'].includes(userRank);
+  const isModPlus    = ['moderator','admin','superadmin','owner'].includes(userRank);
 
   const renderSection = () => {
     switch (active) {
       case 'dashboard':       return <Dashboard socket={socket} />;
       case 'active_rooms':    return <ActiveRooms socket={socket} />;
+      case 'live_users':       return <LiveUsers />;
       case 'members':         return <Members />;
       case 'rooms':           return <Rooms socket={socket} />;
       case 'reports':         return <Reports />;
-      case 'gifts':           return <Gifts />;
-      case 'badges':          return <Badges />;
+      case 'contacts':        return <ContactMessages />;
+      case 'gifts':           return isAdminPlus ? <Gifts /> : <AccessDenied />;
+      case 'badges':          return isAdminPlus ? <Badges /> : <AccessDenied />;
       case 'filters':         return <WordFilters />;
-      case 'ipbans':          return <IpBans />;
-      case 'news':            return <News />;
-      case 'broadcast':       return <Broadcast />;
-      case 'permissions':     return <Permissions />;
-      case 'themes_by_rank':  return <ThemePermissionsSection />;
-      case 'premium':         return <PremiumSection />;
-      case 'revenue':         return <RevenueSection userRank={userRank} />;
-      case 'bots':            return <BotsSection />;
-      case 'appearance':      return <Appearance />;
+      case 'ipbans':          return isAdminPlus ? <IpBans /> : <AccessDenied />;
+      case 'news':            return isAdminPlus ? <News /> : <AccessDenied />;
+      case 'broadcast':       return isAdminPlus ? <Broadcast /> : <AccessDenied />;
+      case 'permissions':     return isAdminPlus ? <Permissions /> : <AccessDenied />;
+      case 'themes_by_rank':  return isAdminPlus ? <ThemePermissionsSection /> : <AccessDenied />;
+      case 'premium':         return isAdminPlus ? <PremiumSection /> : <AccessDenied />;
+      case 'revenue':         return isOwner ? <RevenueSection userRank={userRank} /> : <AccessDenied />;
+      case 'bots':            return isAdminPlus ? <BotsSection /> : <AccessDenied />;
+      case 'appearance':      return isAdminPlus ? <Appearance /> : <AccessDenied />;
       case 'notes':           return <StaffNotes />;
       case 'action_logs':     return <ActionLogs />;
       case 'logs':            return <ChatLogs />;
-      case 'addons':          return <AddonsWallet />;
-      case 'settings':        return <Settings />;
+      case 'addons':          return isAdminPlus ? <AddonsWallet /> : <AccessDenied />;
+      case 'settings':        return isAdminPlus ? <Settings /> : <AccessDenied />;
       default:                return null;
     }
   };
+
+  const navigate = (id) => { setActive(id); setSideOpen(false); };
+
+  // Sections visible based on rank
+  const visibleSections = SECTIONS.filter(s => {
+    if (s.id === 'revenue') return isOwner;
+    if (['gifts','badges','ipbans','news','broadcast','permissions',
+         'themes_by_rank','premium','bots','appearance','addons',
+         'settings'].includes(s.id)) return isAdminPlus;
+    return true;
+  });
 
   return (
     <>
@@ -5008,14 +5730,15 @@ export default function AdminPanel() {
           </div>
 
           <nav className="ap-nav">
-            {SECTIONS.filter(s => s.id !== 'revenue' || userRank === 'owner').map(s => (
+            {visibleSections.map(s => (
               <button key={s.id} className={`ap-nav-item ${active === s.id ? 'ap-nav-item--active' : ''}`} onClick={() => navigate(s.id)}>
                 {s.img
                   ? <img src={s.img} className="ap-icon-img" alt="" onError={e => e.target.style.display='none'} />
                   : <i className={`fa-solid ${s.icon}`} style={
                       s.id === 'active_rooms' ? { color: '#22c55e' } :
                       s.id === 'action_logs'  ? { color: '#f59e0b' } :
-                      s.id === 'filters'      ? { color: '#3b82f6' } : {}
+                      s.id === 'filters'      ? { color: '#3b82f6' } :
+                      s.id === 'contacts'     ? { color: '#06b6d4' } : {}
                     } />
                 }
                 <span>{s.label}</span>
