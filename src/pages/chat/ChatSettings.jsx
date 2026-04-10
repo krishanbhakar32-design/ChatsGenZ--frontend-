@@ -8,7 +8,7 @@ import { useNavigate }                  from 'react-router-dom'
 import { API, R, GBR, RANKS, RL }      from './chatConstants.js'
 import { THEMES }                       from '../../components/StyleModal.jsx'
 import { FBtn }                         from './ChatIcons.jsx'
-import { Sounds }                       from '../../utils/sounds.js'
+import { Sounds, getSoundEnabled, toggleSound } from '../../utils/sounds.js'
 
 // ── Color data ────────────────────────────────────────────────
 const SOLID_COLORS = [
@@ -438,14 +438,23 @@ function BubbleModal({ me, onSave, onClose, accent='#03add8' }) {
 
 // ── MODAL 4 — SOUNDS ─────────────────────────────────────────
 function SoundsModal({ onClose, accent='#03add8' }) {
-  const [prefs,setPrefs] = useState(getSoundPrefs)
+  const [prefs,setPrefs]     = useState(getSoundPrefs)
+  const [master,setMaster]   = useState(getSoundEnabled)
+
+  function toggleMaster(){
+    const next = toggleSound()
+    setMaster(next)
+  }
 
   function toggle(key){
     const cur = prefs[key]!==false
     setSoundPref(key,!cur)
     setPrefs(p=>({...p,[key]:!cur}))
   }
-  function testSound(file){ try{ const a=new Audio(file);a.volume=0.5;a.play().catch(()=>{}) }catch{} }
+  function testSound(file){
+    if(!master) return
+    try{ const a=new Audio(file);a.volume=0.5;a.play().catch(()=>{}) }catch{}
+  }
 
   return (
     <>
@@ -453,10 +462,28 @@ function SoundsModal({ onClose, accent='#03add8' }) {
       <CModal>
         <CHead title="Sounds" icon="fa-solid fa-volume-high" onClose={onClose} accent={accent} />
         <div style={{ flex:1,overflowY:'auto' }}>
+
+          {/* ── MASTER TOGGLE ── */}
+          <div style={{ display:'flex',alignItems:'center',gap:10,padding:'12px 13px',borderBottom:'2px solid rgba(255,255,255,0.07)',background:'rgba(0,0,0,0.2)' }}>
+            <span style={{ width:32,height:32,borderRadius:9,background:master?`${accent}22`:'rgba(255,255,255,0.05)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,transition:'background .2s' }}>
+              <i className={master?'fa-solid fa-volume-high':'fa-solid fa-volume-xmark'} style={{ fontSize:14,color:master?accent:'#555' }} />
+            </span>
+            <div style={{ flex:1 }}>
+              <span style={{ fontSize:'0.85rem',color:master?'#f1f5f9':'#555',fontWeight:800 }}>All Sounds</span>
+              <div style={{ fontSize:'0.62rem',color:'#444',marginTop:1 }}>{master?'Master sound is ON':'Master sound is OFF — all sounds muted'}</div>
+            </div>
+            <button onClick={toggleMaster}
+              style={{ width:46,height:24,borderRadius:12,border:'none',cursor:'pointer',background:master?accent:'rgba(255,255,255,0.1)',position:'relative',transition:'background .2s',flexShrink:0,boxShadow:master?`0 0 8px ${accent}66`:'none' }}>
+              <span style={{ position:'absolute',top:3,left:master?'calc(100% - 20px)':'3px',width:18,height:18,borderRadius:'50%',background:'#fff',transition:'left .2s',boxShadow:'0 1px 3px rgba(0,0,0,0.4)' }} />
+            </button>
+          </div>
+
+          {/* ── PER-SOUND LIST ── */}
           {SOUND_KEYS.map((sk,i)=>{
-            const isOn = prefs[sk.key]!==false
+            const isOn = master && prefs[sk.key]!==false
+            const canToggle = master  // can only toggle individual sounds if master is on
             return (
-              <div key={sk.key} style={{ display:'flex',alignItems:'center',gap:10,padding:'11px 13px',borderBottom:i<SOUND_KEYS.length-1?'1px solid rgba(255,255,255,0.04)':'none' }}>
+              <div key={sk.key} style={{ display:'flex',alignItems:'center',gap:10,padding:'11px 13px',borderBottom:i<SOUND_KEYS.length-1?'1px solid rgba(255,255,255,0.04)':'none',opacity:master?1:0.4,transition:'opacity .2s' }}>
                 <span style={{ width:30,height:30,borderRadius:8,background:`${accent}15`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
                   <i className={sk.icon} style={{ fontSize:13,color:isOn?accent:'#444' }} />
                 </span>
@@ -465,16 +492,16 @@ function SoundsModal({ onClose, accent='#03add8' }) {
                   style={{ width:26,height:26,borderRadius:6,border:'none',cursor:isOn?'pointer':'not-allowed',background:'rgba(255,255,255,0.05)',color:isOn?accent:'#333',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,flexShrink:0 }}>
                   <i className="fa-solid fa-play" />
                 </button>
-                <button onClick={()=>toggle(sk.key)}
-                  style={{ width:40,height:22,borderRadius:11,border:'none',cursor:'pointer',background:isOn?accent:'rgba(255,255,255,0.08)',position:'relative',transition:'background .2s',flexShrink:0 }}>
-                  <span style={{ position:'absolute',top:2,left:isOn?'calc(100% - 19px)':'2px',width:18,height:18,borderRadius:'50%',background:'#fff',transition:'left .2s',boxShadow:'0 1px 3px rgba(0,0,0,0.4)' }} />
+                <button onClick={()=>canToggle&&toggle(sk.key)} disabled={!master}
+                  style={{ width:40,height:22,borderRadius:11,border:'none',cursor:canToggle?'pointer':'not-allowed',background:(master&&prefs[sk.key]!==false)?accent:'rgba(255,255,255,0.08)',position:'relative',transition:'background .2s',flexShrink:0 }}>
+                  <span style={{ position:'absolute',top:2,left:(master&&prefs[sk.key]!==false)?'calc(100% - 19px)':'2px',width:18,height:18,borderRadius:'50%',background:'#fff',transition:'left .2s',boxShadow:'0 1px 3px rgba(0,0,0,0.4)' }} />
                 </button>
               </div>
             )
           })}
         </div>
         <div style={{ padding:'9px 13px',borderTop:'1px solid rgba(255,255,255,0.04)',background:'#0e1018' }}>
-          <p style={{ fontSize:'0.66rem',color:'#444',textAlign:'center',margin:0 }}>Changes save automatically.</p>
+          <p style={{ fontSize:'0.66rem',color:'#444',textAlign:'center',margin:0 }}>Changes save automatically. Master off = all sounds silent.</p>
         </div>
       </CModal>
     </>
@@ -565,6 +592,84 @@ function ThemesModal({ me, onSave, onClose, accent='#03add8' }) {
   )
 }
 
+// ── MODAL 6 — CUSTOM CSS ─────────────────────────────────────
+// Custom CSS applies user-level personalisation (stored server side)
+// Example use: override font sizes, add animations, custom colors
+function CustomCSSModal({ me, onSave, onClose, accent='#03add8' }) {
+  const [css, setCss] = useState(me?.customCss || '')
+  const [saving, setSaving] = useState(false)
+
+  const EXAMPLES = [
+    { label: 'Bigger text', code: '.chat-msg { font-size: 18px !important; }' },
+    { label: 'Bold names', code: '.chat-name { font-weight: 900 !important; }' },
+    { label: 'Round bubbles', code: '.chat-bubble { border-radius: 20px !important; }' },
+    { label: 'Hide timestamps', code: '.chat-ts { display: none !important; }' },
+  ]
+
+  async function handleSave() {
+    setSaving(true)
+    await onSave([{ field: 'customCss', value: css }])
+    // Inject CSS into current page
+    let el = document.getElementById('cgz-user-custom-css')
+    if (!el) { el = document.createElement('style'); el.id = 'cgz-user-custom-css'; document.head.appendChild(el) }
+    el.textContent = css
+    setSaving(false)
+    onClose()
+  }
+
+  return (
+    <>
+      <COverlay onClose={onClose} />
+      <CModal maxW={420}>
+        <CHead title="Custom CSS" icon="fa-solid fa-code" onClose={onClose} accent={accent} />
+        <div style={{ flex:1, overflowY:'auto', padding:13 }}>
+          <div style={{ fontSize:'0.65rem', color:'#555', marginBottom:8, fontWeight:700, textTransform:'uppercase', letterSpacing:1 }}>
+            Your CSS
+          </div>
+          <textarea
+            value={css}
+            onChange={e => setCss(e.target.value)}
+            placeholder={'/* Add your custom CSS here */\n.chat-msg { font-size: 16px; }\n.chat-name { font-weight: 900; }'}
+            rows={10}
+            style={{ width:'100%', padding:'10px', background:'#0a0c14', border:'1.5px solid rgba(255,255,255,0.07)',
+              borderRadius:9, color:'#e0e0ff', fontSize:'0.78rem', fontFamily:"'Courier New',monospace",
+              lineHeight:1.6, resize:'vertical', outline:'none', boxSizing:'border-box',
+              minHeight:180 }}
+            onFocus={e => e.target.style.borderColor = accent}
+            onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.07)'}
+          />
+          <div style={{ fontSize:'0.62rem', color:'#444', marginTop:6, marginBottom:10 }}>
+            ⚠️ Custom CSS applies to your view only. Affects all chat elements.
+          </div>
+          <div style={{ fontSize:'0.65rem', color:'#555', fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:6 }}>
+            Quick Examples
+          </div>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:5 }}>
+            {EXAMPLES.map((ex, i) => (
+              <button key={i} onClick={() => setCss(p => p ? p + '\n' + ex.code : ex.code)}
+                style={{ padding:'4px 10px', borderRadius:20, border:`1px solid rgba(255,255,255,0.08)`,
+                  background:'rgba(255,255,255,0.04)', color:'#888', fontSize:'0.68rem', cursor:'pointer',
+                  fontFamily:'inherit', transition:'all .12s' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = `${accent}55`; e.currentTarget.style.color = accent }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#888' }}>
+                + {ex.label}
+              </button>
+            ))}
+            {css && (
+              <button onClick={() => setCss('')}
+                style={{ padding:'4px 10px', borderRadius:20, border:'1px solid rgba(239,68,68,0.3)',
+                  background:'rgba(239,68,68,0.08)', color:'#ef4444', fontSize:'0.68rem', cursor:'pointer', fontFamily:'inherit' }}>
+                Clear All
+              </button>
+            )}
+          </div>
+        </div>
+        <CFoot onClose={onClose} onSave={handleSave} saving={saving} accent={accent} />
+      </CModal>
+    </>
+  )
+}
+
 // ── CHAT OPTIONS SUBMENU ──────────────────────────────────────
 function ChatOptionsSubmenu({ me, tObj, onClose, onSaved }) {
   const [modal,setModal] = useState(null)
@@ -588,6 +693,7 @@ function ChatOptionsSubmenu({ me, tObj, onClose, onSaved }) {
     {id:'bubble',       label:'Message Bubble',icon:'fa-solid fa-comment',     desc:'Bubble color & style'},
     {id:'sounds',       label:'Sounds',        icon:'fa-solid fa-volume-high', desc:'Notification sounds'},
     {id:'theme',        label:'Theme',         icon:'fa-solid fa-palette',     desc:'Chat room theme'},
+    {id:'customCss',    label:'Custom CSS',    icon:'fa-solid fa-code',        desc:'Personalise with CSS'},
   ]
 
   return (
@@ -623,6 +729,7 @@ function ChatOptionsSubmenu({ me, tObj, onClose, onSaved }) {
       {modal==='bubble'        && <BubbleModal        me={me} accent={acc} onSave={saveStyle} onClose={()=>setModal(null)} />}
       {modal==='sounds'        && <SoundsModal        accent={acc}          onClose={()=>setModal(null)} />}
       {modal==='theme'         && <ThemesModal        me={me} accent={acc} onSave={saveStyle} onClose={()=>setModal(null)} />}
+      {modal==='customCss'     && <CustomCSSModal     me={me} accent={acc} onSave={saveStyle} onClose={()=>setModal(null)} />}
     </>
   )
 }
@@ -743,44 +850,74 @@ function AvatarDropdown({ me, status, setStatus, onLeave, socket, onOpenSettings
 
         {open&&(
           <div onClick={e=>e.stopPropagation()}
-            style={{ position:'absolute',top:'calc(100% + 6px)',right:0,background:hdr,borderRadius:13,minWidth:230,boxShadow:'0 10px 40px rgba(0,0,0,0.65)',zIndex:500,overflow:'hidden' }}>
-            {/* User info */}
-            <div style={{ padding:'11px 12px 9px',borderBottom:'1px solid rgba(255,255,255,0.05)',display:'flex',alignItems:'center',gap:9 }}>
-              <img src={me?.avatar||'/default_images/avatar/default_guest.png'} alt=""
-                style={{ width:38,height:38,borderRadius:'50%',objectFit:'cover',border:`2px solid ${GBR(me?.gender,me?.rank)}`,flexShrink:0 }}
-                onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}} />
-              <div style={{ flex:1,minWidth:0 }}>
-                <div style={{ display:'flex',alignItems:'center',gap:4,marginBottom:1 }}>
-                  <span style={{ fontSize:'0.85rem',fontWeight:800,color:txt,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:100 }}>{me?.username}</span>
-                  <img src={`/icons/ranks/${ri.icon}`} alt={ri.label} title={ri.label}
-                    style={{ width:14,height:14,objectFit:'contain',flexShrink:0 }}
-                    onError={e=>e.target.style.display='none'} />
+            style={{ position:'absolute',top:'calc(100% + 6px)',right:0,background:hdr,borderRadius:13,minWidth:240,boxShadow:'0 10px 40px rgba(0,0,0,0.65)',zIndex:500,overflow:'hidden' }}>
+
+            {/* ── CodyChat-style user header ── */}
+            <div style={{ padding:'12px 12px 10px',borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ display:'flex',alignItems:'flex-start',gap:9 }}>
+                {/* Avatar with status dot */}
+                <div style={{ position:'relative',flexShrink:0 }}>
+                  <img src={me?.avatar||'/default_images/avatar/default_guest.png'} alt=""
+                    style={{ width:44,height:44,borderRadius:'50%',objectFit:'cover',border:`2px solid ${GBR(me?.gender,me?.rank)}` }}
+                    onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}} />
+                  {/* Status picker button */}
+                  <button onClick={()=>setShowStatusMenu(p=>!p)}
+                    title="Change status"
+                    style={{ position:'absolute',bottom:-1,right:-1,width:16,height:16,borderRadius:'50%',background:STATUS_COLOR[status]||'#22c55e',border:`2px solid ${hdr}`,cursor:'pointer',padding:0 }} />
                 </div>
-                <div style={{ fontSize:'0.63rem',color:ri.color||'#888',fontWeight:700 }}>{ri.label}</div>
-              </div>
-              {/* Status picker */}
-              <div style={{ position:'relative',flexShrink:0 }}>
-                <button onClick={()=>setShowStatusMenu(p=>!p)}
-                  style={{ background:'rgba(255,255,255,0.06)',border:'none',borderRadius:7,cursor:'pointer',width:28,height:28,display:'flex',alignItems:'center',justifyContent:'center' }}>
-                  <span style={{ width:10,height:10,borderRadius:'50%',background:STATUS_COLOR[status]||'#22c55e',display:'block' }} />
-                </button>
-                {showStatusMenu&&(
-                  <div style={{ position:'absolute',top:'calc(100% + 4px)',right:0,background:bg,borderRadius:9,padding:4,minWidth:128,boxShadow:'0 6px 20px rgba(0,0,0,0.5)',zIndex:10 }}>
-                    {STATUS_OPTS.map(s=>(
-                      <button key={s.id} onClick={()=>{setStatus(s.id);socket?.emit('setStatus',{status:s.id});setShowStatusMenu(false)}}
-                        style={{ display:'flex',alignItems:'center',gap:6,width:'100%',padding:'6px 9px',borderRadius:6,border:'none',cursor:'pointer',background:status===s.id?`${acc}1a`:'none',color:status===s.id?txt:'#777',fontSize:'0.75rem',fontWeight:status===s.id?700:500 }}>
-                        <span style={{ width:8,height:8,borderRadius:'50%',background:s.color,flexShrink:0 }} />{s.label}
-                        {status===s.id&&<i className="fa-solid fa-check" style={{ fontSize:8,color:acc,marginLeft:'auto' }} />}
-                      </button>
-                    ))}
+
+                {/* Name, rank, level, mood */}
+                <div style={{ flex:1,minWidth:0 }}>
+                  <div style={{ display:'flex',alignItems:'center',gap:4,marginBottom:1,flexWrap:'wrap' }}>
+                    <span style={{ fontSize:'0.88rem',fontWeight:800,color:txt,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:110 }}>{me?.username}</span>
+                    <img src={`/icons/ranks/${ri.icon}`} alt={ri.label} title={ri.label}
+                      style={{ width:15,height:15,objectFit:'contain',flexShrink:0 }}
+                      onError={e=>e.target.style.display='none'} />
+                    {/* Level badge */}
+                    <span style={{ background:`${acc}22`,color:acc,fontSize:'0.55rem',fontWeight:800,padding:'1px 5px',borderRadius:5,flexShrink:0,border:`1px solid ${acc}44` }}>
+                      Lv {me?.level||1}
+                    </span>
                   </div>
-                )}
+                  {/* Rank label */}
+                  <div style={{ fontSize:'0.63rem',color:ri.color||'#888',fontWeight:700,marginBottom:2 }}>{ri.label}</div>
+                  {/* Mood under name */}
+                  {me?.mood && (
+                    <div style={{ fontSize:'0.64rem',color:'#777',fontStyle:'italic',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>
+                      "{me.mood}"
+                    </div>
+                  )}
+                  {/* Mini stats: gold + ruby */}
+                  <div style={{ display:'flex',gap:6,marginTop:3 }}>
+                    <span style={{ fontSize:'0.62rem',color:'#f59e0b',fontWeight:700 }}>🪙 {(me?.gold||0).toLocaleString()}</span>
+                    <span style={{ fontSize:'0.62rem',color:'#ef4444',fontWeight:700 }}>💎 {(me?.ruby||0).toLocaleString()}</span>
+                  </div>
+                </div>
+
+                {/* Edit profile quick link */}
+                <button onClick={()=>{onOpenProfile?.();setOpen(false)}}
+                  title="Edit Profile"
+                  style={{ width:24,height:24,borderRadius:6,background:'rgba(255,255,255,0.07)',border:'none',cursor:'pointer',color:'#888',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,flexShrink:0 }}>
+                  <i className="fa-regular fa-pen-to-square" />
+                </button>
               </div>
+
+              {/* Status submenu */}
+              {showStatusMenu&&(
+                <div style={{ marginTop:8,background:bg,borderRadius:9,padding:4,boxShadow:'0 4px 16px rgba(0,0,0,0.4)',border:'1px solid rgba(255,255,255,0.06)' }}>
+                  {STATUS_OPTS.map(s=>(
+                    <button key={s.id} onClick={()=>{setStatus(s.id);socket?.emit('setStatus',{status:s.id});setShowStatusMenu(false)}}
+                      style={{ display:'flex',alignItems:'center',gap:7,width:'100%',padding:'7px 10px',borderRadius:6,border:'none',cursor:'pointer',background:status===s.id?`${acc}1a`:'none',color:status===s.id?txt:'#777',fontSize:'0.76rem',fontWeight:status===s.id?700:500 }}>
+                      <span style={{ width:9,height:9,borderRadius:'50%',background:s.color,flexShrink:0 }} />{s.label}
+                      {status===s.id&&<i className="fa-solid fa-check" style={{ fontSize:8,color:acc,marginLeft:'auto' }} />}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <MenuRow icon="fa-regular fa-pen-to-square" label="Edit Profile" onClick={()=>{onOpenProfile?.();setOpen(false)}} acc={acc} txt={txt} />
+            {/* Menu items */}
             <MenuRow icon="fa-solid fa-wallet" iconColor="#f59e0b"
-              label={<span style={{ display:'flex',alignItems:'center',gap:4,flex:1 }}>Wallet<span style={{ marginLeft:'auto',display:'flex',gap:5,fontSize:'0.68rem' }}><span style={{ color:'#f59e0b',fontWeight:700 }}>🪙 {(me?.gold||0).toLocaleString()}</span><span style={{ color:'#ef4444',fontWeight:700 }}>💎 {(me?.ruby||0).toLocaleString()}</span></span></span>}
+              label={<span style={{ display:'flex',alignItems:'center',gap:4,flex:1 }}>Wallet</span>}
               onClick={()=>{setShowWallet(true);setOpen(false)}} acc={acc} txt={txt} />
             <MenuRow icon="fa-solid fa-chart-line" iconColor="#818cf8"
               label={<span style={{ display:'flex',alignItems:'center',gap:4,flex:1 }}>Level<span style={{ marginLeft:'auto',fontSize:'0.7rem',color:'#818cf8',fontWeight:800 }}>Lv {me?.level||1}</span></span>}
@@ -866,9 +1003,26 @@ function ChatSettingsOverlay({ me, onClose, onSaved }) {
 // ── FOOTER ────────────────────────────────────────────────────
 function Footer({ showRadio, setShowRadio, showRight, setRight, notif, tObj }) {
   const thHeader=tObj?.bg_header||'#111', thBorder=tObj?.default_color||'#222'
+  const acc=tObj?.accent||'#03add8'
+  const [soundOn, setSoundOn] = useState(getSoundEnabled)
+
+  function handleSoundToggle() {
+    const next = toggleSound()
+    setSoundOn(next)
+  }
+
   return (
     <div style={{ background:thHeader,borderTop:`1px solid ${thBorder}22`,padding:'3px 10px',display:'flex',alignItems:'center',gap:2,flexShrink:0,position:'relative',minHeight:42 }}>
       <FBtn faIcon="fa-solid fa-radio" active={showRadio} onClick={()=>setShowRadio(s=>!s)} title="Radio" tObj={tObj} />
+
+      {/* Master sound toggle */}
+      <button
+        onClick={handleSoundToggle}
+        title={soundOn ? 'Sounds ON – click to mute all' : 'Sounds OFF – click to unmute'}
+        style={{ width:32,height:32,borderRadius:8,border:`1px solid ${soundOn?acc+'44':'rgba(255,255,255,0.08)'}`,background:soundOn?`${acc}15`:'rgba(255,255,255,0.04)',color:soundOn?acc:'#555',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0,transition:'all .15s' }}>
+        <i className={soundOn ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark'} />
+      </button>
+
       <div style={{ flex:1 }} />
       <FBtn faIcon="fa-solid fa-users" active={showRight} onClick={()=>setRight(s=>!s)} title="Online Users" badge={notif?.friends||0} tObj={tObj} />
     </div>
