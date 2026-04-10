@@ -1764,9 +1764,9 @@ function ActionLogsV2() {
   const [successFilter, setSuccessFilter] = useState('');
 
   const apiV2 = useCallback(async (path, opts = {}) => {
-    const token = localStorage.getItem('token');
+    const tok = localStorage.getItem('cgz_token') || '';
     const r = await fetch(`${API}/api/admin/v2${path}`, {
-      headers: { 'Content-Type':'application/json', Authorization:`Bearer ${token}` },
+      headers: { 'Content-Type':'application/json', Authorization:`Bearer ${tok}` },
       ...opts,
     });
     if (!r.ok) { const e = await r.json().catch(()=>({error:'Request failed'})); throw new Error(e.error||'Error'); }
@@ -2092,9 +2092,9 @@ function RbacPermissionsManager() {
   const RANK_COLORS = { moderator:'#00AAFF', admin:'#FF4444', superadmin:'#FF00FF' };
 
   const apiV2 = useCallback(async (path, opts = {}) => {
-    const token = localStorage.getItem('token');
+    const tok = localStorage.getItem('cgz_token') || '';
     const r = await fetch(`${API}/api/admin/v2${path}`, {
-      headers: { 'Content-Type':'application/json', Authorization:`Bearer ${token}` },
+      headers: { 'Content-Type':'application/json', Authorization:`Bearer ${tok}` },
       ...opts,
     });
     if (!r.ok) { const e = await r.json().catch(()=>({error:'Request failed'})); throw new Error(e.error||'Error'); }
