@@ -804,7 +804,7 @@ function AvatarDropdown({ me, status, setStatus, onLeave, socket, onOpenSettings
 // ── CHAT SETTINGS OVERLAY ────────────────────────────────────
 function ChatSettingsOverlay({ me, onClose, onSaved }) {
   const [modal,setModal] = useState(null)
-  const acc = '#03add8'
+  const acc = me?.chatTheme ? (require('../../components/StyleModal').THEMES.find(t=>t.id===me.chatTheme)?.accent || '#03add8') : '#03add8'
   const token = localStorage.getItem('cgz_token')
   async function saveStyle(fields){
     const body={}; fields.forEach(({field,value})=>{body[field]=value})
@@ -814,31 +814,44 @@ function ChatSettingsOverlay({ me, onClose, onSaved }) {
     }catch{}
   }
   const TABS=[
-    {id:'usernameStyle',label:'Name',  icon:'fa-solid fa-signature'},
-    {id:'textStyle',    label:'Text',  icon:'fa-solid fa-font'},
-    {id:'bubble',       label:'Bubble',icon:'fa-solid fa-comment'},
-    {id:'sounds',       label:'Sounds',icon:'fa-solid fa-volume-high'},
-    {id:'theme',        label:'Theme', icon:'fa-solid fa-palette'},
+    {id:'usernameStyle',label:'Name',    icon:'fa-solid fa-signature'},
+    {id:'textStyle',    label:'Text',    icon:'fa-solid fa-font'},
+    {id:'bubble',       label:'Bubble',  icon:'fa-solid fa-comment'},
+    {id:'sounds',       label:'Sounds',  icon:'fa-solid fa-volume-high'},
+    {id:'theme',        label:'Theme',   icon:'fa-solid fa-palette'},
   ]
   return (
     <>
       <div onClick={onClose} style={{ position:'fixed',inset:0,zIndex:9999,background:'rgba(0,0,0,0.65)',display:'flex',alignItems:'flex-start',justifyContent:'center',paddingTop:55 }}>
         <div onClick={e=>e.stopPropagation()} style={{ background:'#191921',borderRadius:13,width:'min(440px,96vw)',maxHeight:'80vh',display:'flex',flexDirection:'column',boxShadow:'0 8px 40px rgba(0,0,0,0.7)' }}>
           <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 14px',borderBottom:'1px solid rgba(255,255,255,0.05)',background:'#111',borderRadius:'13px 13px 0 0',flexShrink:0 }}>
-            <span style={{ fontSize:'0.9rem',fontWeight:700,color:'#fff' }}>Chat Settings</span>
+            <span style={{ fontSize:'0.9rem',fontWeight:700,color:'#fff' }}>⚙️ Chat Settings</span>
             <button onClick={onClose} style={{ background:'rgba(255,255,255,0.06)',border:'none',borderRadius:7,color:'#777',cursor:'pointer',width:26,height:26,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13 }}><i className="fa-solid fa-xmark" /></button>
           </div>
+          {/* Tab icons row */}
           <div style={{ display:'flex',borderBottom:'1px solid rgba(255,255,255,0.05)',flexShrink:0,background:'#111' }}>
             {TABS.map(t=>(
-              <button key={t.id} onClick={()=>setModal(t.id)}
-                style={{ flex:1,padding:'9px 0',border:'none',cursor:'pointer',fontSize:'0.66rem',fontWeight:600,background:'none',color:modal===t.id?'#03add8':'rgba(255,255,255,0.3)',borderBottom:modal===t.id?'2px solid #03add8':'2px solid transparent',display:'flex',flexDirection:'column',alignItems:'center',gap:3 }}>
+              <button key={t.id} onClick={()=>setModal(prev=>prev===t.id?null:t.id)}
+                style={{ flex:1,padding:'9px 0',border:'none',cursor:'pointer',fontSize:'0.66rem',fontWeight:600,background:'none',color:modal===t.id?acc:'rgba(255,255,255,0.3)',borderBottom:modal===t.id?`2px solid ${acc}`:'2px solid transparent',display:'flex',flexDirection:'column',alignItems:'center',gap:3,transition:'color .12s' }}>
                 <i className={t.icon} style={{ fontSize:15 }} />{t.label}
               </button>
             ))}
           </div>
-          <div style={{ flex:1,display:'flex',alignItems:'center',justifyContent:'center',padding:18 }}>
-            <p style={{ color:'#555',fontSize:'0.82rem',textAlign:'center' }}>Select a category above.</p>
-          </div>
+          {/* Empty state when nothing selected */}
+          {!modal && (
+            <div style={{ flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,gap:12 }}>
+              <i className="fa-solid fa-sliders" style={{ fontSize:32,color:'rgba(255,255,255,0.12)' }} />
+              <p style={{ color:'#555',fontSize:'0.82rem',textAlign:'center' }}>Pick a category above to customise your chat experience.</p>
+              <div style={{ display:'flex',flexWrap:'wrap',gap:8,justifyContent:'center',marginTop:4 }}>
+                {TABS.map(t=>(
+                  <button key={t.id} onClick={()=>setModal(t.id)}
+                    style={{ display:'flex',alignItems:'center',gap:6,padding:'8px 14px',borderRadius:20,border:`1px solid rgba(255,255,255,0.08)`,background:'rgba(255,255,255,0.04)',color:'rgba(255,255,255,0.55)',fontSize:'0.75rem',fontWeight:600,cursor:'pointer' }}>
+                    <i className={t.icon} style={{ color:acc,fontSize:12 }} />{t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
       {modal==='usernameStyle' && <UsernameStyleModal me={me} accent={acc} onSave={saveStyle} onClose={()=>setModal(null)} />}
