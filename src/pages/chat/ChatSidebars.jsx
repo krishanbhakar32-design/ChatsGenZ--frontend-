@@ -537,11 +537,11 @@ function GamesFlyoutPanel({ onClose, socket, roomId, me, tObj }) {
 
 // ── LEADERBOARD with sub-menu ─────────────────────────────────
 const LB_TABS = [
-  { key:'xp',     label:'Top XP',           icon:'fa-solid fa-bolt',           color:'#8b5cf6', field:'xp' },
-  { key:'gold',   label:'Top Gold',          icon:'fa-solid fa-coins',          color:'#f59e0b', field:'gold' },
-  { key:'gifts',  label:'Top Gifts',         icon:'fa-solid fa-gift',           color:'#22c55e', field:'totalGiftsReceived' },
-  { key:'likes',  label:'Top Likes',         icon:'fa-solid fa-heart',          color:'#ec4899', field:'totalLikes' },
-  { key:'views',  label:'Top Views',         icon:'fa-solid fa-eye',            color:'#f97316', field:'profileViews' },
+  { key:'xp',     label:'XP',     icon:'fa-solid fa-bolt',        color:'#8b5cf6', field:'xp',                 img:'/default_images/menu/top_xp.svg' },
+  { key:'level',  label:'Level',  icon:'fa-solid fa-layer-group', color:'#6366f1', field:'level',              img:'/default_images/menu/top_level.svg' },
+  { key:'gold',   label:'Gold',   icon:'fa-solid fa-coins',       color:'#f59e0b', field:'gold',               img:'/default_images/menu/top_gold.svg' },
+  { key:'gifts',  label:'Gifts',  icon:'fa-solid fa-gift',        color:'#22c55e', field:'totalGiftsReceived', img:'/default_images/menu/top_gift.svg' },
+  { key:'likes',  label:'Likes',  icon:'fa-solid fa-heart',       color:'#ec4899', field:'totalLikes',         img:'/default_images/menu/top_like.svg' },
 ]
 const LB_PERIODS = [
   { key:'all',     label:'All Time' },
@@ -560,7 +560,7 @@ function LeaderboardPanel({ onClose, tObj }) {
   useEffect(() => {
     setLoading(true)
     const t = localStorage.getItem('cgz_token')
-    fetch(`${API}/api/leaderboard?tab=${lbTab}&period=${period}&limit=20`, { headers: { Authorization: `Bearer ${t}` } })
+    fetch(`${API}/api/leaderboard/${lbTab}?period=${period}&limit=20`, { headers: { Authorization: `Bearer ${t}` } })
       .then(r => r.json()).then(d => { setUsers(d.users || d || []); setLoading(false) })
       .catch(() => setLoading(false))
   }, [lbTab, period])
@@ -570,17 +570,22 @@ function LeaderboardPanel({ onClose, tObj }) {
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100%', background:bg }}>
       <FlyoutHeader icon="fa-solid fa-trophy" title="Leaderboard" onClose={onClose} accent={'#f59e0b'} header={header} text={text} border={border} />
-      {/* Sub-menu tabs */}
+      {/* Sub-menu tabs — match CodyChat PHP leaderboard_menu */}
       <div style={{ overflowX:'auto', scrollbarWidth:'none', flexShrink:0, borderBottom:`1px solid ${border}22`, background:header }}>
         <div style={{ display:'flex', gap:2, padding:'6px 8px', minWidth:'max-content' }}>
           {LB_TABS.map(t => (
             <button key={t.key} onClick={() => setLbTab(t.key)}
-              style={{ display:'flex', alignItems:'center', gap:4, padding:'5px 10px', borderRadius:20,
+              style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'5px 10px', borderRadius:10,
                 border:`1px solid ${lbTab===t.key ? t.color : border+'44'}`,
                 background: lbTab===t.key ? `${t.color}22` : 'transparent',
-                color: lbTab===t.key ? t.color : '#666', fontSize:'0.68rem', fontWeight:700,
-                cursor:'pointer', whiteSpace:'nowrap', flexShrink:0, transition:'all .15s' }}>
-              <i className={t.icon} style={{ fontSize:10 }} />{t.label}
+                color: lbTab===t.key ? t.color : '#666', fontSize:'0.6rem', fontWeight:700,
+                cursor:'pointer', whiteSpace:'nowrap', flexShrink:0, transition:'all .15s', minWidth:44 }}>
+              {t.img
+                ? <img src={t.img} alt={t.label} style={{ width:20, height:20, objectFit:'contain' }}
+                    onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='block' }} />
+                : null}
+              <i className={t.icon} style={{ fontSize:13, display: t.img ? 'none' : 'block' }} />
+              {t.label}
             </button>
           ))}
         </div>
@@ -986,83 +991,129 @@ function MsgBanner({ msg }) {
 // ═══════════════════════════════════════════════════════════════
 // LEFT SIDEBAR — flyout opens as overlay over chatroom
 // ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// LEFT SIDEBAR — CodyChat PHP style, mobile-first
+// Mobile: narrow 52px icon strip + full-width flyout overlay
+// Desktop: 230px full sidebar + 300px flyout overlay
+// ═══════════════════════════════════════════════════════════════
 function LeftSidebar({ room, nav, socket, roomId, onClose, me, tObj, onStyleSaved, onOpenProfile, onOpenSettings }) {
   const [flyout, setFlyout] = useState(null)
   const { accent, bg, header, text, border } = useTheme(tObj)
-  const SIDEBAR_W = 230
-  const FLYOUT_W  = 300
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+  const ICON_W   = 52   // narrow icon strip on mobile
+  const SIDEBAR_W = isMobile ? ICON_W : 230
+  const FLYOUT_W  = isMobile ? window.innerWidth - ICON_W : 300
 
   function openFlyout(id) { setFlyout(prev => prev===id ? null : id) }
   function closeFlyout() { setFlyout(null) }
 
   const menuItems = [
-    { icon:'fa-solid fa-list',          label:'Room List',       flyoutId:'rooms',       chevron:true },
-    { icon:'fa-regular fa-newspaper',   label:'News',            flyoutId:'news',        chevron:true },
-    { icon:'fa-solid fa-users',         label:'Friend Wall',     flyoutId:'friendwall',  chevron:true },
-    { icon:'fa-solid fa-comments',      label:'Forum',           fn:()=>{ window.open('/forum','_blank') } },
-    { icon:'fa-solid fa-envelope',      label:'Contact Us',      fn:()=>{ window.open('/contact','_blank') } },
-    { icon:'fa-solid fa-user-pen',      label:'Username Change', flyoutId:'username',    chevron:true, badge:'🪙500' },
-    { icon:'fa-solid fa-gamepad',       label:'Games',           flyoutId:'games',       chevron:true },
-    { icon:'fa-solid fa-trophy',        label:'Leaderboard',     flyoutId:'leaderboard', chevron:true },
-    { icon:'fa-solid fa-crown',         label:'Buy Premium',     flyoutId:'premium',     chevron:true, rankIcon:true },
-    { icon:'fa-solid fa-store',         label:'Store',           flyoutId:'store',       chevron:true },
+    { icon:'fa-solid fa-house-user',    label:'Room List',       flyoutId:'rooms',       title:'Room List' },
+    { icon:'fa-regular fa-newspaper',   label:'News',            flyoutId:'news',        title:'News' },
+    { icon:'fa-solid fa-rss',           label:'Friend Wall',     flyoutId:'friendwall',  title:'Friend Wall' },
+    { icon:'fa-solid fa-dice',          label:'Games',           flyoutId:'games',       title:'Games' },
+    { icon:'fa-solid fa-store',         label:'Store',           flyoutId:'store',       title:'Store' },
+    { icon:'fa-solid fa-medal',         label:'Leaderboard',     flyoutId:'leaderboard', title:'Leaderboard' },
+    { icon:'fa-solid fa-crown',         label:'Buy Premium',     flyoutId:'premium',     title:'Premium', gold:true },
+    { icon:'fa-solid fa-user-pen',      label:'Username Change', flyoutId:'username',    title:'Change Username', badge:'500' },
+    { icon:'fa-solid fa-life-ring',     label:'Help',            fn:()=>{ window.open('/help','_blank') }, title:'Help' },
+    { icon:'fa-solid fa-envelope',      label:'Contact Us',      fn:()=>{ window.open('/contact','_blank') }, title:'Contact' },
   ]
 
   return (
     <>
-      {/* Main sidebar */}
-      <div style={{ width:SIDEBAR_W, flexShrink:0, display:'flex', flexDirection:'column',
-        background:bg, borderRight:`1px solid ${border}33`, zIndex:50, position:'relative', height:'100%', overflow:'hidden' }}>
-        {/* Room header */}
-        <div style={{ padding:'12px 14px', borderBottom:`1px solid ${border}33`,
-          background:header, display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
-          {room?.image
-            ? <img src={room.image} alt="" style={{ width:36, height:36, borderRadius:9, objectFit:'cover', flexShrink:0, border:`1.5px solid ${border}55` }} onError={e=>e.target.style.display='none'} />
-            : <div style={{ width:36, height:36, borderRadius:9, background:`${accent}22`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                <i className="fa-solid fa-comments" style={{ color:accent, fontSize:16 }} />
+      {/* ── Icon strip (always visible when sidebar is open) ── */}
+      <div style={{
+        width: SIDEBAR_W, flexShrink: 0, display: 'flex', flexDirection: 'column',
+        background: bg, borderRight: `1px solid ${border}33`,
+        zIndex: 50, position: 'relative', height: '100%', overflow: 'hidden',
+      }}>
+        {/* Top: room thumb + close */}
+        <div style={{
+          padding: isMobile ? '10px 0' : '12px 14px',
+          borderBottom: `1px solid ${border}33`, background: header,
+          display: 'flex', alignItems: 'center',
+          justifyContent: isMobile ? 'center' : 'flex-start',
+          gap: 10, flexShrink: 0,
+        }}>
+          {isMobile ? (
+            <button onClick={() => { closeFlyout(); onClose?.() }}
+              style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: 18, padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className="fa-solid fa-xmark" />
+            </button>
+          ) : (
+            <>
+              {room?.image
+                ? <img src={room.image} alt="" style={{ width:36, height:36, borderRadius:9, objectFit:'cover', flexShrink:0, border:`1.5px solid ${border}55` }} onError={e=>e.target.style.display='none'} />
+                : <div style={{ width:36, height:36, borderRadius:9, background:`${accent}22`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                    <i className="fa-solid fa-comments" style={{ color:accent, fontSize:16 }} />
+                  </div>
+              }
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontSize:'0.85rem', fontWeight:800, color:text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                  {room?.name||'Chat Room'}
+                </div>
+                <div style={{ fontSize:'0.68rem', color:`${text}55`, marginTop:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', lineHeight:1.3 }}>
+                  {room?.description || room?.category || ''}
+                </div>
               </div>
-          }
-          <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ fontSize:'0.85rem', fontWeight:800, color:text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-              {room?.name||'Chat Room'}
-            </div>
-            <div style={{ fontSize:'0.68rem', color:`${text}55`, marginTop:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', lineHeight:1.3 }}>
-              {room?.description || room?.category || ''}
-            </div>
-          </div>
-          <button onClick={()=>{ closeFlyout(); onClose?.() }}
-            style={{ background:'none', border:'none', color:'#666', cursor:'pointer', fontSize:16, padding:4, flexShrink:0, borderRadius:5 }}>
-            <i className="fa-solid fa-xmark"/>
-          </button>
+              <button onClick={() => { closeFlyout(); onClose?.() }}
+                style={{ background:'none', border:'none', color:'#666', cursor:'pointer', fontSize:16, padding:4, flexShrink:0, borderRadius:5 }}>
+                <i className="fa-solid fa-xmark"/>
+              </button>
+            </>
+          )}
         </div>
 
         {/* Menu items */}
         <div style={{ flex:1, overflowY:'auto', overflowX:'hidden' }}>
           {menuItems.map((item, i) => {
-            const isActive = flyout===item.flyoutId && !!item.flyoutId
+            const isActive = flyout === item.flyoutId && !!item.flyoutId
             return (
-              <div key={i} onClick={()=>{ if(item.fn){item.fn();onClose?.()}else if(item.flyoutId) openFlyout(item.flyoutId) }}
-                style={{ display:'flex', alignItems:'center', gap:10, padding:'11px 14px', cursor:'pointer',
-                  background: isActive ? `${accent}12` : 'transparent',
-                  borderBottom:`1px solid ${border}18`, transition:'background .12s',
-                  borderLeft: isActive ? `3px solid ${accent}` : '3px solid transparent' }}
-                onMouseEnter={e=>{ if(!isActive) e.currentTarget.style.background='rgba(255,255,255,0.04)' }}
-                onMouseLeave={e=>{ e.currentTarget.style.background = isActive ? `${accent}12` : 'transparent' }}>
-                <i className={item.icon} style={{ fontSize:15, color: isActive ? accent : `${accent}bb`, width:20, textAlign:'center', flexShrink:0 }} />
-                <span style={{ flex:1, fontSize:'0.85rem', fontWeight:600, color: isActive ? text : `${text}cc` }}>{item.label}</span>
-                {item.badge && <span style={{ fontSize:'0.62rem', fontWeight:800, color:'#f59e0b', background:'rgba(245,158,11,0.12)', padding:'1px 5px', borderRadius:10, flexShrink:0 }}>{item.badge}</span>}
-                {item.rankIcon && <i className="fa-solid fa-crown" style={{ fontSize:11, color:'#f59e0b', marginRight:4, flexShrink:0 }} />}
-                {item.chevron && (
-                  <i className={`fa-solid fa-chevron-${isActive ? 'down' : 'right'}`}
-                    style={{ fontSize:10, color:'#444', flexShrink:0, transition:'transform .15s' }} />
+              <div key={i}
+                title={item.title}
+                onClick={() => { if(item.fn){ item.fn(); onClose?.() } else if(item.flyoutId) openFlyout(item.flyoutId) }}
+                style={{
+                  display: 'flex', alignItems: 'center',
+                  gap: isMobile ? 0 : 10,
+                  padding: isMobile ? '13px 0' : '11px 14px',
+                  justifyContent: isMobile ? 'center' : 'flex-start',
+                  cursor: 'pointer',
+                  background: isActive ? `${accent}18` : 'transparent',
+                  borderBottom: `1px solid ${border}18`,
+                  borderLeft: isActive ? `3px solid ${accent}` : '3px solid transparent',
+                  transition: 'background .12s',
+                  position: 'relative',
+                }}
+                onMouseEnter={e => { if(!isActive) e.currentTarget.style.background='rgba(255,255,255,0.05)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = isActive ? `${accent}18` : 'transparent' }}>
+                <i className={item.icon} style={{ fontSize: isMobile ? 18 : 15, color: isActive ? accent : `${accent}cc`, width: isMobile ? 'auto' : 20, textAlign:'center', flexShrink:0 }} />
+                {!isMobile && (
+                  <>
+                    <span style={{ flex:1, fontSize:'0.85rem', fontWeight:600, color: isActive ? text : `${text}cc` }}>{item.label}</span>
+                    {item.badge && (
+                      <span style={{ fontSize:'0.6rem', fontWeight:800, color:'#f59e0b', background:'rgba(245,158,11,0.12)', padding:'1px 5px', borderRadius:10, flexShrink:0 }}>
+                        🪙{item.badge}
+                      </span>
+                    )}
+                    {item.gold && <i className="fa-solid fa-crown" style={{ fontSize:11, color:'#f59e0b', marginRight:4, flexShrink:0 }} />}
+                    {item.flyoutId && (
+                      <i className={`fa-solid fa-chevron-${isActive ? 'down' : 'right'}`}
+                        style={{ fontSize:10, color:'#444', flexShrink:0 }} />
+                    )}
+                  </>
+                )}
+                {/* Mobile: badge dot */}
+                {isMobile && item.badge && (
+                  <span style={{ position:'absolute', top:7, right:7, width:8, height:8, background:'#f59e0b', borderRadius:'50%' }} />
                 )}
               </div>
             )
           })}
         </div>
 
-        {/* Footer */}
-        {room && (
+        {/* Footer info (desktop only) */}
+        {!isMobile && room && (
           <div style={{ padding:'8px 14px', borderTop:`1px solid ${border}22`, background:header, flexShrink:0 }}>
             <div style={{ fontSize:'0.68rem', color:'#555', display:'flex', gap:10, flexWrap:'wrap' }}>
               {room.category && <span><i className="fa-solid fa-tag" style={{ marginRight:3, color:`${accent}99` }} />{room.category}</span>}
@@ -1072,18 +1123,16 @@ function LeftSidebar({ room, nav, socket, roomId, onClose, me, tObj, onStyleSave
         )}
       </div>
 
-      {/* Flyout panel — OVERLAY on top of chatroom (position:fixed) */}
+      {/* ── Flyout panel — overlay on chatroom ── */}
       {flyout && (
         <>
-          {/* Click-away backdrop */}
-          <div
-            onClick={closeFlyout}
-            style={{ position:'fixed', inset:0, zIndex:290, background:'rgba(0,0,0,0.4)' }}
-          />
+          {/* Click-away backdrop — behind flyout, in front of chat */}
+          <div onClick={closeFlyout}
+            style={{ position:'fixed', inset:0, zIndex:290, background:'rgba(0,0,0,0.45)' }} />
           <div style={{
             position: 'fixed',
             left: SIDEBAR_W,
-            top: 50, // below header
+            top: 50,
             bottom: 0,
             width: FLYOUT_W,
             zIndex: 295,
@@ -1091,16 +1140,16 @@ function LeftSidebar({ room, nav, socket, roomId, onClose, me, tObj, onStyleSave
             flexDirection: 'column',
             background: bg,
             borderRight: `1px solid ${border}33`,
-            boxShadow: '6px 0 24px rgba(0,0,0,0.5)',
+            boxShadow: '8px 0 28px rgba(0,0,0,0.6)',
             overflow: 'hidden',
           }}>
-            {flyout==='rooms'       && <RoomListPanel onClose={closeFlyout} nav={nav} tObj={tObj} />}
-            {flyout==='news'        && <NewsPanel onClose={closeFlyout} tObj={tObj} />}
-            {flyout==='friendwall'  && <FriendWallPanel onClose={closeFlyout} tObj={tObj} />}
+            {flyout==='rooms'       && <RoomListPanel    onClose={closeFlyout} nav={nav} tObj={tObj} />}
+            {flyout==='news'        && <NewsPanel        onClose={closeFlyout} tObj={tObj} />}
+            {flyout==='friendwall'  && <FriendWallPanel  onClose={closeFlyout} tObj={tObj} />}
             {flyout==='games'       && <GamesFlyoutPanel onClose={closeFlyout} socket={socket} roomId={roomId} me={me} tObj={tObj} />}
             {flyout==='leaderboard' && <LeaderboardPanel onClose={closeFlyout} tObj={tObj} />}
-            {flyout==='premium'     && <PremiumPanel onClose={closeFlyout} tObj={tObj} me={me} />}
-            {flyout==='store'       && <StorePanel onClose={closeFlyout} tObj={tObj} me={me} />}
+            {flyout==='premium'     && <PremiumPanel     onClose={closeFlyout} tObj={tObj} me={me} />}
+            {flyout==='store'       && <StorePanel       onClose={closeFlyout} tObj={tObj} me={me} />}
             {flyout==='username'    && <UsernameChangePanel onClose={closeFlyout} tObj={tObj} me={me} onUpdated={u=>{ onStyleSaved?.(u); closeFlyout() }} />}
           </div>
         </>
