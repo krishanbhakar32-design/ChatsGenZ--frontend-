@@ -79,7 +79,7 @@ export default function ChatRoom() {
   const [autoScroll,    setAutoScroll] = useState(false)
 
   const sockRef = useRef(null), bottomRef = useRef(null), inputRef = useRef(null)
-  const dmBtnRef = useRef(null), friendsBtnRef = useRef(null), notifBtnRef = useRef(null)
+  const dmBtnRef = useRef(null), friendsBtnRef = useRef(null), notifBtnRef = useRef(null), emojiBtnRef = useRef(null)
   const typingTimer = useRef(null), isTypingRef = useRef(false)
   const intentionalLeaveRef = useRef(false)
 
@@ -151,7 +151,7 @@ export default function ChatRoom() {
       if (suppressTypes.includes(m.type)) {
         if (m.type === 'join')  Sounds.join?.()
         else if (m.type === 'leave') Sounds.leave?.()
-        else Sounds.action?.()
+        else Sounds.mute?.()
         return // don't add to chat feed
       }
       setMsgs(p => [...p, m])
@@ -163,7 +163,7 @@ export default function ChatRoom() {
       // Suppress join/leave announcements — play sounds only, don't add to chat feed
       if (m.type === 'join')  { Sounds.join?.(); return }
       if (m.type === 'leave') { Sounds.leave?.(); return }
-      if (m.type === 'kick' || m.type === 'ban' || m.type === 'mute') { Sounds.action?.(); return }
+      if (m.type === 'kick' || m.type === 'ban' || m.type === 'mute') { Sounds.mute?.(); return }
       const sysId = m._id || ('sys_' + Date.now() + Math.random().toString(36).slice(2, 7))
       setMsgs(p => {
         const last = p[p.length - 1]
@@ -201,11 +201,26 @@ export default function ChatRoom() {
     })
     // ── Live settings/rank style updates from admin panel ──
     s.on('siteSettingsUpdated', () => {
-      // Reload user's theme if rank styles changed
       if (me?.chatTheme) loadThemeCss(me.chatTheme)
     })
     s.on('rankStyleUpdated', () => {
       if (me?.chatTheme) loadThemeCss(me.chatTheme)
+    })
+    // ── Live user style update (name color, bubble, theme) ──
+    s.on('userStyleUpdated', ({ userId, chatTheme, ...styleUpdates }) => {
+      // Update in-room user list so name colors show instantly
+      setUsers(prev => prev.map(u =>
+        (u._id === userId || u.userId === userId)
+          ? { ...u, ...styleUpdates, chatTheme }
+          : u
+      ))
+      // If it's our own update — sync me state + load new theme CSS
+      setMe(prev => {
+        if (!prev || (String(prev._id) !== String(userId))) return prev
+        const updated = { ...prev, ...styleUpdates, chatTheme }
+        if (chatTheme && chatTheme !== prev.chatTheme) loadThemeCss(chatTheme)
+        return updated
+      })
     })
     s.on('diceError',        ({ msg }) => toast?.show(`🎲 ${msg}`, 'error', 4000))
     s.on('kenoError',        ({ msg }) => toast?.show(`🎯 ${msg}`, 'error', 4000))
@@ -551,7 +566,7 @@ export default function ChatRoom() {
             {showYT      && <YTPanel onClose={() => setShowYT(false)} onSend={url => { sockRef.current?.emit('sendMessage', { roomId, content: url, type: 'youtube' }); setShowYT(false) }} />}
             {showSpotify && <SpotifyPanel onClose={() => setShowSpotify(false)} onSend={url => { sockRef.current?.emit('sendMessage', { roomId, content: url, type: 'spotify' }); setShowSpotify(false) }} />}
             {showPaint   && <PaintingCanvas onSend={url => { sockRef.current?.emit('sendMessage', { roomId, content: url, type: 'image' }); setShowPaint(false) }} onClose={() => setShowPaint(false)} />}
-            {showEmoji   && <EmoticonPicker onSelect={em => { setInput(p => p + em); setShowEmoji(false); inputRef.current?.focus() }} onClose={() => setShowEmoji(false)} />}
+            {showEmoji   && <EmoticonPicker anchorRef={emojiBtnRef} tObj={tObj} onSelect={em => { setInput(p => p + em); inputRef.current?.focus() }} onClose={() => setShowEmoji(false)} />}
 
             <input id="cgz-img-input" type="file" accept="image/*" style={{ display: 'none' }}
               onChange={async e => {
@@ -570,8 +585,8 @@ export default function ChatRoom() {
               <button type="button" onClick={e => { e.stopPropagation(); setShowPlus(p => !p); setShowEmoji(false) }}
                 style={{ width: 32, height: 32, borderRadius: '50%', border: `1.5px solid ${thBorder}44`, background: showPlus ? `${thAccent}22` : 'rgba(255,255,255,0.06)', color: showPlus ? thAccent : '#888', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0, fontWeight: 700, lineHeight: 1, transition: 'all .15s' }}>+</button>
 
-              <button type="button" onClick={e => { e.stopPropagation(); setShowEmoji(p => !p); setShowPlus(false) }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: showEmoji ? thAccent : '#666', fontSize: 20, padding: '0 1px', flexShrink: 0, display: 'flex', alignItems: 'center', lineHeight: 1 }}>
+              <button ref={emojiBtnRef} type="button" onClick={e => { e.stopPropagation(); setShowEmoji(p => !p); setShowPlus(false) }}
+                style={{ background: showEmoji ? `${thAccent}22` : 'none', border: `1px solid ${showEmoji ? thAccent + '55' : 'transparent'}`, borderRadius: 8, cursor: 'pointer', color: showEmoji ? thAccent : '#666', fontSize: 20, padding: '3px 4px', flexShrink: 0, display: 'flex', alignItems: 'center', lineHeight: 1, transition: 'all .15s' }}>
                 <img src="/icons/emoticons/happy.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block' }} />
                 <i className="fa-regular fa-face-smile" style={{ display: 'none' }} />
               </button>
