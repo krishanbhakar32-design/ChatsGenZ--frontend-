@@ -1,4 +1,4 @@
-// ChatMedia.jsx — ChatsGenZ v5
+\// ChatMedia.jsx — ChatsGenZ v5
 // NO backdrop blur/darken. All panels open above input bar (and the + window).
 // Spotify: full iframe embed (plays full song). YouTube: iframe embed directly.
 // EmoticonPicker: reads from /icons/emoticons with category tabs.
@@ -340,34 +340,110 @@ const EMOT_CATS = [
   { id: 'animals', label: 'Animals', icon: '/icons/emoticon_icon/sticker_animals.png', items: EMOT_ANIMALS, prefix: '/icons/emoticons/sticker_animals/',   suffix: '.png' },
 ]
 
-function EmoticonPicker({ onSelect, onClose }) {
+// EmoticonPicker — anchors above the emoji button, theme-synced, NOT center-screen
+function EmoticonPicker({ onSelect, onClose, anchorRef, tObj }) {
   const [tab, setTab] = useState('base')
+  const [pos, setPos] = useState(null)
   const cat = EMOT_CATS.find(c => c.id === tab) || EMOT_CATS[0]
 
+  // Theme colors
+  const thBg     = tObj?.bg_header  || '#111111'
+  const thBg2    = tObj?.bg_chat    || '#151515'
+  const thText   = tObj?.text       || '#ffffff'
+  const thAccent = tObj?.accent     || '#03add8'
+  const thBorder = tObj?.default_color || '#222222'
+
+  useEffect(() => {
+    if (anchorRef?.current) {
+      const r = anchorRef.current.getBoundingClientRect()
+      // Position the modal just above the anchor button, left-aligned
+      const modalW = 300
+      let left = r.left
+      // clamp to viewport
+      if (left + modalW > window.innerWidth - 8) left = window.innerWidth - modalW - 8
+      if (left < 8) left = 8
+      const bottom = window.innerHeight - r.top + 6
+      setPos({ left, bottom })
+    } else {
+      // fallback: bottom-left of screen
+      setPos({ left: 8, bottom: 60 })
+    }
+  }, [anchorRef])
+
+  if (!pos) return null
+
   return (
-    <FloatPanel onClose={onClose} width={360}>
-      <PanelHeader icon="😊" title="Emoticons" onClose={onClose} />
-      <div style={{ display: 'flex', borderBottom: '1px solid #f0f0f0', background: '#fafafa', flexShrink: 0 }}>
+    <div
+      onClick={e => e.stopPropagation()}
+      style={{
+        position: 'fixed',
+        left: pos.left,
+        bottom: pos.bottom,
+        width: 300,
+        maxHeight: 340,
+        zIndex: 1200,
+        display: 'flex',
+        flexDirection: 'column',
+        borderRadius: 14,
+        background: thBg,
+        border: `1px solid ${thBorder}44`,
+        boxShadow: '0 -4px 24px rgba(0,0,0,0.7)',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Header */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '8px 10px', borderBottom: `1px solid ${thBorder}33`,
+        background: thBg, flexShrink: 0,
+      }}>
+        <span style={{ fontSize: '0.78rem', fontWeight: 800, color: thText }}>😊 Emoticons</span>
+        <button onClick={onClose}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666', fontSize: 16, lineHeight: 1, padding: '2px 5px' }}>✕</button>
+      </div>
+
+      {/* Category tabs */}
+      <div style={{ display: 'flex', borderBottom: `1px solid ${thBorder}33`, background: thBg, flexShrink: 0 }}>
         {EMOT_CATS.map(c => (
           <button key={c.id} onClick={() => setTab(c.id)}
-            style={{ flex: 1, padding: '8px 4px', border: 'none', borderBottom: `2px solid ${tab === c.id ? '#1a73e8' : 'transparent'}`, background: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, opacity: tab === c.id ? 1 : 0.55, transition: 'opacity .15s' }}>
-            <img src={c.icon} alt={c.label} style={{ width: 24, height: 24, objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
-            <span style={{ fontSize: '0.6rem', fontWeight: 700, color: tab === c.id ? '#1a73e8' : '#666' }}>{c.label}</span>
+            style={{
+              flex: 1, padding: '7px 4px', border: 'none',
+              borderBottom: `2px solid ${tab === c.id ? thAccent : 'transparent'}`,
+              background: 'none', cursor: 'pointer',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+              opacity: tab === c.id ? 1 : 0.5, transition: 'opacity .15s',
+            }}>
+            <img src={c.icon} alt={c.label}
+              style={{ width: 22, height: 22, objectFit: 'contain' }}
+              onError={e => e.target.style.display = 'none'} />
+            <span style={{ fontSize: '0.58rem', fontWeight: 700, color: tab === c.id ? thAccent : thText + '88' }}>{c.label}</span>
           </button>
         ))}
       </div>
-      <div style={{ flex: 1, overflowY: 'auto', padding: 8, display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: 4 }}>
+
+      {/* Emoticon grid */}
+      <div style={{
+        flex: 1, overflowY: 'auto', padding: 6,
+        display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 3,
+        background: thBg2,
+      }}>
         {cat.items.map((name, i) => (
-          <button key={i} onClick={() => onSelect(`:${name}:`)} title={name}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '5px', borderRadius: 8, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background .1s' }}
-            onMouseEnter={e => e.currentTarget.style.background = '#f3f4f6'}
+          <button key={i} onClick={() => { onSelect(`:${name}:`); onClose?.() }} title={name}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              padding: '4px', borderRadius: 7, lineHeight: 1,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'background .1s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = `${thAccent}22`}
             onMouseLeave={e => e.currentTarget.style.background = 'none'}>
-            <img src={`${cat.prefix}${name}${cat.suffix}`} alt={name} style={{ width: 30, height: 30, objectFit: 'contain' }}
-              onError={e => e.target.style.opacity = '0.3'} />
+            <img src={`${cat.prefix}${name}${cat.suffix}`} alt={name}
+              style={{ width: 28, height: 28, objectFit: 'contain' }}
+              onError={e => { e.target.style.opacity = '0.25' }} />
           </button>
         ))}
       </div>
-    </FloatPanel>
+    </div>
   )
 }
 
