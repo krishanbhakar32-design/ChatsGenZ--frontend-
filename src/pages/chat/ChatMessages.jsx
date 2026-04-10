@@ -1,4 +1,4 @@
-// ============================================================
+]// ============================================================
 // ChatMessages.jsx — Fixed
 // FIX 2: Default Nunito font, transparent bubble default
 // FIX 1: System msgs not auto-shown on refresh (dedup logic)
@@ -185,13 +185,53 @@ function Msg({ msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myL
   }
   const msgTextColor = getMsgTextColor()
 
+  // Emoticon category prefixes — matches EMOT_CATS in ChatMedia.jsx
+  const EMOT_PREFIXES = {
+    // food emoticons
+    apple:1,babymilk:1,banana:1,beer:1,beers:1,bread:1,burger:1,burritos:1,cake:1,candy:1,
+    champain:1,cheeze:1,chocolate:1,cookie:1,corn:1,flower:1,flower2:1,fries:1,greenapple:1,
+    honey:1,hotdog:1,lemon:1,lollypop:1,lunchtime:1,meal:1,noodle:1,orange:1,pancake:1,
+    pineapple:1,pizza:1,plant:1,popcorn:1,rice:1,spaghetti:1,sunflower:1,taco:1,weat:1,
+  }
+  const FOOD_EMOTS = new Set(Object.keys(EMOT_PREFIXES))
+
+  function getEmoticonSrc(name) {
+    // animal emoticons are unicode codepoints like 1f401
+    if (/^1f[0-9a-f]{3}$/i.test(name)) return `/icons/emoticons/sticker_animals/${name}.png`
+    if (FOOD_EMOTS.has(name)) return `/icons/emoticons/food/${name}.png`
+    return `/icons/emoticons/${name}.png`
+  }
+
   function renderContent(text) {
     if (!text) return null
-    return text.split(/(@\w+)/g).map((p, i) =>
-      p.startsWith('@')
-        ? <span key={i} style={{ color: thAccent, fontWeight: 700, background: thAccent + '18', padding: '0 3px', borderRadius: 4, cursor: 'pointer' }} onClick={() => onMention?.(p)}>{p}</span>
-        : p
-    )
+    // Split on :emoticon_name: and @mentions
+    const parts = text.split(/(:[\w]+:|@\w+)/g)
+    return parts.map((p, i) => {
+      if (p.startsWith('@')) {
+        return (
+          <span key={i}
+            style={{ color: thAccent, fontWeight: 700, background: thAccent + '18', padding: '0 3px', borderRadius: 4, cursor: 'pointer' }}
+            onClick={() => onMention?.(p)}>{p}</span>
+        )
+      }
+      if (p.startsWith(':') && p.endsWith(':') && p.length > 2) {
+        const name = p.slice(1, -1)
+        const src  = getEmoticonSrc(name)
+        return (
+          <img key={i} src={src} alt={name} title={name}
+            style={{ width: 28, height: 28, objectFit: 'contain', verticalAlign: 'middle', margin: '0 1px', display: 'inline-block' }}
+            onError={e => {
+              // fallback — show the text code if image missing
+              e.target.style.display = 'none'
+              const span = document.createElement('span')
+              span.textContent = p
+              span.style.cssText = 'font-size:0.78rem;color:#888;'
+              e.target.parentNode?.insertBefore(span, e.target.nextSibling)
+            }} />
+        )
+      }
+      return p
+    })
   }
 
   const [menuPos, setMenuPos] = useState(null)
