@@ -956,6 +956,7 @@ function ChatSettingsOverlay({ me, onClose, onSaved }) {
     {id:'bubble',       label:'Bubble',  icon:'fa-solid fa-comment'},
     {id:'sounds',       label:'Sounds',  icon:'fa-solid fa-volume-high'},
     {id:'theme',        label:'Theme',   icon:'fa-solid fa-palette'},
+    {id:'customCss',    label:'CSS',     icon:'fa-solid fa-code'},
   ]
   return (
     <>
@@ -996,6 +997,7 @@ function ChatSettingsOverlay({ me, onClose, onSaved }) {
       {modal==='bubble'        && <BubbleModal        me={me} accent={acc} onSave={saveStyle} onClose={()=>setModal(null)} />}
       {modal==='sounds'        && <SoundsModal        accent={acc}          onClose={()=>setModal(null)} />}
       {modal==='theme'         && <ThemesModal        me={me} accent={acc} onSave={saveStyle} onClose={()=>setModal(null)} />}
+      {modal==='customCss'     && <CustomCSSModal     me={me} accent={acc} onSave={saveStyle} onClose={()=>setModal(null)} />}
     </>
   )
 }
@@ -1030,4 +1032,4 @@ function Footer({ showRadio, setShowRadio, showRight, setRight, notif, tObj }) {
 }
 
 export { ChatSettingsOverlay, AvatarDropdown, Footer }
-export { UsernameStyleModal, TextStyleModal, BubbleModal, SoundsModal, ThemesModal }
+export { UsernameStyleModal, TextStyleModal, BubbleModal, SoundsModal, ThemesModal, CustomCSSModal }
