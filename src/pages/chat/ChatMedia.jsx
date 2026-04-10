@@ -1,4 +1,4 @@
-\// ChatMedia.jsx — ChatsGenZ v5
+// ChatMedia.jsx — ChatsGenZ v5
 // NO backdrop blur/darken. All panels open above input bar (and the + window).
 // Spotify: full iframe embed (plays full song). YouTube: iframe embed directly.
 // EmoticonPicker: reads from /icons/emoticons with category tabs.
