@@ -1,4 +1,4 @@
-]// ============================================================
+// ============================================================
 // ChatMessages.jsx — Fixed
 // FIX 2: Default Nunito font, transparent bubble default
 // FIX 1: System msgs not auto-shown on refresh (dedup logic)
