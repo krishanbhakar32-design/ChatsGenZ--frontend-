@@ -120,6 +120,12 @@ export default function ChatRoom() {
         setMe(md.user)
         // FIX 5: Load theme CSS from /public/themes/
         loadThemeCss(md.user.chatTheme || 'Dark')
+        // Inject user's custom CSS if any
+        if (md.user.customCss) {
+          let el = document.getElementById('cgz-user-custom-css')
+          if (!el) { el = document.createElement('style'); el.id = 'cgz-user-custom-css'; document.head.appendChild(el) }
+          el.textContent = md.user.customCss
+        }
       }
       const rd = await rr.json()
       if (!rr.ok) { setErr(rd.error || 'Room not found'); setLoad(false); return }
@@ -219,6 +225,12 @@ export default function ChatRoom() {
         if (!prev || (String(prev._id) !== String(userId))) return prev
         const updated = { ...prev, ...styleUpdates, chatTheme }
         if (chatTheme && chatTheme !== prev.chatTheme) loadThemeCss(chatTheme)
+        // Inject custom CSS if updated
+        if (styleUpdates.customCss !== undefined) {
+          let el = document.getElementById('cgz-user-custom-css')
+          if (!el) { el = document.createElement('style'); el.id = 'cgz-user-custom-css'; document.head.appendChild(el) }
+          el.textContent = styleUpdates.customCss || ''
+        }
         return updated
       })
     })
@@ -352,20 +364,17 @@ export default function ChatRoom() {
           style={{ background: showLeft ? `${thAccent}22` : 'none', border: 'none', cursor: 'pointer', color: showLeft ? thAccent : 'rgba(255,255,255,0.55)', width: 34, height: 34, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0, transition: 'all .12s' }}
         ><i className="fa-solid fa-bars" /></button>
 
-        {/* Room name + online count */}
-        <div style={{ flex: 1, minWidth: 0, padding: '0 4px' }}>
-          <div style={{ fontSize: '0.82rem', fontWeight: 700, color: thText, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.25 }}>
-            {room?.name || 'Chat Room'}
-          </div>
-          {onlineCount > 0 && (
-            <div style={{ fontSize: '0.63rem', color: '#22c55e', display: 'flex', alignItems: 'center', gap: 3, lineHeight: 1 }}>
-              <i className="fa-solid fa-circle" style={{ fontSize: 6 }} />{onlineCount} online
-            </div>
-          )}
-        </div>
+        {/* Spacer */}
+        <div style={{ flex: 1, minWidth: 0 }} />
 
-        {/* Webcam toggle */}
-        <HBtn faIcon="fa-solid fa-video" title="Webcam" active={showCam} onClick={e => { e.stopPropagation(); setShowCam(p => !p) }} tObj={tObj} />
+        {/* Webcam toggle - uses webcam.svg from public folder */}
+        <button
+          onClick={e => { e.stopPropagation(); setShowCam(p => !p) }}
+          title="Webcam"
+          style={{ background: showCam ? `${thAccent}22` : 'none', border: `1px solid ${showCam ? thAccent + '55' : 'transparent'}`, borderRadius: 8, cursor: 'pointer', color: showCam ? thAccent : 'rgba(255,255,255,0.55)', width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all .12s' }}
+        >
+          <img src="/default_images/icons/webcam.svg" alt="Webcam" style={{ width: 18, height: 18, opacity: showCam ? 1 : 0.6, filter: showCam ? `drop-shadow(0 0 4px ${thAccent})` : 'none' }} onError={e => { e.target.style.display='none'; e.target.parentElement.innerHTML += '<i class="fa-solid fa-video" style="font-size:15px"></i>' }} />
+        </button>
 
         {/* DM */}
         <div style={{ position: 'relative' }} ref={dmBtnRef}>
