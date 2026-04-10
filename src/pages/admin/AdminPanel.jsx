@@ -1130,15 +1130,86 @@ function Gifts() {
   );
 }
 
+// ── Badge icon names from public/icons/badges/ ─────────────────
+const BADGE_ICONS = [
+  'badge_auth','badge_beat','badge_chat','badge_friend','badge_gift',
+  'badge_gold','badge_like','badge_ruby','badge_top',
+  'badge_member1','badge_member2','badge_member3','badge_member4','badge_member5',
+  'badge_member6','badge_member7','badge_member8','badge_member9','badge_member10',
+  'badge_member11','badge_member12','badge_member13','badge_member14','badge_member15',
+];
+
+function BadgeIconPicker({ value, onChange }) {
+  const [tab, setTab] = useState('public');
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ display:'flex', gap:6, marginBottom:8 }}>
+        <button className={`gift-picker-tab ${tab==='public'?'active':''}`} onClick={()=>setTab('public')}
+          style={{ padding:'4px 10px', borderRadius:6, border:'none', cursor:'pointer', fontSize:'0.75rem', fontWeight:700,
+            background: tab==='public' ? '#3b82f6' : 'rgba(255,255,255,0.08)', color: tab==='public' ? '#fff' : '#888' }}>
+          🏆 Preset Icons
+        </button>
+        <button className={`gift-picker-tab ${tab==='url'?'active':''}`} onClick={()=>setTab('url')}
+          style={{ padding:'4px 10px', borderRadius:6, border:'none', cursor:'pointer', fontSize:'0.75rem', fontWeight:700,
+            background: tab==='url' ? '#3b82f6' : 'rgba(255,255,255,0.08)', color: tab==='url' ? '#fff' : '#888' }}>
+          🔗 URL / Emoji
+        </button>
+      </div>
+
+      {tab === 'public' && (
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:6, maxHeight:200, overflowY:'auto',
+          background:'rgba(0,0,0,0.3)', borderRadius:10, padding:10 }}>
+          {BADGE_ICONS.map(b => {
+            const src = `/icons/badges/${b}.svg`;
+            const selected = value === src;
+            return (
+              <div key={b} onClick={()=>onChange(src)}
+                style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:6, borderRadius:8,
+                  border:`2px solid ${selected?'#3b82f6':'transparent'}`,
+                  background: selected ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.04)',
+                  cursor:'pointer', transition:'all .12s' }}>
+                <img src={src} alt={b} style={{ width:28, height:28, objectFit:'contain' }}
+                  onError={e => { e.target.src = '/icons/badges/badge_auth.svg' }} />
+                <span style={{ fontSize:'0.5rem', color:'#888', textAlign:'center', lineHeight:1.2, wordBreak:'break-all' }}>
+                  {b.replace('badge_','')}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {tab === 'url' && (
+        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+          <input className="ap-input" placeholder="URL, emoji, or /icons/badges/badge_auth.svg"
+            value={value} onChange={e=>onChange(e.target.value)}
+            style={{ flex:1 }} />
+          {value && (
+            <div style={{ width:36, height:36, borderRadius:8, background:'rgba(255,255,255,0.08)',
+              display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+              {value.startsWith('/') || value.startsWith('http')
+                ? <img src={value} alt="" style={{ width:28, height:28, objectFit:'contain' }} onError={e=>e.target.style.display='none'} />
+                : <span style={{ fontSize:22 }}>{value}</span>
+              }
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Badges ─────────────────────────────────────────────────────
 function Badges() {
   const [badges, setBadges] = useState([]);
   const [form, setForm] = useState({ name: '', icon: '', description: '' });
   const [confirm, setConfirm] = useState(null);
-  const load = useCallback(() => api('/badges').then(d => setBadges(d.badges)).catch(() => {}), []);
+  const load = useCallback(() => api('/badges').then(d => setBadges(d.badges || [])).catch(() => {}), []);
   useEffect(() => { load(); }, [load]);
   const save = async () => {
-    try { await api('/badges', { method: 'POST', body: JSON.stringify(form) }); toast('Badge created'); setForm({ name: '', icon: '', description: '' }); load(); }
+    if (!form.name.trim()) return toast('Badge name is required', 'error');
+    if (!form.icon.trim()) return toast('Badge icon is required', 'error');
+    try { await api('/badges', { method: 'POST', body: JSON.stringify(form) }); toast('✅ Badge created!'); setForm({ name: '', icon: '', description: '' }); load(); }
     catch (e) { toast(e.message, 'error'); }
   };
   const del = async id => {
@@ -1148,22 +1219,69 @@ function Badges() {
 
   return (
     <div className="ap-section">
-      <h2 className="ap-section-title"><i className="fa-solid fa-award" /> Badges</h2>
+      <h2 className="ap-section-title"><i className="fa-solid fa-award" /> Badges Management</h2>
       <div className="ap-card">
-        <div className="ap-form-grid">
-          <input className="ap-input" placeholder="Badge Name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-          <input className="ap-input" placeholder="Icon URL or emoji" value={form.icon} onChange={e => setForm(f => ({ ...f, icon: e.target.value }))} />
-          <input className="ap-input" placeholder="Description" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
-        </div>
-        <button className="ap-btn ap-btn--primary" onClick={save}><i className="fa-solid fa-plus" /> Create</button>
-      </div>
-      <div className="ap-list">
-        {badges.map(b => (
-          <div key={b._id} className="ap-list-item">
-            <div className="ap-list-info"><strong>{b.name}</strong><span className="ap-muted">{b.description}</span></div>
-            <button className="ap-btn ap-btn--xs ap-btn--danger" onClick={() => setConfirm({ msg: `Delete badge ${b.name}?`, cb: () => del(b._id) })}><i className="fa-solid fa-trash" /></button>
+        <div style={{ marginBottom:10 }}>
+          <div style={{ fontSize:'0.72rem', fontWeight:700, color:'#888', marginBottom:5, textTransform:'uppercase', letterSpacing:1 }}>
+            Badge Icon
           </div>
-        ))}
+          <BadgeIconPicker value={form.icon} onChange={v => setForm(f=>({...f, icon:v}))} />
+        </div>
+        <div className="ap-form-grid">
+          <input className="ap-input" placeholder="Badge Name (e.g. Verified Member)" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+          <input className="ap-input" placeholder="Description (optional)" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+        </div>
+        {form.icon && form.name && (
+          <div style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 12px', background:'rgba(59,130,246,0.1)',
+            borderRadius:9, border:'1px solid rgba(59,130,246,0.25)', marginBottom:10 }}>
+            {form.icon.startsWith('/') || form.icon.startsWith('http')
+              ? <img src={form.icon} alt="" style={{ width:32, height:32, objectFit:'contain' }} />
+              : <span style={{ fontSize:28 }}>{form.icon}</span>
+            }
+            <div>
+              <div style={{ fontWeight:800, color:'#fff', fontSize:'0.85rem' }}>{form.name}</div>
+              {form.description && <div style={{ fontSize:'0.7rem', color:'#888' }}>{form.description}</div>}
+            </div>
+          </div>
+        )}
+        <button className="ap-btn ap-btn--primary" onClick={save}>
+          <i className="fa-solid fa-plus" /> Create Badge
+        </button>
+      </div>
+
+      <div style={{ marginTop:16 }}>
+        <div style={{ fontSize:'0.72rem', fontWeight:700, color:'#888', marginBottom:8, textTransform:'uppercase', letterSpacing:1 }}>
+          Existing Badges ({badges.length})
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:8 }}>
+          {badges.map(b => (
+            <div key={b._id} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px',
+              background:'rgba(255,255,255,0.04)', borderRadius:10, border:'1px solid rgba(255,255,255,0.07)' }}>
+              <div style={{ width:36, height:36, borderRadius:8, background:'rgba(255,255,255,0.08)',
+                display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                {b.icon && (b.icon.startsWith('/') || b.icon.startsWith('http'))
+                  ? <img src={b.icon} alt={b.name} style={{ width:28, height:28, objectFit:'contain' }}
+                      onError={e=>e.target.src='/icons/badges/badge_auth.svg'} />
+                  : <span style={{ fontSize:22 }}>{b.icon || '🏆'}</span>
+                }
+              </div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontWeight:700, fontSize:'0.82rem', color:'#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{b.name}</div>
+                {b.description && <div style={{ fontSize:'0.65rem', color:'#888', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{b.description}</div>}
+              </div>
+              <button className="ap-btn ap-btn--xs ap-btn--danger" title="Delete badge"
+                onClick={() => setConfirm({ msg: `Delete badge "${b.name}"?`, cb: () => del(b._id) })}>
+                <i className="fa-solid fa-trash" />
+              </button>
+            </div>
+          ))}
+        </div>
+        {badges.length === 0 && (
+          <div style={{ textAlign:'center', padding:'24px', color:'#555', fontSize:'0.8rem' }}>
+            <i className="fa-solid fa-award" style={{ fontSize:28, opacity:0.3, display:'block', marginBottom:8 }} />
+            No badges created yet. Create your first badge above.
+          </div>
+        )}
       </div>
       {confirm && <Confirm msg={confirm.msg} onYes={() => { confirm.cb(); setConfirm(null); }} onNo={() => setConfirm(null)} />}
     </div>
