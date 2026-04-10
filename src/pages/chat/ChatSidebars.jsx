@@ -54,40 +54,67 @@ function resolveNameStyle(u) {
 }
 
 // ── User list item ────────────────────────────────────────────
+// Shows: avatar + status dot, cam icon, username (styled), rank icon, mood, country flag
+// On hover: whisper button appears on right
 function UserItem({ u, onClick, onWhisper, showMood = true, myId }) {
   const [hov, setHov] = useState(false)
   const nameStyle = resolveNameStyle(u)
   const status = u.status || 'online'
   const isMe = String(u._id || u.userId) === String(myId)
+  const statusColor = ST_COLOR[status] || '#22c55e'
+
   return (
     <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
       style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 10px', cursor:'pointer',
         background: hov ? 'rgba(255,255,255,0.05)' : 'transparent',
         borderBottom:'1px solid rgba(255,255,255,0.03)', transition:'background .12s', position:'relative' }}>
+
+      {/* Avatar + status dot */}
       <div style={{ position:'relative', flexShrink:0 }} onClick={e => onClick?.(u, e)}>
         <img src={u.avatar || '/default_images/avatar/default_guest.png'} alt=""
-          style={{ width:30, height:30, borderRadius:'50%', objectFit:'cover', border:`1.5px solid ${GBR(u.gender, u.rank)}`, display:'block' }}
+          style={{ width:34, height:34, borderRadius:'50%', objectFit:'cover', border:`2px solid ${GBR(u.gender, u.rank)}`, display:'block' }}
           onError={e => { e.target.src = '/default_images/avatar/default_guest.png' }} />
-        <span style={{ position:'absolute', bottom:0, right:0, width:8, height:8,
-          background: ST_COLOR[status]||'#22c55e', borderRadius:'50%', border:'1.5px solid #151515' }} />
+        <span style={{ position:'absolute', bottom:0, right:0, width:9, height:9,
+          background: statusColor, borderRadius:'50%', border:'2px solid #111', flexShrink:0 }} />
       </div>
+
+      {/* Name + mood + rank */}
       <div style={{ flex:1, minWidth:0 }} onClick={e => onClick?.(u, e)}>
-        <div style={{ display:'flex', alignItems:'center', gap:3 }}>
-          {u.isCamHost && <i className="fa-solid fa-video" style={{ fontSize:9, color:'#ef4444', flexShrink:0 }} />}
+        {/* Row 1: cam icon + username + rank icon */}
+        <div style={{ display:'flex', alignItems:'center', gap:4, marginBottom:1 }}>
+          {u.isCamHost && (
+            <img src="/default_images/icons/webcam.svg" alt="cam"
+              style={{ width:10, height:10, flexShrink:0, opacity:0.9 }}
+              onError={e => { e.target.style.display='none' }} />
+          )}
           <span style={{ fontSize:'0.8rem', fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
-            maxWidth:110, color:'#ffffff', ...nameStyle }}>{u.username}</span>
+            maxWidth:100, color:'#ffffff', ...nameStyle }}>{u.username}</span>
+          <RIcon rank={u.rank} size={13} />
         </div>
+
+        {/* Row 2: mood (italic, muted) */}
         {showMood && u.mood && (
-          <div style={{ fontSize:'0.62rem', color:'#888', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', marginTop:1, fontStyle:'italic' }}>
-            {u.mood}
+          <div style={{ fontSize:'0.62rem', color:'#666', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontStyle:'italic', lineHeight:1.2 }}>
+            "{u.mood}"
           </div>
         )}
+
+        {/* Row 3: status text + country flag */}
+        <div style={{ display:'flex', alignItems:'center', gap:4, marginTop:1 }}>
+          {status !== 'online' && (
+            <span style={{ fontSize:'0.55rem', fontWeight:700, color: statusColor, textTransform:'uppercase', letterSpacing:0.5 }}>
+              {status}
+            </span>
+          )}
+          {u.countryCode && u.countryCode !== 'ZZ' && (
+            <img src={`/icons/flags/${u.countryCode.toUpperCase()}.png`} alt=""
+              style={{ width:13, height:9, flexShrink:0, borderRadius:1 }}
+              onError={e => e.target.style.display='none'} />
+          )}
+        </div>
       </div>
-      <RIcon rank={u.rank} size={14} />
-      {u.countryCode && u.countryCode !== 'ZZ' && (
-        <img src={`/icons/flags/${u.countryCode.toUpperCase()}.png`} alt="" style={{ width:14, height:10, flexShrink:0, borderRadius:1 }}
-          onError={e => e.target.style.display='none'} />
-      )}
+
+      {/* Whisper button on hover */}
       {hov && !isMe && onWhisper && (
         <button onClick={e => { e.stopPropagation(); onWhisper({ ...u, userId: u._id || u.userId }) }}
           title="Whisper"
@@ -1009,7 +1036,7 @@ function LeftSidebar({ room, nav, socket, roomId, onClose, me, tObj, onStyleSave
 
   const menuItems = [
     { icon:'fa-solid fa-house-user',    label:'Room List',       flyoutId:'rooms',       title:'Room List' },
-    { icon:'fa-regular fa-newspaper',   label:'News',            flyoutId:'news',        title:'News' },
+    { icon:'fa-solid fa-newspaper',     label:'News',            flyoutId:'news',        title:'News' },
     { icon:'fa-solid fa-rss',           label:'Friend Wall',     flyoutId:'friendwall',  title:'Friend Wall' },
     { icon:'fa-solid fa-dice',          label:'Games',           flyoutId:'games',       title:'Games' },
     { icon:'fa-solid fa-store',         label:'Store',           flyoutId:'store',       title:'Store' },
@@ -1019,6 +1046,41 @@ function LeftSidebar({ room, nav, socket, roomId, onClose, me, tObj, onStyleSave
     { icon:'fa-solid fa-life-ring',     label:'Help',            fn:()=>{ window.open('/help','_blank') }, title:'Help' },
     { icon:'fa-solid fa-envelope',      label:'Contact Us',      fn:()=>{ window.open('/contact','_blank') }, title:'Contact' },
   ]
+
+  // Call action buttons (audio/video/group calls)
+  const callActions = [
+    {
+      icon: 'fa-solid fa-phone',
+      label: 'Audio Call',
+      color: '#22c55e',
+      title: 'Start Audio Call',
+      fn: () => { socket?.emit('requestAudioCall', { roomId }); toast?.('📞 Starting audio call...') }
+    },
+    {
+      icon: 'fa-solid fa-video',
+      label: 'Video Call',
+      color: '#3b82f6',
+      title: 'Start Video Call',
+      fn: () => { socket?.emit('requestVideoCall', { roomId }); toast?.('🎥 Starting video call...') }
+    },
+    {
+      icon: 'fa-solid fa-users',
+      label: 'Group Call',
+      color: '#8b5cf6',
+      title: 'Start Group Call',
+      fn: () => { socket?.emit('requestGroupCall', { roomId }); toast?.('👥 Starting group call...') }
+    },
+  ]
+
+  function toast(msg) {
+    try {
+      const el = document.createElement('div')
+      el.style.cssText = 'position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#fff;padding:8px 16px;borderRadius:20px;fontSize:0.8rem;zIndex:9999;pointerEvents:none;fontWeight:600'
+      el.textContent = msg
+      document.body.appendChild(el)
+      setTimeout(() => el.remove(), 3000)
+    } catch {}
+  }
 
   return (
     <>
@@ -1121,6 +1183,41 @@ function LeftSidebar({ room, nav, socket, roomId, onClose, me, tObj, onStyleSave
             </div>
           </div>
         )}
+
+        {/* ── Call Action Buttons ── */}
+        <div style={{
+          padding: isMobile ? '8px 6px' : '8px 10px',
+          borderTop: `1px solid ${border}22`,
+          background: header,
+          flexShrink: 0,
+          display: 'flex',
+          gap: 5,
+          justifyContent: isMobile ? 'center' : 'stretch',
+        }}>
+          {callActions.map((ca, i) => (
+            <button key={i} onClick={ca.fn} title={ca.title}
+              style={{
+                flex: isMobile ? '0 0 auto' : 1,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap: isMobile ? 0 : 5,
+                padding: isMobile ? '7px 10px' : '7px 6px',
+                border: `1px solid ${ca.color}33`,
+                borderRadius: 9,
+                background: `${ca.color}14`,
+                color: ca.color,
+                cursor: 'pointer',
+                fontSize: isMobile ? 15 : 12,
+                fontWeight: 700,
+                transition: 'all .15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = `${ca.color}28`; e.currentTarget.style.borderColor = `${ca.color}66` }}
+              onMouseLeave={e => { e.currentTarget.style.background = `${ca.color}14`; e.currentTarget.style.borderColor = `${ca.color}33` }}
+            >
+              <i className={ca.icon} />
+              {!isMobile && <span style={{ fontSize:'0.65rem' }}>{ca.label}</span>}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ── Flyout panel — overlay on chatroom ── */}
