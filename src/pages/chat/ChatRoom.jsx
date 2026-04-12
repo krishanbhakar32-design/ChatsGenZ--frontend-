@@ -1,6 +1,5 @@
 // ============================================================
-// ChatRoom.jsx — ChatsGenZ v2 — All 9 Issues Fixed
-// ============================================================
+// ChatRoom.jsx — ChatsGenZ v2 — All 9 Issues Fix
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate }                   from 'react-router-dom'
 import { io }                                        from 'socket.io-client'
