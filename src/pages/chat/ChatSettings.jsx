@@ -754,8 +754,8 @@ function WalletModal({ me, tObj, onClose }) {
         </div>
         <div style={{ padding:'20px 18px',textAlign:'center',background:bg }}>
           {tab==='gold'
-            ?<><div style={{ fontSize:44,marginBottom:6 }}>🪙</div><div style={{ fontSize:'2rem',fontWeight:900,color:'#f59e0b' }}>{(me?.gold||0).toLocaleString()}</div><div style={{ fontSize:'0.75rem',color:'#666',marginTop:3 }}>Gold Coins</div></>
-            :<><div style={{ fontSize:44,marginBottom:6 }}>💎</div><div style={{ fontSize:'2rem',fontWeight:900,color:'#ef4444' }}>{(me?.ruby||0).toLocaleString()}</div><div style={{ fontSize:'0.75rem',color:'#666',marginTop:3 }}>Rubies</div></>
+            ?<><img src="/default_images/icons/gold.svg" alt="gold" style={{ width:44,height:44,marginBottom:6 }} onError={e=>{e.target.style.display='none'}}/><div style={{ fontSize:'2rem',fontWeight:900,color:'#f59e0b' }}>{(me?.gold||0).toLocaleString()}</div><div style={{ fontSize:'0.75rem',color:'#666',marginTop:3 }}>Gold Coins</div></>
+            :<><img src="/default_images/icons/ruby.svg" alt="ruby" style={{ width:44,height:44,marginBottom:6 }} onError={e=>{e.target.style.display='none'}}/><div style={{ fontSize:'2rem',fontWeight:900,color:'#ef4444' }}>{(me?.ruby||0).toLocaleString()}</div><div style={{ fontSize:'0.75rem',color:'#666',marginTop:3 }}>Rubies</div></>
           }
         </div>
       </div>
@@ -844,7 +844,10 @@ function AvatarDropdown({ me, status, setStatus, onLeave, socket, onOpenSettings
             <img src={me?.avatar||'/default_images/avatar/default_guest.png'} alt=""
               style={{ width:30,height:30,borderRadius:'50%',objectFit:'cover',border:`1.5px solid ${GBR(me?.gender,me?.rank)}`,display:'block' }}
               onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}} />
-            <span style={{ position:'absolute',bottom:0,right:0,width:9,height:9,borderRadius:'50%',background:STATUS_COLOR[status]||'#22c55e',border:`1.5px solid ${hdr}` }} />
+            <img src={`/default_images/status/${status==='online'?'active':status==='invisible'?'invisible':status==='busy'?'busy':'away'}.svg`} alt={status}
+              style={{ position:'absolute',bottom:-1,right:-1,width:11,height:11 }}
+              onError={e=>{ e.target.style.display='none'; const s=document.createElement('span'); s.style.cssText=`position:absolute;bottom:0;right:0;width:9px;height:9px;border-radius:50%;background:${STATUS_COLOR[status]||'#22c55e'};border:1.5px solid ${hdr}`; e.target.parentNode?.appendChild(s) }}
+            />
           </div>
         </button>
 
@@ -888,8 +891,12 @@ function AvatarDropdown({ me, status, setStatus, onLeave, socket, onOpenSettings
                   )}
                   {/* Mini stats: gold + ruby */}
                   <div style={{ display:'flex',gap:6,marginTop:3 }}>
-                    <span style={{ fontSize:'0.62rem',color:'#f59e0b',fontWeight:700 }}>🪙 {(me?.gold||0).toLocaleString()}</span>
-                    <span style={{ fontSize:'0.62rem',color:'#ef4444',fontWeight:700 }}>💎 {(me?.ruby||0).toLocaleString()}</span>
+                    <span style={{ fontSize:'0.62rem',color:'#f59e0b',fontWeight:700,display:'flex',alignItems:'center',gap:2 }}>
+                      <img src="/default_images/icons/gold.svg" alt="" style={{ width:12,height:12 }} onError={e=>e.target.style.display='none'}/> {(me?.gold||0).toLocaleString()}
+                    </span>
+                    <span style={{ fontSize:'0.62rem',color:'#ef4444',fontWeight:700,display:'flex',alignItems:'center',gap:2 }}>
+                      <img src="/default_images/icons/ruby.svg" alt="" style={{ width:12,height:12 }} onError={e=>e.target.style.display='none'}/> {(me?.ruby||0).toLocaleString()}
+                    </span>
                   </div>
                 </div>
 
@@ -906,8 +913,14 @@ function AvatarDropdown({ me, status, setStatus, onLeave, socket, onOpenSettings
                 <div style={{ marginTop:8,background:bg,borderRadius:9,padding:4,boxShadow:'0 4px 16px rgba(0,0,0,0.4)',border:'1px solid rgba(255,255,255,0.06)' }}>
                   {STATUS_OPTS.map(s=>(
                     <button key={s.id} onClick={()=>{setStatus(s.id);socket?.emit('setStatus',{status:s.id});setShowStatusMenu(false)}}
-                      style={{ display:'flex',alignItems:'center',gap:7,width:'100%',padding:'7px 10px',borderRadius:6,border:'none',cursor:'pointer',background:status===s.id?`${acc}1a`:'none',color:status===s.id?txt:'#777',fontSize:'0.76rem',fontWeight:status===s.id?700:500 }}>
-                      <span style={{ width:9,height:9,borderRadius:'50%',background:s.color,flexShrink:0 }} />{s.label}
+                      style={{ display:'flex',alignItems:'center',gap:8,width:'100%',padding:'7px 10px',borderRadius:6,border:'none',cursor:'pointer',background:status===s.id?`${acc}1a`:'none',color:status===s.id?txt:'#888',fontSize:'0.76rem',fontWeight:status===s.id?700:500 }}>
+                      <img
+                        src={`/default_images/status/${s.id==='online'?'active':s.id==='invisible'?'invisible':s.id==='busy'?'busy':'away'}.svg`}
+                        alt={s.label}
+                        style={{ width:14,height:14,flexShrink:0 }}
+                        onError={e=>{ e.target.style.display='none'; const dot=document.createElement('span'); dot.style.cssText=`width:9px;height:9px;border-radius:50%;background:${s.color};display:inline-block`; e.target.parentNode?.insertBefore(dot,e.target.nextSibling) }}
+                      />
+                      {s.label}
                       {status===s.id&&<i className="fa-solid fa-check" style={{ fontSize:8,color:acc,marginLeft:'auto' }} />}
                     </button>
                   ))}
@@ -933,7 +946,7 @@ function AvatarDropdown({ me, status, setStatus, onLeave, socket, onOpenSettings
       </div>
       {showWallet   && <WalletModal        me={me} tObj={tObj} onClose={()=>setShowWallet(false)} />}
       {showLevel    && <LevelPanel         me={me} tObj={tObj} onClose={()=>setShowLevel(false)} />}
-      {showChatOpts && <ChatOptionsSubmenu me={me} tObj={tObj} onClose={()=>setShowChatOpts(false)} onSaved={()=>{}} />}
+      {showChatOpts && <ChatOptionsSubmenu me={me} tObj={tObj} onClose={()=>setShowChatOpts(false)} onSaved={()=>{}} inline={true} />}
     </>
   )
 }
@@ -956,7 +969,7 @@ function ChatSettingsOverlay({ me, onClose, onSaved }) {
     {id:'bubble',       label:'Bubble',  icon:'fa-solid fa-comment'},
     {id:'sounds',       label:'Sounds',  icon:'fa-solid fa-volume-high'},
     {id:'theme',        label:'Theme',   icon:'fa-solid fa-palette'},
-    {id:'customCss',    label:'CSS',     icon:'fa-solid fa-code'},
+
   ]
   return (
     <>
@@ -1003,9 +1016,9 @@ function ChatSettingsOverlay({ me, onClose, onSaved }) {
 }
 
 // ── FOOTER ────────────────────────────────────────────────────
-function Footer({ showRadio, setShowRadio, showRight, setRight, notif, tObj }) {
+function Footer({ showRadio, setShowRadio, showRight, setRight, notif, tObj, minimized = [], onMaximize }) {
   const thHeader=tObj?.bg_header||'#111', thBorder=tObj?.default_color||'#222'
-  const acc=tObj?.accent||'#03add8'
+  const acc=tObj?.accent||'#03add8', txt=tObj?.text||'#fff'
   const [soundOn, setSoundOn] = useState(getSoundEnabled)
 
   function handleSoundToggle() {
@@ -1014,19 +1027,41 @@ function Footer({ showRadio, setShowRadio, showRight, setRight, notif, tObj }) {
   }
 
   return (
-    <div style={{ background:thHeader,borderTop:`1px solid ${thBorder}22`,padding:'3px 10px',display:'flex',alignItems:'center',gap:2,flexShrink:0,position:'relative',minHeight:42 }}>
+    <div style={{ background:thHeader,borderTop:`1px solid ${thBorder}22`,padding:'3px 8px',display:'flex',alignItems:'center',gap:2,flexShrink:0,position:'relative',minHeight:44 }}>
+      {/* Leftmost: Radio icon — opens radio modal above footer */}
       <FBtn faIcon="fa-solid fa-radio" active={showRadio} onClick={()=>setShowRadio(s=>!s)} title="Radio" tObj={tObj} />
 
-      {/* Master sound toggle */}
+      {/* Sound toggle */}
       <button
         onClick={handleSoundToggle}
-        title={soundOn ? 'Sounds ON – click to mute all' : 'Sounds OFF – click to unmute'}
-        style={{ width:32,height:32,borderRadius:8,border:`1px solid ${soundOn?acc+'44':'rgba(255,255,255,0.08)'}`,background:soundOn?`${acc}15`:'rgba(255,255,255,0.04)',color:soundOn?acc:'#555',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0,transition:'all .15s' }}>
+        title={soundOn ? 'Sounds ON – click to mute' : 'Sounds OFF – click to unmute'}
+        style={{ width:32,height:32,borderRadius:8,border:`1px solid ${soundOn?acc+'44':'rgba(255,255,255,0.08)'}`,background:soundOn?`${acc}15`:'rgba(255,255,255,0.04)',color:soundOn?acc:'#555',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,flexShrink:0,transition:'all .15s' }}>
         <i className={soundOn ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark'} />
       </button>
 
-      <div style={{ flex:1 }} />
-      <FBtn faIcon="fa-solid fa-users" active={showRight} onClick={()=>setRight(s=>!s)} title="Online Users" badge={notif?.friends||0} tObj={tObj} />
+      {/* Minimized windows area — DM / YouTube / Spotify bubbles */}
+      <div style={{ flex:1, display:'flex', alignItems:'center', gap:4, overflow:'hidden', padding:'0 4px' }}>
+        {(minimized||[]).map((item,i) => (
+          <button key={i} onClick={() => onMaximize?.(item)}
+            title={`Open ${item.label || item.type}`}
+            style={{ display:'flex',alignItems:'center',gap:4,padding:'3px 8px',borderRadius:20,border:`1px solid ${acc}33`,background:`${acc}11`,color:acc,cursor:'pointer',fontSize:'0.68rem',fontWeight:600,flexShrink:0,maxWidth:100,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>
+            <i className={item.type==='dm'?'fa-solid fa-envelope':item.type==='youtube'?'fa-brands fa-youtube':item.type==='spotify'?'fa-brands fa-spotify':'fa-solid fa-window-restore'} style={{fontSize:10}}/>
+            <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:60}}>{item.label || item.type}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Buy Premium icon — rightmost before user list */}
+      <button
+        onClick={() => {/* open premium modal via event */document.dispatchEvent(new CustomEvent('cgz:openPremium'))}}
+        title="Buy Premium"
+        style={{ width:32,height:32,borderRadius:8,border:'1px solid rgba(245,158,11,0.3)',background:'rgba(245,158,11,0.08)',color:'#f59e0b',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,flexShrink:0,transition:'all .15s' }}
+        onMouseEnter={e=>{e.currentTarget.style.background='rgba(245,158,11,0.18)';e.currentTarget.style.borderColor='rgba(245,158,11,0.6)'}}
+        onMouseLeave={e=>{e.currentTarget.style.background='rgba(245,158,11,0.08)';e.currentTarget.style.borderColor='rgba(245,158,11,0.3)'}}>
+        <i className="fa-solid fa-crown" />
+      </button>
+
+      <FBtn faIcon="fa-solid fa-users" active={showRight} onClick={()=>setRight(s=>!s)} title="Online Users" badge={notif?.online||0} tObj={tObj} />
     </div>
   )
 }
