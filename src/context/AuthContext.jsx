@@ -1,7 +1,8 @@
+// FIX: removed hardcoded Railway URL fallback — use VITE_API_URL env var only
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../utils/apiHelper'
 
-const API = import.meta.env.VITE_API_URL || 'https://chatsgenz-backend-production.up.railway.app'
+const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
@@ -34,7 +35,6 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     fetchMe()
-
     // Auto-refresh every 5 minutes
     const interval = setInterval(fetchMe, 5 * 60 * 1000)
     return () => clearInterval(interval)
