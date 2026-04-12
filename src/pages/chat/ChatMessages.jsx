@@ -11,7 +11,7 @@ import { API, R, RL, GBR, SYS_CFG, SYSTEM_SENDER, resolveNameColor } from './cha
 import { RIcon } from './ChatIcons.jsx'
 import { WhisperMessage } from './ChatWhisper.jsx'
 import { SpotifyEmbed, isSpotifyUrl } from '../../components/SpotifyPlayer.jsx'
-import { YTMessage } from './ChatMedia.jsx'
+import { YTMessage, VoiceMessage } from './ChatMedia.jsx'
 
 export { RIcon }
 
@@ -42,10 +42,16 @@ function formatTs(createdAt) {
   const d = new Date(createdAt), now = new Date()
   const isToday     = d.toDateString() === now.toDateString()
   const isYesterday = d.toDateString() === new Date(now - 86400000).toDateString()
-  const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  // 24-hour time HH:mm
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mm = String(d.getMinutes()).padStart(2, '0')
+  const time = `${hh}:${mm}`
+  const day  = String(d.getDate()).padStart(2, '0')
+  const mon  = String(d.getMonth() + 1).padStart(2, '0')
+  const yr   = d.getFullYear()
   if (isToday)     return time
   if (isYesterday) return `Yesterday ${time}`
-  return `${d.toLocaleDateString([], { day:'2-digit', month:'2-digit', year:'2-digit' })} ${time}`
+  return `${day}/${mon}/${yr} ${time}`
 }
 
 export function QuotedMessage({ replyTo, tObj }) {
@@ -94,7 +100,44 @@ const SYS_TEXT = {
   success: { color: '#22c55e', bg: 'rgba(34,197,94,0.08)',    border: 'rgba(34,197,94,0.20)',    icon: 'fa-solid fa-circle-check' },
 }
 
-function Msg({ msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myLevel, socket, roomId, onYTMinimize, onIgnore, tObj }) {
+
+// ── Image Preview — thumbnail click to reveal full overlay ────
+function ImagePreview({ src, isGif }) {
+  const [revealed, setRevealed] = useState(false)
+  const [fullOpen, setFullOpen] = useState(false)
+
+  if (!revealed) {
+    return (
+      <div
+        onClick={() => setRevealed(true)}
+        style={{ width: 160, height: 90, borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexDirection: 'column', gap: 4, position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${src})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(12px) brightness(0.4)', transform: 'scale(1.1)' }} />
+        <i className="fa-light fa-image" style={{ fontSize: 28, color: 'rgba(104,55,98,0.9)', position: 'relative', zIndex: 1 }} />
+        <span style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.7)', fontWeight: 600, position: 'relative', zIndex: 1 }}>{isGif ? 'Click to show GIF' : 'Click to show image'}</span>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <img
+        src={src}
+        alt={isGif ? 'GIF' : 'Image'}
+        onClick={() => setFullOpen(true)}
+        style={{ maxWidth: 'min(220px,55vw)', maxHeight: 160, width: 'auto', height: 'auto', borderRadius: 8, display: 'block', cursor: 'zoom-in', objectFit: 'cover' }}
+        onError={e => { e.target.style.display = 'none' }}
+      />
+      {fullOpen && (
+        <div onClick={() => setFullOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <button onClick={() => setFullOpen(false)} style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', fontSize: 20, width: 36, height: 36, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+          <img src={src} alt="" onClick={e => e.stopPropagation()} style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: 10, objectFit: 'contain', boxShadow: '0 8px 40px rgba(0,0,0,0.6)' }} />
+        </div>
+      )}
+    </>
+  )
+}
+
+function Msg({ msg, onMiniCard, onMention, onHide, onWhisper, onQuote, onReport, myId, myLevel, socket, roomId, onYTMinimize, onIgnore, tObj }) {
   const thText   = tObj?.text   || '#ffffff'
   const thAccent = tObj?.accent || '#03add8'
   const thBg     = tObj?.bg_chat || '#151515'
@@ -253,7 +296,7 @@ function Msg({ msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myL
             // FIX 9: Whisper sets inline target, no popup
             { icon: 'fa-solid fa-hand-lizard',   label: 'Whisper', color: '#a78bfa',  disabled: isMine, fn: () => { if (!senderForWhisper || isMine) return; onWhisper?.(senderForWhisper); setMenuPos(null) } },
             { icon: 'fa-solid fa-eye-slash',     label: 'Hide',    color: '#888888',  disabled: false,  fn: () => { onHide?.(msg._id); setMenuPos(null) } },
-            { icon: 'fa-sharp fa-solid fa-flag', label: 'Report',  color: '#f59e0b',  disabled: false,  fn: () => setMenuPos(null) },
+            { icon: 'fa-sharp fa-solid fa-flag', label: 'Report',  color: '#f59e0b',  disabled: isMine, fn: () => { onReport?.({ ...msg.sender, messageId: msg._id, content: msg.content, username: msg.sender?.username }); setMenuPos(null) } },
             ...(canDel ? [{ icon: 'fa-solid fa-trash', label: 'Delete', color: '#ef4444', disabled: false, fn: () => { socket?.emit('deleteMessage', { messageId: msg._id, roomId }); setMenuPos(null) } }] : []),
           ].map((item, i, arr) => (
             <button key={i} onClick={item.disabled ? undefined : item.fn}
@@ -332,9 +375,11 @@ function Msg({ msg, onMiniCard, onMention, onHide, onWhisper, onQuote, myId, myL
             {msg.type === 'gift'
               ? <span>🎁 {msg.content}</span>
               : msg.type === 'image'
-              ? <img src={msg.content} alt="" style={{ maxWidth: 'min(220px,60vw)', borderRadius: 8, display: 'block' }} />
+              ? <ImagePreview src={msg.content} />
               : msg.type === 'gif'
-              ? <img src={msg.content} alt="GIF" style={{ maxWidth: 'min(220px,60vw)', borderRadius: 8, display: 'block' }} />
+              ? <ImagePreview src={msg.content} isGif={true} />
+              : msg.type === 'voice'
+              ? <VoiceMessage src={msg.content} />
               : msg.type === 'youtube'
               ? <YTMessage url={msg.content} onMinimize={onYTMinimize} />
               : (msg.type === 'spotify' || isSpotifyUrl?.(msg.content))
