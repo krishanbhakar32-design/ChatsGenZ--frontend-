@@ -1,8 +1,6 @@
 // ChatSettings.jsx — ChatsGenZ v5
 // Mobile-first compact modals. No backdrop blur. No screen blur.
 // No label elements. No borders on inputs. Dropdowns for fonts/sizes.
-// Theme syncs across all modals and sidebar. No StyleModal UI imports.
-// join/left/kick announcements suppressed from chat feed.
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate }                  from 'react-router-dom'
 import { API, R, GBR, RANKS, RL }      from './chatConstants.js'
