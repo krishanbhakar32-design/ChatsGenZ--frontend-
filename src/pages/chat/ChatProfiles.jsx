@@ -71,6 +71,26 @@ const COUNTRY_NAMES = { IN: 'India', US: 'United States', GB: 'United Kingdom', 
 const GENDER_LABELS = { male: 'Male', female: 'Female', couple: 'Couple', other: 'Other / Non-binary' }
 
 const tok = () => localStorage.getItem('cgz_token')
+
+function getZodiac(dob) {
+  if (!dob) return '—'
+  const d = new Date(dob)
+  const m = d.getMonth() + 1, day = d.getDate()
+  if ((m===1&&day>=20)||(m===2&&day<=18)) return '♒ Aquarius'
+  if ((m===2&&day>=19)||(m===3&&day<=20)) return '♓ Pisces'
+  if ((m===3&&day>=21)||(m===4&&day<=19)) return '♈ Aries'
+  if ((m===4&&day>=20)||(m===5&&day<=20)) return '♉ Taurus'
+  if ((m===5&&day>=21)||(m===6&&day<=20)) return '♊ Gemini'
+  if ((m===6&&day>=21)||(m===7&&day<=22)) return '♋ Cancer'
+  if ((m===7&&day>=23)||(m===8&&day<=22)) return '♌ Leo'
+  if ((m===8&&day>=23)||(m===9&&day<=22)) return '♍ Virgo'
+  if ((m===9&&day>=23)||(m===10&&day<=22)) return '♎ Libra'
+  if ((m===10&&day>=23)||(m===11&&day<=21)) return '♏ Scorpio'
+  if ((m===11&&day>=22)||(m===12&&day<=21)) return '♐ Sagittarius'
+  return '♑ Capricorn'
+}
+
+
 function apiPost(path, body) {
   return fetch(`${API}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tok()}` }, body: JSON.stringify(body) })
 }
@@ -355,11 +375,15 @@ function StaffActionModal({ targetUser, myLevel, socket, roomId, onClose, onKick
 
   // Room actions
   function doRoom() {
-    if (!roomReason.trim()) return
+    if (!roomReason.trim() && !['unmute','unkick','unban'].includes(roomAction)) return
     setLoad(true)
-    if      (roomAction === 'mute') { socket?.emit('muteUser', { targetUserId: tid, roomId, minutes: roomMuteMin, reason: roomReason }); flash(`Room muted ${roomMuteMin} min.`) }
-    else if (roomAction === 'kick') { socket?.emit('kickUser', { targetUserId: tid, roomId, reason: roomReason }); flash('Kicked from room.') }
-    else if (roomAction === 'ban')  { socket?.emit('roomBanUser', { targetUserId: tid, roomId, reason: roomReason }); apiPost(`/api/admin/users/${tid}/roomban`, { roomId, reason: roomReason }).catch(() => {}); flash('Room banned.') }
+    if      (roomAction === 'mute')   { socket?.emit('muteUser',      { targetUserId: tid, roomId, minutes: roomMuteMin, reason: roomReason }); flash(`Room muted ${roomMuteMin} min.`) }
+    else if (roomAction === 'kick')   { socket?.emit('kickUser',       { targetUserId: tid, roomId, reason: roomReason }); flash('Kicked from room.') }
+    else if (roomAction === 'ban')    { socket?.emit('roomBanUser',    { targetUserId: tid, roomId, reason: roomReason }); apiPost(`/api/admin/users/${tid}/roomban`, { roomId, reason: roomReason }).catch(() => {}); flash('Room banned.') }
+    else if (roomAction === 'ghost')  { socket?.emit('ghostUser',      { targetUserId: tid, roomId, reason: roomReason }); apiPost(`/api/admin/users/${tid}/ghost`,  { roomId, reason: roomReason }).catch(() => {}); flash('User ghosted.') }
+    else if (roomAction === 'unmute') { socket?.emit('unmuteUser',     { targetUserId: tid, roomId }); apiPost(`/api/admin/users/${tid}/unmute`, { roomId }).catch(() => {}); flash('User unmuted.') }
+    else if (roomAction === 'unkick') { socket?.emit('unkickUser',     { targetUserId: tid, roomId }); flash('Kick revoked.') }
+    else if (roomAction === 'unban')  { socket?.emit('roomUnbanUser',  { targetUserId: tid, roomId }); apiPost(`/api/admin/users/${tid}/roomunban`, { roomId }).catch(() => {}); flash('Room ban removed.') }
     setLoad(false)
   }
 
@@ -382,9 +406,13 @@ function StaffActionModal({ targetUser, myLevel, socket, roomId, onClose, onKick
   function doWhitelist()     { setLoad(true); apiPost(`/api/admin/users/${tid}/whitelist`, {}).catch(() => {}); flash('VPN whitelisted.'); setLoad(false) }
 
   const ROOM_ACTIONS = [
-    { id: 'mute', icon: 'fa-microphone-slash', label: 'Mute',     color: '#f59e0b' },
-    { id: 'kick', icon: 'fa-user-slash',        label: 'Kick',     color: '#ef4444' },
-    { id: 'ban',  icon: 'fa-ban',               label: 'Room Ban', color: '#dc2626' },
+    { id: 'mute',   icon: 'fa-microphone-slash', label: 'Mute',     color: '#f59e0b' },
+    { id: 'kick',   icon: 'fa-user-slash',        label: 'Kick',     color: '#ef4444' },
+    { id: 'ban',    icon: 'fa-ban',               label: 'Room Ban', color: '#dc2626' },
+    { id: 'ghost',  icon: 'fa-ghost',             label: 'Ghost',    color: '#6b7280' },
+    { id: 'unmute', icon: 'fa-microphone',        label: 'Unmute',   color: '#22c55e' },
+    { id: 'unkick', icon: 'fa-rotate-left',       label: 'Unkick',   color: '#22c55e' },
+    { id: 'unban',  icon: 'fa-shield-check',      label: 'Unban',    color: '#22c55e' },
   ]
   const MAIN_SECTIONS = [
     { id: 'rank',        icon: 'fa-star',                label: 'Rank'        },
@@ -569,6 +597,39 @@ function StaffActionModal({ targetUser, myLevel, socket, roomId, onClose, onKick
 // ═══════════════════════════════════════════════════════════════
 // PROFILE MODAL — full view (PHP: box/profile.php)
 // ═══════════════════════════════════════════════════════════════
+// Status banners for profile modal
+function StatusBanners({ isMuted, isBanned, isKicked, isGhosted }) {
+  return (
+    <>
+      {isBanned && (
+        <div style={{ margin: '8px 14px', padding: '7px 12px', background: 'rgba(239,68,68,0.1)', borderRadius: 9, border: '1px solid rgba(239,68,68,0.35)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <img src="/default_images/icons/banned.svg" alt="banned" style={{ width: 16, height: 16 }} onError={e => { e.target.style.display='none' }} />
+          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#ef4444' }}>This user is banned</span>
+        </div>
+      )}
+      {isMuted && !isBanned && (
+        <div style={{ margin: '8px 14px', padding: '7px 12px', background: 'rgba(245,158,11,0.1)', borderRadius: 9, border: '1px solid rgba(245,158,11,0.35)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <img src="/default_images/actions/muted.svg" alt="muted" style={{ width: 16, height: 16 }} onError={e => { e.target.style.display='none' }} />
+          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#f59e0b' }}>This user is muted</span>
+        </div>
+      )}
+      {isKicked && !isBanned && (
+        <div style={{ margin: '8px 14px', padding: '7px 12px', background: 'rgba(239,68,68,0.08)', borderRadius: 9, border: '1px solid rgba(239,68,68,0.25)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <img src="/default_images/icons/kicked.svg" alt="kicked" style={{ width: 16, height: 16 }} onError={e => { e.target.style.display='none' }} />
+          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#f87171' }}>This user is currently kicked</span>
+        </div>
+      )}
+      {isGhosted && (
+        <div style={{ margin: '8px 14px', padding: '7px 12px', background: 'rgba(107,114,128,0.1)', borderRadius: 9, border: '1px solid rgba(107,114,128,0.3)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <img src="/default_images/actions/ghost.svg" alt="ghost" style={{ width: 16, height: 16 }} onError={e => { e.target.style.display='none' }} />
+          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#9ca3af' }}>This user is ghosted</span>
+        </div>
+      )}
+    </>
+  )
+}
+
+
 export function ProfileModal({ user, myLevel, myId, socket, roomId, onClose, onGift, ignoredUsers, onIgnore, onWhisper }) {
   if (!user) return null
 
@@ -589,6 +650,8 @@ export function ProfileModal({ user, myLevel, myId, socket, roomId, onClose, onG
   const [ignored,    setIgnored]   = useState(() => (ignoredUsers || new Set()).has(uid))
   const [isMuted,    setIsMuted]   = useState(user.isMuted || false)
   const [isBanned,   setIsBanned]  = useState(user.isBanned || false)
+  const [isKicked,   setIsKicked]  = useState(user.isKicked || false)
+  const [isGhosted,  setIsGhosted] = useState(user.isGhosted || false)
 
   const nameColor = resolveNameColor(user.nameColor, '')
 
@@ -746,13 +809,18 @@ export function ProfileModal({ user, myLevel, myId, socket, roomId, onClose, onG
             {/* Bio tab */}
             {tab === 'bio' && (
               <div>
-                {user.age      && <ProItem icon="fa-calendar"    label="Age"        value={`${user.age} years`} />}
+                {/* Age from DOB */}
+                {(user.dob || user.dateOfBirth) && <ProItem icon="fa-calendar" label="Age" value={`${Math.floor((Date.now() - new Date(user.dob || user.dateOfBirth)) / 31557600000)} years`} />}
+                {!(user.dob || user.dateOfBirth) && user.age && <ProItem icon="fa-calendar" label="Age" value={`${user.age} years`} />}
                 {user.gender   && <ProItem icon="fa-venus-mars"  label="Gender"     value={GENDER_LABELS[user.gender] || user.gender} />}
                 {user.country  && <ProItem icon="fa-globe"       label="Country"    value={COUNTRY_NAMES[user.country] || user.country} />}
                 {user.language && <ProItem icon="fa-language"    label="Language"   value={user.language} />}
                 <ProItem icon="fa-user"        label="Joined"     value={longDate(user.createdAt || user.joinedAt)} />
-                <ProItem icon="fa-home"        label="Current Room" value={user.currentRoom || '—'} />
-                {user.lastSeen && <ProItem icon="fa-eye"         label="Last Seen"  value={longDateTime(user.lastSeen)} />}
+                {/* Zodiac from DOB */}
+                {(user.dob || user.dateOfBirth) && <ProItem icon="fa-star" label="Zodiac" value={getZodiac(user.dob || user.dateOfBirth)} />}
+                {user.relationshipStatus && <ProItem icon="fa-heart" label="Relationship" value={user.relationshipStatus} />}
+                <ProItem icon="fa-home" label="Current Room" value={user.currentRoom || '—'} />
+                {user.lastSeen && <ProItem icon="fa-eye" label="Last Seen" value={new Date(user.lastSeen).toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:false })} />}
                 <BadgeRow user={user} />
               </div>
             )}
@@ -843,19 +911,44 @@ export function SelfProfileOverlay({ user, onClose, onUpdated }) {
   const ri  = R(user?.rank)
   const bdr = GBR(user?.gender, user?.rank)
 
-  const [tab,    setTab]    = useState('bio')
-  const [mood,   setMood]   = useState(user?.mood  || '')
-  const [about,  setAbout]  = useState(user?.about || '')
-  const [saving, setSaving] = useState(false)
-  const [ok,     setOk]     = useState('')
+  const [tab,      setTab]      = useState('bio')
+  const [mood,     setMood]     = useState(user?.mood   || '')
+  const [about,    setAbout]    = useState(user?.about  || '')
+  const [email,    setEmail]    = useState(user?.email  || '')
+  const [pw,       setPw]       = useState('')
+  const [relStatus,setRel]      = useState(user?.relationshipStatus || '')
+  const [friends,  setFriends]  = useState(null)
+  const [blocks,   setBlocks]   = useState(null)
+  const [saving,   setSaving]   = useState(false)
+  const [ok,       setOk]       = useState('')
+  const [err,      setErr]       = useState('')
+  const [showDelModal, setDel]  = useState(false)
+  const [delPw,    setDelPw]    = useState('')
+  const [privacy,  setPrivacy]  = useState(user?.privacy || {})
+  const [prefs,    setPrefs]    = useState(user?.preferences || {})
+
+  const RELS = ['Single','In a Relationship','Married','Complicated','Divorced','Widowed','Prefer not to say']
+  const nameColor = resolveNameColor(user?.nameColor, '')
 
   async function save(field, value) {
-    setSaving(true); setOk('')
+    setSaving(true); setOk(''); setErr('')
     try {
       const r = await fetch(`${API}/api/users/me`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tok()}` }, body: JSON.stringify({ [field]: value }) })
       const d = await r.json()
       if (r.ok) { setOk('Saved!'); onUpdated?.(d.user); setTimeout(() => setOk(''), 2200) }
-    } catch {}
+      else setErr(d.error || 'Failed')
+    } catch { setErr('Network error') }
+    setSaving(false)
+  }
+
+  async function saveMany(obj) {
+    setSaving(true); setOk(''); setErr('')
+    try {
+      const r = await fetch(`${API}/api/users/me`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tok()}` }, body: JSON.stringify(obj) })
+      const d = await r.json()
+      if (r.ok) { setOk('Saved!'); onUpdated?.(d.user); setTimeout(() => setOk(''), 2200) }
+      else setErr(d.error || 'Failed')
+    } catch { setErr('Network error') }
     setSaving(false)
   }
 
@@ -870,104 +963,312 @@ export function SelfProfileOverlay({ user, onClose, onUpdated }) {
     setSaving(false)
   }
 
-  const nameColor = resolveNameColor(user?.nameColor, '')
+  async function uploadCover(file) {
+    setSaving(true)
+    const fd = new FormData(); fd.append('cover', file)
+    try {
+      const r = await fetch(`${API}/api/upload/cover`, { method: 'POST', headers: { Authorization: `Bearer ${tok()}` }, body: fd })
+      const d = await r.json()
+      if (r.ok && d.url) { onUpdated?.({ ...user, coverImage: d.url }); setOk('Cover updated!'); setTimeout(() => setOk(''), 2500) }
+    } catch {}
+    setSaving(false)
+  }
+
+  async function loadFriends() {
+    if (friends !== null) return
+    const r = await fetch(`${API}/api/users/me/friends`, { headers: { Authorization: `Bearer ${tok()}` } }).catch(() => null)
+    if (r) { const d = await r.json(); setFriends(d.friends || []) }
+  }
+
+  async function loadBlocks() {
+    if (blocks !== null) return
+    const r = await fetch(`${API}/api/users/me/ignored`, { headers: { Authorization: `Bearer ${tok()}` } }).catch(() => null)
+    if (r) { const d = await r.json(); setBlocks(d.ignoredUsers || []) }
+  }
+
+  async function removeFriend(uid) {
+    await fetch(`${API}/api/users/friend/${uid}/remove`, { method: 'DELETE', headers: { Authorization: `Bearer ${tok()}` } }).catch(() => {})
+    setFriends(p => (p||[]).filter(f => String(f._id) !== String(uid)))
+  }
+
+  async function unblock(uid) {
+    await fetch(`${API}/api/users/ignore/${uid}`, { method: 'POST', headers: { Authorization: `Bearer ${tok()}` } }).catch(() => {})
+    setBlocks(p => (p||[]).filter(b => String(b._id) !== String(uid)))
+  }
+
+  async function requestDelete() {
+    if (!delPw.trim()) return
+    setSaving(true)
+    try {
+      const r = await fetch(`${API}/api/users/me/request-delete`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tok()}` }, body: JSON.stringify({ password: delPw }) })
+      const d = await r.json()
+      if (r.ok) { setOk('Account scheduled for deletion in 3 days. Check profile to cancel.'); setDel(false); onUpdated?.({ ...user, pendingDelete: true }) }
+      else setErr(d.error || 'Wrong password')
+    } catch { setErr('Network error') }
+    setSaving(false)
+  }
+
+  async function cancelDelete() {
+    await fetch(`${API}/api/users/me/cancel-delete`, { method: 'POST', headers: { Authorization: `Bearer ${tok()}` } }).catch(() => {})
+    onUpdated?.({ ...user, pendingDelete: false }); setOk('Account deletion cancelled!')
+  }
+
+  function togglePrivacy(key) {
+    const updated = { ...privacy, [key]: !privacy[key] }
+    setPrivacy(updated); saveMany({ privacy: updated })
+  }
+  function togglePref(key) {
+    const updated = { ...prefs, [key]: !prefs[key] }
+    setPrefs(updated); saveMany({ preferences: updated })
+  }
+
+  const TABS = [
+    { id: 'bio',     label: 'Bio' },
+    { id: 'edit',    label: 'Edit' },
+    { id: 'friends', label: 'Friends' },
+    { id: 'more',    label: 'More' },
+  ]
 
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 1200, background: 'rgba(0,0,0,.6)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '32px 16px 16px', overflowY: 'auto' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: 16, width: '100%', maxWidth: 400, overflow: 'hidden', boxShadow: '0 20px 64px rgba(0,0,0,.7)', marginBottom: 20 }}>
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 1200, background: 'rgba(0,0,0,.65)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '28px 12px 16px', overflowY: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: 16, width: '100%', maxWidth: 420, overflow: 'hidden', boxShadow: '0 20px 64px rgba(0,0,0,.7)', marginBottom: 20 }}>
 
         {/* Cover */}
-        <div style={{ height: 100, position: 'relative', background: `linear-gradient(135deg, ${ri.color}77, #0a0a15 80%)`, overflow: 'hidden' }}>
-          {user?.coverImage && <img src={user.coverImage} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.6 }} />}
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,.3) 0%, rgba(0,0,0,.05) 100%)' }} />
-          {/* Top-right: edit & close */}
-          <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 4, zIndex: 2 }}>
-            <CoverBtn icon="fa-regular fa-edit" onClick={() => {}} title="Edit Profile" />
+        <div style={{ height: 96, position: 'relative', background: `linear-gradient(135deg, ${ri.color}66, #0a0a15 80%)`, overflow: 'hidden' }}>
+          {user?.coverImage && <img src={user.coverImage} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.65 }} />}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,.15) 0%, rgba(0,0,0,.6) 100%)' }} />
+          {/* Cover change button */}
+          <label style={{ position: 'absolute', bottom: 6, left: 8, cursor: 'pointer', background: 'rgba(0,0,0,.5)', borderRadius: 7, padding: '3px 8px', display: 'flex', alignItems: 'center', gap: 4, zIndex: 2 }}>
+            <i className="fa fa-camera" style={{ fontSize: 10, color: '#fff' }} />
+            <span style={{ fontSize: '0.62rem', color: '#fff', fontWeight: 600 }}>Change Cover</span>
+            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files[0]; if (f) uploadCover(f); e.target.value = '' }} />
+          </label>
+          <div style={{ position: 'absolute', top: 7, right: 8, display: 'flex', gap: 4, zIndex: 2 }}>
             <CoverBtn icon="fa-times" onClick={onClose} title="Close" />
           </div>
         </div>
 
-        {/* Avatar (centered, overlapping) */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: -38, position: 'relative', zIndex: 3 }}>
+        {/* Avatar */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: -36, position: 'relative', zIndex: 3 }}>
           <label style={{ cursor: 'pointer', position: 'relative', display: 'block' }}>
             <img src={user?.avatar || '/default_images/avatar/default_guest.png'} alt=""
-              style={{ width: 76, height: 76, borderRadius: '50%', border: `3px solid ${bdr}`, objectFit: 'cover', background: T.bg, boxShadow: '0 4px 16px rgba(0,0,0,.5)', display: 'block' }}
+              style={{ width: 72, height: 72, borderRadius: '50%', border: `3px solid ${bdr}`, objectFit: 'cover', background: T.bg, boxShadow: '0 4px 16px rgba(0,0,0,.5)', display: 'block' }}
               onError={e => { e.target.src = '/default_images/avatar/default_guest.png' }} />
-            <div style={{ position: 'absolute', bottom: 2, right: 2, width: 22, height: 22, borderRadius: '50%', background: T.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `2px solid ${T.bg}` }}>
-              <i className="fa fa-camera" style={{ fontSize: 9, color: '#fff' }} />
+            <div style={{ position: 'absolute', bottom: 2, right: 2, width: 20, height: 20, borderRadius: '50%', background: T.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `2px solid ${T.bg}` }}>
+              <i className="fa fa-camera" style={{ fontSize: 8, color: '#fff' }} />
             </div>
             <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files[0]; if (f) uploadAvatar(f); e.target.value = '' }} />
           </label>
         </div>
 
-        {/* Name + rank */}
-        <div style={{ textAlign: 'center', padding: '8px 16px 2px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, marginBottom: 2 }}>
-            <RIcon rank={user?.rank} size={16} />
-            <span style={{ fontSize: '0.72rem', color: ri.color, fontWeight: 700 }}>{ri.label}</span>
+        {/* Name */}
+        <div style={{ textAlign: 'center', padding: '6px 16px 2px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, marginBottom: 1 }}>
+            <RIcon rank={user?.rank} size={14} />
+            <span style={{ fontSize: '0.65rem', color: ri.color, fontWeight: 700 }}>{ri.label}</span>
           </div>
-          <div style={{ fontWeight: 900, fontSize: '1.05rem', color: nameColor || T.text, fontFamily: 'Outfit, sans-serif' }}>{user?.username}</div>
-          {user?.mood && <div style={{ fontSize: '0.78rem', color: T.muted, marginTop: 2, fontStyle: 'italic' }}>"{user.mood}"</div>}
+          <div style={{ fontWeight: 900, fontSize: '1rem', color: nameColor || T.text, fontFamily: 'Outfit, sans-serif' }}>{user?.username}</div>
+          {user?.mood && <div style={{ fontSize: '0.75rem', color: T.muted, fontStyle: 'italic' }}>"{user.mood}"</div>}
         </div>
 
-        {/* Stats row */}
-        <div style={{ display: 'flex', gap: 1, padding: '10px 14px 0', justifyContent: 'center' }}>
-          {[{ l: 'Level', v: user?.level || 1, c: '#60a5fa' }, { l: 'Gold', v: user?.gold || 0, c: '#fbbf24' }, { l: 'Messages', v: user?.totalMessages || 0, c: '#a78bfa' }].map(s => (
-            <div key={s.l} style={{ textAlign: 'center', background: T.bg2, borderRadius: 8, padding: '6px 14px', border: `1px solid ${T.border}`, flex: 1, margin: '0 3px' }}>
-              <div style={{ fontSize: '0.6rem', color: T.muted, textTransform: 'uppercase', letterSpacing: .5 }}>{s.l}</div>
-              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: s.c }}>{s.v}</div>
+        {/* Pending delete banner */}
+        {user?.pendingDelete && (
+          <div style={{ margin: '8px 14px', padding: '8px 12px', background: 'rgba(239,68,68,0.1)', borderRadius: 9, border: '1px solid rgba(239,68,68,0.3)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <i className="fa fa-trash" style={{ color: '#ef4444' }} />
+            <div style={{ flex: 1, fontSize: '0.75rem', color: '#ef4444' }}>Account scheduled for deletion.</div>
+            <button onClick={cancelDelete} style={{ padding: '3px 10px', borderRadius: 6, border: 'none', background: '#22c55e', color: '#fff', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+          </div>
+        )}
+
+        {/* Stats */}
+        <div style={{ display: 'flex', padding: '8px 14px 0', gap: 6 }}>
+          {[
+            { l: 'Level', v: user?.level || 1, c: '#60a5fa' },
+            { l: 'Gold',  v: (user?.gold  || 0).toLocaleString(), c: '#fbbf24' },
+            { l: 'XP',    v: (user?.xp    || 0).toLocaleString(), c: '#a78bfa' },
+          ].map(s => (
+            <div key={s.l} style={{ textAlign: 'center', background: T.bg2, borderRadius: 8, padding: '5px 10px', border: `1px solid ${T.border}`, flex: 1 }}>
+              <div style={{ fontSize: '0.55rem', color: T.muted, textTransform: 'uppercase', letterSpacing: .5 }}>{s.l}</div>
+              <div style={{ fontSize: '0.9rem', fontWeight: 800, color: s.c }}>{s.v}</div>
             </div>
           ))}
         </div>
 
-        {/* Tab bar */}
-        <div style={{ display: 'flex', borderBottom: `1px solid ${T.border}`, marginTop: 12, background: T.bg2 }}>
-          {[{ id: 'bio', label: 'Bio' }, { id: 'edit', label: 'Edit Profile' }].map(t => <TabBtn key={t.id} label={t.label} active={tab === t.id} onClick={() => setTab(t.id)} />)}
+        {/* Tabs */}
+        <div style={{ display: 'flex', borderBottom: `1px solid ${T.border}`, marginTop: 10, background: T.bg2, overflowX: 'auto' }}>
+          {TABS.map(t => <TabBtn key={t.id} label={t.label} active={tab === t.id} onClick={() => { setTab(t.id); if(t.id==='friends') loadFriends(); if(t.id==='more') { loadFriends(); loadBlocks(); } }} />)}
         </div>
 
         {/* Content */}
-        <div style={{ padding: '14px 18px 20px', maxHeight: '45vh', overflowY: 'auto', scrollbarWidth: 'thin' }}>
-          {ok && <div style={{ background: 'rgba(34,197,94,.08)', border: `1px solid rgba(34,197,94,.2)`, borderRadius: 8, padding: '7px 12px', fontSize: '0.78rem', color: '#22c55e', marginBottom: 12, textAlign: 'center' }}>{ok}</div>}
+        <div style={{ padding: '12px 16px 18px', maxHeight: '50vh', overflowY: 'auto', scrollbarWidth: 'thin' }}>
+          {ok  && <div style={{ background: 'rgba(34,197,94,.08)', border: '1px solid rgba(34,197,94,.2)', borderRadius: 8, padding: '6px 12px', fontSize: '0.75rem', color: '#22c55e', marginBottom: 10, textAlign: 'center' }}>{ok}</div>}
+          {err && <div style={{ background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)', borderRadius: 8, padding: '6px 12px', fontSize: '0.75rem', color: '#ef4444', marginBottom: 10, textAlign: 'center' }}>{err}</div>}
 
-          {/* Bio view */}
+          {/* BIO */}
           {tab === 'bio' && (
             <div>
-              {user?.age      && <ProItem icon="fa-calendar"    label="Age"       value={`${user.age} years`} />}
-              {user?.gender   && <ProItem icon="fa-venus-mars"  label="Gender"    value={GENDER_LABELS[user.gender] || user.gender} />}
-              {user?.country  && <ProItem icon="fa-globe"       label="Country"   value={COUNTRY_NAMES[user.country] || user.country} />}
-              {user?.language && <ProItem icon="fa-language"    label="Language"  value={user.language} />}
-              <ProItem icon="fa-user" label="Joined" value={user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '—'} />
+              {(user?.dob||user?.dateOfBirth)&&<ProItem icon="fa-calendar" label="Age" value={`${Math.floor((Date.now()-new Date(user.dob||user.dateOfBirth))/31557600000)} years`}/>}
+              {!(user?.dob||user?.dateOfBirth)&&user?.age&&<ProItem icon="fa-calendar" label="Age" value={`${user.age} years`}/>}
+              {user?.gender      && <ProItem icon="fa-venus-mars" label="Gender"       value={GENDER_LABELS[user.gender]||user.gender} />}
+              {user?.country     && <ProItem icon="fa-globe"      label="Country"      value={COUNTRY_NAMES[user.country]||user.country} />}
+              {user?.language    && <ProItem icon="fa-language"   label="Language"     value={user.language} />}
+              {user?.relationshipStatus && <ProItem icon="fa-heart" label="Relationship" value={user.relationshipStatus} />}
+              <ProItem icon="fa-user"    label="Joined"       value={user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}) : '—'} />
+              {(user?.dob||user?.dateOfBirth) && <ProItem icon="fa-star" label="Zodiac" value={getZodiac(user.dob||user.dateOfBirth)} />}
               <BadgeRow user={user} />
             </div>
           )}
 
-          {/* Edit profile */}
+          {/* EDIT */}
           {tab === 'edit' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {/* Mood */}
               <div>
-                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: .5, marginBottom: 5 }}>Mood</div>
-                <div style={{ display: 'flex', gap: 7 }}>
-                  <SInput value={mood} onChange={e => setMood(e.target.value)} placeholder="What's on your mind?" style={{ flex: 1 }} />
-                  <button onClick={() => save('mood', mood)} disabled={saving} style={{ padding: '9px 14px', borderRadius: 9, border: 'none', background: T.accent, color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem', flexShrink: 0 }}>Save</button>
+                <div style={{ fontSize: '0.68rem', fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: .5, marginBottom: 4 }}>Mood <span style={{ color: '#555' }}>(max 10 words)</span></div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <SInput value={mood} onChange={e => { const w=e.target.value.split(' '); if(w.length<=10) setMood(e.target.value) }} placeholder="What's on your mind?" style={{ flex: 1 }} />
+                  <button onClick={() => save('mood', mood)} disabled={saving} style={{ padding: '9px 12px', borderRadius: 9, border: 'none', background: T.accent, color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '0.78rem', flexShrink: 0 }}>Save</button>
                 </div>
               </div>
+              {/* Relationship */}
               <div>
-                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: .5, marginBottom: 5 }}>About Me</div>
+                <div style={{ fontSize: '0.68rem', fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: .5, marginBottom: 4 }}>Relationship Status</div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <select value={relStatus} onChange={e => setRel(e.target.value)} style={{ flex: 1, padding: '9px 10px', background: T.bg2, border: `1.5px solid ${T.border}`, borderRadius: 9, color: T.text, fontSize: '0.82rem', outline: 'none' }}>
+                    <option value="">— Select —</option>
+                    {RELS.map(r => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                  <button onClick={() => save('relationshipStatus', relStatus)} disabled={saving} style={{ padding: '9px 12px', borderRadius: 9, border: 'none', background: T.accent, color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '0.78rem', flexShrink: 0 }}>Save</button>
+                </div>
+              </div>
+              {/* About */}
+              <div>
+                <div style={{ fontSize: '0.68rem', fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: .5, marginBottom: 4 }}>About Me</div>
                 <SInput value={about} onChange={e => setAbout(e.target.value)} placeholder="Tell others about yourself…" rows={3} />
-                <button onClick={() => save('about', about)} disabled={saving} style={{ marginTop: 8, padding: '9px', borderRadius: 9, border: 'none', background: T.accent, color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '0.82rem', width: '100%' }}>Save About</button>
+                <button onClick={() => save('about', about)} disabled={saving} style={{ marginTop: 6, padding: '8px', borderRadius: 9, border: 'none', background: T.accent, color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '0.78rem', width: '100%' }}>Save About</button>
+              </div>
+              {/* Email */}
+              <div>
+                <div style={{ fontSize: '0.68rem', fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: .5, marginBottom: 4 }}>Email</div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <SInput value={email} onChange={e => setEmail(e.target.value)} placeholder="New email address" style={{ flex: 1 }} />
+                  <button onClick={() => save('email', email)} disabled={saving||!email} style={{ padding: '9px 12px', borderRadius: 9, border: 'none', background: email ? T.accent : T.bg3, color: email ? '#fff' : T.muted, fontWeight: 700, cursor: email ? 'pointer' : 'not-allowed', fontSize: '0.78rem', flexShrink: 0 }}>Save</button>
+                </div>
+              </div>
+              {/* Password */}
+              <div>
+                <div style={{ fontSize: '0.68rem', fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: .5, marginBottom: 4 }}>New Password</div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <SInput value={pw} onChange={e => setPw(e.target.value)} placeholder="New password (min 6 chars)" style={{ flex: 1 }} />
+                  <button onClick={() => save('password', pw)} disabled={saving||pw.length<6} style={{ padding: '9px 12px', borderRadius: 9, border: 'none', background: pw.length>=6 ? T.accent : T.bg3, color: pw.length>=6 ? '#fff' : T.muted, fontWeight: 700, cursor: pw.length>=6 ? 'pointer' : 'not-allowed', fontSize: '0.78rem', flexShrink: 0 }}>Save</button>
+                </div>
+              </div>
+              {/* Privacy section */}
+              <div style={{ background: T.bg2, borderRadius: 10, padding: '10px 12px', border: `1px solid ${T.border}` }}>
+                <div style={{ fontSize: '0.68rem', fontWeight: 800, color: T.muted, textTransform: 'uppercase', letterSpacing: .7, marginBottom: 8 }}>Privacy</div>
+                {[
+                  { key: 'hideAge',      label: 'Hide Age' },
+                  { key: 'hideGender',   label: 'Hide Gender' },
+                  { key: 'hideLocation', label: 'Hide Country Flag' },
+                  { key: 'hideFriends',  label: 'Hide Friend List' },
+                  { key: 'hideGifts',    label: 'Hide Gifts' },
+                ].map(p => (
+                  <div key={p.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 0', borderBottom: `1px solid ${T.border}` }}>
+                    <span style={{ fontSize: '0.78rem', color: T.text }}>{p.label}</span>
+                    <button onClick={() => togglePrivacy(p.key)} style={{ width: 40, height: 22, borderRadius: 20, border: 'none', cursor: 'pointer', background: privacy[p.key] ? T.accent : T.bg3, position: 'relative', transition: 'all .2s' }}>
+                      <span style={{ position: 'absolute', top: 2, left: privacy[p.key] ? 20 : 2, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left .2s', boxShadow: '0 1px 4px rgba(0,0,0,.3)' }} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {/* Preferences */}
+              <div style={{ background: T.bg2, borderRadius: 10, padding: '10px 12px', border: `1px solid ${T.border}` }}>
+                <div style={{ fontSize: '0.68rem', fontWeight: 800, color: T.muted, textTransform: 'uppercase', letterSpacing: .7, marginBottom: 8 }}>Preferences</div>
+                {[
+                  { key: 'allowFriendReq', label: 'Allow Friend Requests' },
+                  { key: 'allowPrivateMsg', label: 'Allow Private Messages' },
+                  { key: 'allowCalls',      label: 'Allow Calls' },
+                ].map(p => (
+                  <div key={p.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 0', borderBottom: `1px solid ${T.border}` }}>
+                    <span style={{ fontSize: '0.78rem', color: T.text }}>{p.label}</span>
+                    <button onClick={() => togglePref(p.key)} style={{ width: 40, height: 22, borderRadius: 20, border: 'none', cursor: 'pointer', background: prefs[p.key] !== false ? T.accent : T.bg3, position: 'relative', transition: 'all .2s' }}>
+                      <span style={{ position: 'absolute', top: 2, left: prefs[p.key] !== false ? 20 : 2, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left .2s', boxShadow: '0 1px 4px rgba(0,0,0,.3)' }} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {/* Delete account */}
+              <div style={{ marginTop: 4 }}>
+                {user?.pendingDelete ? (
+                  <button onClick={cancelDelete} style={{ width: '100%', padding: '9px', borderRadius: 9, border: '1px solid #22c55e', background: 'rgba(34,197,94,0.08)', color: '#22c55e', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}>
+                    <i className="fa fa-rotate-left" style={{ marginRight: 6 }} />Cancel Account Deletion
+                  </button>
+                ) : (
+                  <button onClick={() => setDel(true)} style={{ width: '100%', padding: '9px', borderRadius: 9, border: '1px solid rgba(239,68,68,.4)', background: 'rgba(239,68,68,.06)', color: '#ef4444', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}>
+                    <i className="fa fa-trash" style={{ marginRight: 6 }} />Delete Account
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* FRIENDS */}
+          {tab === 'friends' && (
+            <div>
+              {friends === null && <p style={{ textAlign: 'center', color: T.muted, fontSize: '0.78rem' }}>Loading...</p>}
+              {friends !== null && friends.length === 0 && <p style={{ textAlign: 'center', color: T.muted, fontSize: '0.78rem', padding: 16 }}>No friends yet</p>}
+              {(friends||[]).map(f => (
+                <div key={f._id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: `1px solid ${T.border}` }}>
+                  <img src={f.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', border: `1.5px solid ${GBR(f.gender,f.rank)}` }} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}><RIcon rank={f.rank} size={11} /><span style={{ fontSize: '0.8rem', fontWeight: 700, color: R(f.rank).color, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.username}</span></div>
+                    <div style={{ fontSize: '0.62rem', color: f.isOnline ? '#22c55e' : T.muted }}>{f.isOnline ? 'Online' : 'Offline'}</div>
+                  </div>
+                  <button onClick={() => removeFriend(f._id)} style={{ padding: '4px 10px', borderRadius: 7, border: '1px solid rgba(239,68,68,.35)', background: 'rgba(239,68,68,.08)', color: '#ef4444', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}>Remove</button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* MORE — manage blocks */}
+          {tab === 'more' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: T.muted, textTransform: 'uppercase', letterSpacing: .7, marginBottom: 8 }}>Blocked Users</div>
+                {blocks === null && <p style={{ color: T.muted, fontSize: '0.78rem' }}>Loading...</p>}
+                {blocks !== null && blocks.length === 0 && <p style={{ color: T.muted, fontSize: '0.78rem' }}>No blocked users</p>}
+                {(blocks||[]).map(b => (
+                  <div key={b._id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: `1px solid ${T.border}` }}>
+                    <img src={b.avatar||'/default_images/avatar/default_guest.png'} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} onError={e=>{e.target.src='/default_images/avatar/default_guest.png'}} />
+                    <span style={{ flex: 1, fontSize: '0.8rem', color: T.text }}>{b.username}</span>
+                    <button onClick={() => unblock(b._id)} style={{ padding: '3px 9px', borderRadius: 7, border: '1px solid rgba(34,197,94,.35)', background: 'rgba(34,197,94,.08)', color: '#22c55e', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}>Unblock</button>
+                  </div>
+                ))}
               </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Delete confirm modal */}
+      {showDelModal && (
+        <div onClick={e => e.stopPropagation()} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.75)', zIndex: 1300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: T.bg, borderRadius: 14, border: '1px solid rgba(239,68,68,.3)', maxWidth: 360, width: '100%', padding: 20 }}>
+            <div style={{ fontWeight: 800, fontSize: '1rem', color: '#ef4444', marginBottom: 10 }}><i className="fa fa-trash" style={{ marginRight: 7 }} />Delete Account</div>
+            <p style={{ fontSize: '0.8rem', color: T.muted, marginBottom: 12 }}>Your account will be permanently deleted after 3 days. Enter your password to confirm.</p>
+            <SInput value={delPw} onChange={e => setDelPw(e.target.value)} placeholder="Enter your password" style={{ marginBottom: 12 }} />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setDel(false)} style={{ flex: 1, padding: '9px', borderRadius: 9, border: `1px solid ${T.border}`, background: 'none', color: T.muted, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={requestDelete} disabled={saving || !delPw.trim()} style={{ flex: 2, padding: '9px', borderRadius: 9, border: 'none', background: delPw.trim() ? '#ef4444' : T.bg3, color: '#fff', fontWeight: 700, cursor: delPw.trim() ? 'pointer' : 'not-allowed' }}>Confirm Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
-// ═══════════════════════════════════════════════════════════════
-// MINI CARD — near-username popup, anchored to click position
-// ═══════════════════════════════════════════════════════════════
-export function MiniCard({ user, myId, myLevel, pos, socket, roomId, ignoredUsers, onIgnore, onClose, onFull, onGift, tObj, liveCamUsers, onWhisper }) {
+export function MiniCard({ user, myId, myLevel, pos, socket, roomId, ignoredUsers, onIgnore, onClose, onFull, onGift, tObj, liveCamUsers, onWhisper, onReport }) {
   const [showStaff, setShowStaff] = useState(false)
   const [ignored,   setIgnored]   = useState(() => (ignoredUsers || new Set()).has(user._id || user.userId))
 
