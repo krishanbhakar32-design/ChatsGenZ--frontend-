@@ -2,6 +2,7 @@
 // NO backdrop blur/darken. All panels open above input bar (and the + window).
 // Spotify: full iframe embed (plays full song). YouTube: iframe embed directly.
 // EmoticonPicker: reads from /icons/emoticons with category tabs.
+// FIX: Added missing VoiceMessage + VoiceMicBtn exports (were imported by ChatMessages & ChatRoom)
 import { useState, useRef, useEffect } from 'react'
 import { API } from './chatConstants.js'
 
@@ -335,18 +336,16 @@ const EMOT_ANIMALS = [
   '1f98b','1f98c','1f98d','1f98e','1f98f','1f990','1f991',
 ]
 const EMOT_CATS = [
-  { id: 'base',    label: 'Faces',   icon: '/icons/emoticon_icon/base_emo.png',        items: EMOT_BASE,    prefix: '/icons/emoticons/',                   suffix: '.png' },
-  { id: 'food',    label: 'Food',    icon: '/icons/emoticon_icon/food.png',            items: EMOT_FOOD,    prefix: '/icons/emoticons/food/',              suffix: '.png' },
-  { id: 'animals', label: 'Animals', icon: '/icons/emoticon_icon/sticker_animals.png', items: EMOT_ANIMALS, prefix: '/icons/emoticons/sticker_animals/',   suffix: '.png' },
+  { id: 'base',    label: 'Faces',   icon: '/icons/emoticon_icon/base_emo.png',        items: EMOT_BASE,    prefix: '/icons/emoticons/',                 suffix: '.png' },
+  { id: 'food',    label: 'Food',    icon: '/icons/emoticon_icon/food.png',            items: EMOT_FOOD,    prefix: '/icons/emoticons/food/',            suffix: '.png' },
+  { id: 'animals', label: 'Animals', icon: '/icons/emoticon_icon/sticker_animals.png', items: EMOT_ANIMALS, prefix: '/icons/emoticons/sticker_animals/', suffix: '.png' },
 ]
 
-// EmoticonPicker — anchors above the emoji button, theme-synced, NOT center-screen
 function EmoticonPicker({ onSelect, onClose, anchorRef, tObj }) {
   const [tab, setTab] = useState('base')
   const [pos, setPos] = useState(null)
   const cat = EMOT_CATS.find(c => c.id === tab) || EMOT_CATS[0]
 
-  // Theme colors
   const thBg     = tObj?.bg_header  || '#111111'
   const thBg2    = tObj?.bg_chat    || '#151515'
   const thText   = tObj?.text       || '#ffffff'
@@ -356,16 +355,13 @@ function EmoticonPicker({ onSelect, onClose, anchorRef, tObj }) {
   useEffect(() => {
     if (anchorRef?.current) {
       const r = anchorRef.current.getBoundingClientRect()
-      // Position the modal just above the anchor button, left-aligned
       const modalW = 300
       let left = r.left
-      // clamp to viewport
       if (left + modalW > window.innerWidth - 8) left = window.innerWidth - modalW - 8
       if (left < 8) left = 8
       const bottom = window.innerHeight - r.top + 6
       setPos({ left, bottom })
     } else {
-      // fallback: bottom-left of screen
       setPos({ left: 8, bottom: 60 })
     }
   }, [anchorRef])
@@ -391,7 +387,6 @@ function EmoticonPicker({ onSelect, onClose, anchorRef, tObj }) {
         overflow: 'hidden',
       }}
     >
-      {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '8px 10px', borderBottom: `1px solid ${thBorder}33`,
@@ -402,7 +397,6 @@ function EmoticonPicker({ onSelect, onClose, anchorRef, tObj }) {
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666', fontSize: 16, lineHeight: 1, padding: '2px 5px' }}>✕</button>
       </div>
 
-      {/* Category tabs */}
       <div style={{ display: 'flex', borderBottom: `1px solid ${thBorder}33`, background: thBg, flexShrink: 0 }}>
         {EMOT_CATS.map(c => (
           <button key={c.id} onClick={() => setTab(c.id)}
@@ -421,7 +415,6 @@ function EmoticonPicker({ onSelect, onClose, anchorRef, tObj }) {
         ))}
       </div>
 
-      {/* Emoticon grid */}
       <div style={{
         flex: 1, overflowY: 'auto', padding: 6,
         display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 3,
@@ -486,6 +479,84 @@ function YTMessage({ url, onMinimize }) {
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen
         style={{ display: 'block', height: 'min(180px,40vw)', marginTop: 0 }} />
     </div>
+  )
+}
+
+// ─── VOICE MESSAGE — inline audio player in chat ─────────────
+// FIX: was imported by ChatMessages.jsx but not defined/exported here
+export function VoiceMessage({ src }) {
+  return (
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(3,173,216,0.12)', border: '1px solid rgba(3,173,216,0.3)', borderRadius: 22, padding: '6px 12px', maxWidth: 280 }}>
+      <i className="fa-solid fa-microphone" style={{ color: '#03add8', fontSize: 13, flexShrink: 0 }} />
+      <audio controls src={src} style={{ height: 28, maxWidth: 200, outline: 'none' }} />
+    </div>
+  )
+}
+
+// ─── VOICE MIC BUTTON — record & send voice message ──────────
+// FIX: was imported by ChatRoom.jsx but not defined/exported here
+export function VoiceMicBtn({ connected, thAccent, onSend }) {
+  const [rec, setRec]   = useState(false)
+  const mrRef           = useRef(null)
+  const chunksRef       = useRef([])
+  const streamRef       = useRef(null)
+
+  async function toggle() {
+    if (!connected) return
+    if (!rec) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        streamRef.current = stream
+        chunksRef.current = []
+        const mr = new MediaRecorder(stream)
+        mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data) }
+        mr.onstop = () => {
+          const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
+          const url  = URL.createObjectURL(blob)
+          onSend?.(url)
+          stream.getTracks().forEach(t => t.stop())
+          streamRef.current = null
+        }
+        mrRef.current = mr
+        mr.start()
+        setRec(true)
+      } catch {
+        // mic permission denied — silently fail
+      }
+    } else {
+      mrRef.current?.stop()
+      setRec(false)
+    }
+  }
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (mrRef.current?.state === 'recording') mrRef.current.stop()
+      streamRef.current?.getTracks().forEach(t => t.stop())
+    }
+  }, [])
+
+  return (
+    <>
+      <style>{`@keyframes cgzPulse{0%,100%{opacity:1}50%{opacity:.5}}`}</style>
+      <button
+        onClick={toggle}
+        title={rec ? 'Stop recording' : 'Send voice message'}
+        style={{
+          width: 34, height: 34, borderRadius: '50%', border: 'none', flexShrink: 0,
+          background: rec ? '#ef4444' : 'rgba(255,255,255,0.08)',
+          color: rec ? '#fff' : (thAccent || '#03add8'),
+          cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 14,
+          animation: rec ? 'cgzPulse 1s ease-in-out infinite' : 'none',
+          transition: 'background .15s, color .15s',
+        }}
+      >
+        <i className={rec ? 'fa-solid fa-stop' : 'fa-solid fa-microphone'} />
+      </button>
+    </>
   )
 }
 
