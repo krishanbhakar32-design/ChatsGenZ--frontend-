@@ -65,62 +65,66 @@ function UserItem({ u, onClick, onWhisper, showMood = true, myId }) {
 
   return (
     <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-      style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 10px', cursor:'pointer',
+      style={{ display:'flex', alignItems:'center', gap:7, padding:'6px 8px', cursor:'pointer',
         background: hov ? 'rgba(255,255,255,0.05)' : 'transparent',
         borderBottom:'1px solid rgba(255,255,255,0.03)', transition:'background .12s', position:'relative' }}>
 
       {/* Avatar + status dot */}
       <div style={{ position:'relative', flexShrink:0 }} onClick={e => onClick?.(u, e)}>
         <img src={u.avatar || '/default_images/avatar/default_guest.png'} alt=""
-          style={{ width:34, height:34, borderRadius:'50%', objectFit:'cover', border:`2px solid ${GBR(u.gender, u.rank)}`, display:'block' }}
+          style={{ width:32, height:32, borderRadius:'50%', objectFit:'cover', border:`2px solid ${GBR(u.gender, u.rank)}`, display:'block' }}
           onError={e => { e.target.src = '/default_images/avatar/default_guest.png' }} />
-        <span style={{ position:'absolute', bottom:0, right:0, width:9, height:9,
-          background: statusColor, borderRadius:'50%', border:'2px solid #111', flexShrink:0 }} />
+        {/* Status icon from public folder */}
+        <img src={`/default_images/status/${status === 'invisible' ? 'invisible' : status === 'busy' ? 'busy' : status === 'away' ? 'away' : 'active'}.svg`}
+          alt={status}
+          style={{ position:'absolute', bottom:-1, right:-1, width:11, height:11, flexShrink:0 }}
+          onError={e => {
+            e.target.style.display='none'
+            const dot = document.createElement('span')
+            dot.style.cssText = `position:absolute;bottom:0;right:0;width:9px;height:9px;background:${statusColor};border-radius:50%;border:2px solid #111`
+            e.target.parentNode?.appendChild(dot)
+          }} />
       </div>
 
-      {/* Name + mood + rank */}
+      {/* Name + mood */}
       <div style={{ flex:1, minWidth:0 }} onClick={e => onClick?.(u, e)}>
-        {/* Row 1: cam icon + username + rank icon */}
-        <div style={{ display:'flex', alignItems:'center', gap:4, marginBottom:1 }}>
+        {/* Row 1: cam icon + username */}
+        <div style={{ display:'flex', alignItems:'center', gap:3, marginBottom:1 }}>
           {u.isCamHost && (
             <img src="/default_images/icons/webcam.svg" alt="cam"
-              style={{ width:10, height:10, flexShrink:0, opacity:0.9 }}
+              style={{ width:9, height:9, flexShrink:0, opacity:0.85 }}
               onError={e => { e.target.style.display='none' }} />
           )}
-          <span style={{ fontSize:'0.8rem', fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
-            maxWidth:100, color:'#ffffff', ...nameStyle }}>{u.username}</span>
-          <RIcon rank={u.rank} size={13} />
+          <span style={{ fontSize:'0.78rem', fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+            color:'#ffffff', ...nameStyle }}>{u.username}</span>
         </div>
-
-        {/* Row 2: mood (italic, muted) */}
+        {/* Row 2: mood */}
         {showMood && u.mood && (
-          <div style={{ fontSize:'0.62rem', color:'#666', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontStyle:'italic', lineHeight:1.2 }}>
-            "{u.mood}"
+          <div style={{ fontSize:'0.6rem', color:'#666', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontStyle:'italic', lineHeight:1.2 }}>
+            {u.mood}
           </div>
         )}
+      </div>
 
-        {/* Row 3: status text + country flag */}
-        <div style={{ display:'flex', alignItems:'center', gap:4, marginTop:1 }}>
-          {status !== 'online' && (
-            <span style={{ fontSize:'0.55rem', fontWeight:700, color: statusColor, textTransform:'uppercase', letterSpacing:0.5 }}>
-              {status}
-            </span>
-          )}
-          {u.countryCode && u.countryCode !== 'ZZ' && (
-            <img src={`/icons/flags/${u.countryCode.toUpperCase()}.png`} alt=""
-              style={{ width:13, height:9, flexShrink:0, borderRadius:1 }}
-              onError={e => e.target.style.display='none'} />
-          )}
-        </div>
+      {/* Right: rank icon + country flag stacked */}
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:2, flexShrink:0 }} onClick={e => onClick?.(u, e)}>
+        <RIcon rank={u.rank} size={14} />
+        {u.countryCode && u.countryCode !== 'ZZ' && (
+          <img src={`/icons/flags/${u.countryCode.toUpperCase()}.png`} alt=""
+            style={{ width:14, height:10, flexShrink:0, borderRadius:1 }}
+            onError={e => e.target.style.display='none'} />
+        )}
       </div>
 
       {/* Whisper button on hover */}
       {hov && !isMe && onWhisper && (
         <button onClick={e => { e.stopPropagation(); onWhisper({ ...u, userId: u._id || u.userId }) }}
           title="Whisper"
-          style={{ position:'absolute', right:6, background:'rgba(124,58,237,0.18)', border:'1px solid rgba(124,58,237,0.4)',
-            borderRadius:6, color:'#a78bfa', cursor:'pointer', fontSize:10, padding:'3px 6px', display:'flex', alignItems:'center', gap:3 }}>
-          <i className="fa-solid fa-hand-lizard" style={{ fontSize:10 }} />
+          style={{ position:'absolute', left:'50%', top:'50%', transform:'translate(-50%,-50%)',
+            background:'rgba(0,0,0,0.75)', border:'1px solid rgba(124,58,237,0.5)',
+            borderRadius:6, color:'#a78bfa', cursor:'pointer', fontSize:10, padding:'3px 7px',
+            display:'flex', alignItems:'center', gap:3, zIndex:2 }}>
+          <i className="fa-solid fa-hand-lizard" style={{ fontSize:9 }} /> Whisper
         </button>
       )}
     </div>
@@ -651,7 +655,7 @@ function LeaderboardPanel({ onClose, tObj }) {
   )
 }
 
-function PremiumPanel({ onClose, tObj, me }) {
+function PremiumPanel({ onClose, tObj, me, eligibleForPremium = true }) {
   const [plans, setPlans]   = useState([])
   const [status, setStatus] = useState(null)
   const [loading, setLoad]  = useState(true)
@@ -690,7 +694,14 @@ function PremiumPanel({ onClose, tObj, me }) {
     <div style={{ display:'flex', flexDirection:'column', height:'100%', background:bg }}>
       <FlyoutHeader icon="fa-solid fa-crown" title="Buy Premium" onClose={onClose} accent={'#f59e0b'} header={header} text={text} border={border} />
       {msg && <MsgBanner msg={msg} />}
-      {status && (
+      {!eligibleForPremium && (
+        <div style={{ margin: '16px', padding: '14px', background: 'rgba(239,68,68,0.1)', borderRadius: 10, border: '1px solid rgba(239,68,68,0.3)', textAlign: 'center' }}>
+          <i className="fa-solid fa-crown" style={{ fontSize: 24, color: '#f59e0b', display: 'block', marginBottom: 8 }} />
+          <div style={{ fontSize: '0.85rem', fontWeight: 700, color: text, marginBottom: 4 }}>Not Available</div>
+          <div style={{ fontSize: '0.75rem', color: '#888' }}>Premium is only available for users with Legend rank or below.</div>
+        </div>
+      )}
+      {eligibleForPremium && status && (
         <div style={{ padding:'8px 12px', borderBottom:`1px solid ${border}22`, flexShrink:0 }}>
           <div style={{ display:'flex', gap:12, marginBottom:8 }}>
             <span style={{ fontSize:'0.78rem', color:'#f59e0b', fontWeight:700 }}>🪙 {(status.gold||0).toLocaleString()}</span>
@@ -1015,6 +1026,51 @@ function MsgBanner({ msg }) {
   )
 }
 
+
+// ── Chat Rules Panel ─────────────────────────────────────────
+function ChatRulesPanel({ onClose, tObj }) {
+  const [rules, setRules] = useState([])
+  const { accent, bg, header, text, border } = useTheme(tObj)
+
+  useEffect(() => {
+    const t = localStorage.getItem('cgz_token')
+    fetch(`${API}/api/settings/chat-rules`, { headers: { Authorization: `Bearer ${t}` } })
+      .then(r => r.json()).then(d => setRules(d.rules || d || [])).catch(() => {})
+  }, [])
+
+  const DEFAULT_RULES = [
+    'Be respectful to all users',
+    'No spamming or flooding',
+    'No offensive language or hate speech',
+    'No sharing personal information',
+    'No advertising or self-promotion',
+    'Follow staff instructions',
+    'No impersonation of other users',
+    'Keep conversations appropriate for all ages',
+  ]
+  const displayRules = rules.length > 0 ? rules : DEFAULT_RULES
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', height:'100%', background:bg }}>
+      <FlyoutHeader icon="fa-solid fa-scroll" title="Chat Rules" onClose={onClose} accent={accent} header={header} text={text} border={border} />
+      <div style={{ flex:1, overflowY:'auto', padding:'12px' }}>
+        {displayRules.map((rule, i) => (
+          <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:10, padding:'8px 0', borderBottom:`1px solid ${border}18` }}>
+            <div style={{ width:22, height:22, borderRadius:'50%', background:`${accent}22`, border:`1px solid ${accent}44`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:1 }}>
+              <span style={{ fontSize:'0.65rem', fontWeight:800, color:accent }}>{i+1}</span>
+            </div>
+            <span style={{ fontSize:'0.8rem', color:text, lineHeight:1.5, flex:1 }}>{typeof rule === 'string' ? rule : rule.content || rule.text || rule}</span>
+          </div>
+        ))}
+        <div style={{ marginTop:16, padding:'10px 12px', background:`${accent}0a`, borderRadius:10, border:`1px solid ${accent}22` }}>
+          <div style={{ fontSize:'0.7rem', color:accent, fontWeight:700, marginBottom:4 }}>⚠️ Violation of rules may result in:</div>
+          <div style={{ fontSize:'0.72rem', color:text+'88', lineHeight:1.6 }}>Mute • Kick • Temporary ban • Permanent ban</div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ═══════════════════════════════════════════════════════════════
 // LEFT SIDEBAR — flyout opens as overlay over chatroom
 // ═══════════════════════════════════════════════════════════════
@@ -1038,13 +1094,13 @@ function LeftSidebar({ room, nav, socket, roomId, onClose, me, tObj, onStyleSave
     { icon:'fa-solid fa-house-user',    label:'Room List',       flyoutId:'rooms',       title:'Room List' },
     { icon:'fa-solid fa-newspaper',     label:'News',            flyoutId:'news',        title:'News' },
     { icon:'fa-solid fa-rss',           label:'Friend Wall',     flyoutId:'friendwall',  title:'Friend Wall' },
-    { icon:'fa-solid fa-dice',          label:'Games',           flyoutId:'games',       title:'Games' },
+    { icon:'fa-solid fa-comments',      label:'Forum',           fn:()=>{ nav('/forum') }, title:'Forum' },
     { icon:'fa-solid fa-store',         label:'Store',           flyoutId:'store',       title:'Store' },
-    { icon:'fa-solid fa-medal',         label:'Leaderboard',     flyoutId:'leaderboard', title:'Leaderboard' },
+    { icon:'fa-solid fa-trophy',        label:'Leaderboard',     flyoutId:'leaderboard', title:'Leaderboard' },
     { icon:'fa-solid fa-crown',         label:'Buy Premium',     flyoutId:'premium',     title:'Premium', gold:true },
     { icon:'fa-solid fa-user-pen',      label:'Username Change', flyoutId:'username',    title:'Change Username', badge:'500' },
-    { icon:'fa-solid fa-life-ring',     label:'Help',            fn:()=>{ window.open('/help','_blank') }, title:'Help' },
-    { icon:'fa-solid fa-envelope',      label:'Contact Us',      fn:()=>{ window.open('/contact','_blank') }, title:'Contact' },
+    { icon:'fa-solid fa-scroll',        label:'Chat Rules',      flyoutId:'chatrules',   title:'Chat Rules' },
+    { icon:'fa-solid fa-headset',       label:'Contact Us',      fn:()=>{ nav('/contact') }, title:'Contact' },
   ]
 
   // Call action buttons (audio/video/group calls)
@@ -1245,9 +1301,10 @@ function LeftSidebar({ room, nav, socket, roomId, onClose, me, tObj, onStyleSave
             {flyout==='friendwall'  && <FriendWallPanel  onClose={closeFlyout} tObj={tObj} />}
             {flyout==='games'       && <GamesFlyoutPanel onClose={closeFlyout} socket={socket} roomId={roomId} me={me} tObj={tObj} />}
             {flyout==='leaderboard' && <LeaderboardPanel onClose={closeFlyout} tObj={tObj} />}
-            {flyout==='premium'     && <PremiumPanel     onClose={closeFlyout} tObj={tObj} me={me} />}
+            {flyout==='premium'     && <PremiumPanel     onClose={closeFlyout} tObj={tObj} me={me} eligibleForPremium={['guest','user','vipfemale','vipmale','butterfly','ninja','fairy','legend'].includes(me?.rank)} />}
             {flyout==='store'       && <StorePanel       onClose={closeFlyout} tObj={tObj} me={me} />}
             {flyout==='username'    && <UsernameChangePanel onClose={closeFlyout} tObj={tObj} me={me} onUpdated={u=>{ onStyleSaved?.(u); closeFlyout() }} />}
+            {flyout==='chatrules'   && <ChatRulesPanel onClose={closeFlyout} tObj={tObj} />}
           </div>
         </>
       )}
