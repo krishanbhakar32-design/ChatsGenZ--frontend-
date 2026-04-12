@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 // FIX: trim trailing slash; fall back safely if env var is missing
-const API   = (import.meta.env.VITE_API_URL || 'https://chatsgenz-backend-production.up.railway.app').replace(/\/$/, '');
+const API   = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 // FIX: never returns null — always returns empty string so "Bearer null" is never sent
 const token = () => localStorage.getItem('cgz_token') || '';
 
@@ -57,7 +57,6 @@ const daysLeft = d => d ? Math.max(0, Math.ceil((new Date(d)-Date.now())/8640000
 // ══════════════════════════════════════════════════════════════
 // THEME PERMISSIONS SECTION
 // ══════════════════════════════════════════════════════════════
-// All available themes with names (matches StyleModal.jsx THEMES)
 const THEME_LIST = [
   {id:'Dark',name:'Dark'},{id:'Dark Purple',name:'Dark Purple'},{id:'Classic Blue',name:'Classic Blue'},
   {id:'Midnight',name:'Midnight'},{id:'Ocean',name:'Ocean'},{id:'Forest',name:'Forest'},
@@ -70,9 +69,7 @@ const THEME_LIST = [
 ];
 
 export function ThemePermissionsSection() {
-  const [perms, setPerms]     = useState({});
-  const [saving, setSaving]   = useState('');
-  const [loading, setLoading] = useState(true);
+  // FIX: removed duplicate useState declarations (were causing build failure)
   const [perms, setPerms]     = useState({});
   const [saving, setSaving]   = useState('');
   const [loading, setLoading] = useState(true);
@@ -119,7 +116,7 @@ export function ThemePermissionsSection() {
         Theme Permissions
       </h2>
       <p className="ap-muted" style={{marginBottom:18}}>
-        Control which themes each rank can access. Themes are identified by name. <strong>-1 = all themes</strong>, <strong>0 = blocked</strong>, <strong>N = up to N themes</strong>.
+        Control which themes each rank can access. <strong>-1 = all themes</strong>, <strong>0 = blocked</strong>, <strong>N = up to N themes</strong>.
       </p>
 
       <div className="ap-card" style={{padding:0,overflow:'hidden'}}>
@@ -195,7 +192,6 @@ export function ThemePermissionsSection() {
         </button>
       </div>
 
-      {/* Legend */}
       <div className="ap-card" style={{marginTop:16,padding:'12px 16px'}}>
         <div className="ap-card-title">How it works</div>
         <div style={{display:'flex',gap:16,flexWrap:'wrap',fontSize:13}}>
@@ -212,7 +208,7 @@ export function ThemePermissionsSection() {
 // PREMIUM SECTION — Full CodyChat-style VIP Management
 // ══════════════════════════════════════════════════════════════
 export function PremiumSection() {
-  const [tab, setTab]             = useState('settings');  // settings | members | transactions | manage
+  const [tab, setTab]             = useState('settings');
   const [settings, setSettings]   = useState(null);
   const [members, setMembers]     = useState([]);
   const [txs, setTxs]             = useState([]);
@@ -226,7 +222,6 @@ export function PremiumSection() {
   const [saving, setSaving]       = useState(false);
   const [plans, setPlans]         = useState([]);
 
-  // Load settings + plans
   const loadSettings = useCallback(async () => {
     try {
       const d = await api('/premium-plans');
@@ -235,7 +230,6 @@ export function PremiumSection() {
     } catch(e) { toast(e.message,'error'); }
   }, []);
 
-  // Load active premium members
   const loadMembers = useCallback(async () => {
     setLoading(true);
     try {
@@ -245,7 +239,6 @@ export function PremiumSection() {
     finally { setLoading(false); }
   }, [memSearch]);
 
-  // Load transactions
   const loadTxs = useCallback(async () => {
     setLoading(true);
     try {
@@ -277,7 +270,6 @@ export function PremiumSection() {
     if (!grantUser.trim()) return toast('Enter username','error');
     setSaving(true);
     try {
-      // Resolve username → id first
       const userData = await api(`/users?search=${encodeURIComponent(grantUser)}&limit=1`);
       const u = userData.users?.[0];
       if (!u) return toast('User not found','error');
@@ -291,11 +283,9 @@ export function PremiumSection() {
     finally { setSaving(false); }
   };
 
-  // FIX: replaced native confirm() (blocks thread, bad UX) with a state flag
   const [revokeTarget, setRevokeTarget] = React.useState(null);
 
   const revoke = async (userId, username) => {
-    // Trigger confirm dialog (handled in JSX below)
     setRevokeTarget({ userId, username });
   };
 
@@ -332,7 +322,6 @@ export function PremiumSection() {
         )}
       </h2>
 
-      {/* Tab Bar */}
       <div className="ap-tabs">
         {TABS.map(t => (
           <button key={t.id} className={`ap-tab-btn ${tab===t.id?'ap-tab-btn--active':''}`}
@@ -342,10 +331,8 @@ export function PremiumSection() {
         ))}
       </div>
 
-      {/* ── Settings Tab ── */}
       {tab === 'settings' && (
         <div>
-          {/* Master toggle */}
           <div className="ap-card" style={{marginBottom:14}}>
             <div className="ap-card-title">Premium System</div>
             <label className="ap-toggle-row" style={{cursor:'pointer'}}>
@@ -357,7 +344,6 @@ export function PremiumSection() {
             </label>
           </div>
 
-          {/* Plans editor */}
           <div className="ap-card">
             <div className="ap-card-title">Premium Plans</div>
             <div style={{display:'flex',flexDirection:'column',gap:12}}>
@@ -392,7 +378,7 @@ export function PremiumSection() {
                         onChange={e => setPlans(p => p.map((x,j) => j===i ? {...x,rubyPrice:+e.target.value} : x))} />
                     </div>
                     <div className="ap-setting-row">
-                      <span className="ap-label">Gold Bonus (on purchase)</span>
+                      <span className="ap-label">Gold Bonus</span>
                       <input type="number" className="ap-input" value={plan.goldBonus}
                         onChange={e => setPlans(p => p.map((x,j) => j===i ? {...x,goldBonus:+e.target.value} : x))} />
                     </div>
@@ -407,7 +393,6 @@ export function PremiumSection() {
             </div>
           </div>
 
-          {/* Features list */}
           <div className="ap-card" style={{marginTop:14}}>
             <div className="ap-card-title">Premium Features (shown to users)</div>
             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:8}}>
@@ -436,7 +421,6 @@ export function PremiumSection() {
         </div>
       )}
 
-      {/* ── Members Tab ── */}
       {tab === 'members' && (
         <div>
           <div className="ap-filter-bar">
@@ -470,18 +454,10 @@ export function PremiumSection() {
                           <span style={{fontWeight:600}}>{m.username}</span>
                         </div>
                       </td>
-                      <td>
-                        <span style={{color:RANK_COLORS[m.rank]||'#aaa',fontWeight:700,fontSize:12}}>
-                          {m.rank}
-                        </span>
-                      </td>
+                      <td><span style={{color:RANK_COLORS[m.rank]||'#aaa',fontWeight:700,fontSize:12}}>{m.rank}</span></td>
                       <td style={{fontSize:12}}>{fmtDate(m.premiumUntil)}</td>
                       <td>
-                        <span style={{
-                          background:'#aa44ff22',color:'#aa44ff',
-                          border:'1px solid #aa44ff44',borderRadius:20,
-                          padding:'2px 8px',fontSize:12,fontWeight:700
-                        }}>
+                        <span style={{background:'#aa44ff22',color:'#aa44ff',border:'1px solid #aa44ff44',borderRadius:20,padding:'2px 8px',fontSize:12,fontWeight:700}}>
                           {daysLeft(m.premiumUntil)}d
                         </span>
                       </td>
@@ -503,7 +479,6 @@ export function PremiumSection() {
         </div>
       )}
 
-      {/* ── Transactions Tab ── */}
       {tab === 'transactions' && (
         <div>
           <div className="ap-filter-bar">
@@ -546,7 +521,6 @@ export function PremiumSection() {
             </div>
           )}
 
-          {/* Pagination */}
           {txTotal > 30 && (
             <div className="ap-pagination">
               <button className="ap-btn ap-btn--ghost ap-btn--sm" onClick={() => setTxPage(p=>Math.max(1,p-1))} disabled={txPage===1}>‹</button>
@@ -558,7 +532,6 @@ export function PremiumSection() {
         </div>
       )}
 
-      {/* ── Manage Tab — Manual Grant ── */}
       {tab === 'manage' && (
         <div>
           <div className="ap-card" style={{maxWidth:480}}>
@@ -600,7 +573,6 @@ export function PremiumSection() {
         </div>
       )}
 
-      {/* FIX: Revoke confirm dialog — replaces native confirm() call */}
       {revokeTarget && (
         <div className="ap-overlay" onClick={() => setRevokeTarget(null)}>
           <div className="ap-dialog" onClick={e => e.stopPropagation()}>
@@ -626,13 +598,9 @@ export function RevenueSection({ userRank }) {
   const [adData, setAdData]     = useState(null);
   const [tab, setTab]           = useState('overview');
 
-  // FIX: ALL hooks must be called before any conditional return (Rules of Hooks).
-  // The original code had `if (userRank !== 'owner') return (...)` BEFORE useCallback/useEffect,
-  // which caused React to crash with "rendered more hooks than previous render".
-  // Solution: call all hooks unconditionally, gate the early-return in JSX below.
-
+  // FIX: all hooks called unconditionally before any conditional return
   const loadSummary = useCallback(async () => {
-    if (userRank !== 'owner') return;   // safe inside callback — not a hook call
+    if (userRank !== 'owner') return;
     setLoading(true);
     try { const d = await api('/api/revenue/summary'); setData(d); }
     catch(e) { toast(e.message,'error'); }
@@ -646,10 +614,8 @@ export function RevenueSection({ userRank }) {
   }, [adDays, userRank]);
 
   useEffect(() => { loadSummary(); }, [loadSummary]);
-  // FIX: removed setTimeout(loadAds, 50) — useEffect dependency on adDays handles re-fetch correctly
   useEffect(() => { if (tab === 'ads') loadAds(); }, [tab, loadAds]);
 
-  // Guard: render lock-screen AFTER hooks (JSX return, not early return before hooks)
   if (userRank !== 'owner') {
     return (
       <div className="ap-section">
@@ -695,17 +661,13 @@ export function RevenueSection({ userRank }) {
         <h2 className="ap-section-title" style={{marginBottom:0}}>
           <i className="fa-solid fa-chart-line" style={{color:'#22c55e'}} />
           Revenue Dashboard
-          <span style={{
-            fontSize:11,background:'#FFD70022',color:'#FFD700',
-            border:'1px solid #FFD70044',borderRadius:20,padding:'2px 10px',marginLeft:8,fontWeight:700
-          }}>Owner Only</span>
+          <span style={{fontSize:11,background:'#FFD70022',color:'#FFD700',border:'1px solid #FFD70044',borderRadius:20,padding:'2px 10px',marginLeft:8,fontWeight:700}}>Owner Only</span>
         </h2>
         <button className="ap-btn ap-btn--ghost ap-btn--sm" onClick={loadSummary}>
           <i className="fa-solid fa-refresh" /> Refresh
         </button>
       </div>
 
-      {/* Tabs */}
       <div className="ap-tabs">
         {TABS.map(t => (
           <button key={t.id} className={`ap-tab-btn ${tab===t.id?'ap-tab-btn--active':''}`}
@@ -715,7 +677,6 @@ export function RevenueSection({ userRank }) {
         ))}
       </div>
 
-      {/* ── Overview Tab ── */}
       {tab === 'overview' && data && (() => {
         const premiumCount      = data.premium?.total        || 0;
         const premiumActive     = data.premium?.activeNow    || 0;
@@ -733,13 +694,7 @@ export function RevenueSection({ userRank }) {
 
         return (
         <div>
-          {/* ── Combined Revenue Banner ── */}
-          <div style={{
-            background:'linear-gradient(135deg,#0d1a0d,#1a0d2a)',
-            border:'1px solid #22c55e44', borderRadius:14,
-            padding:'18px 22px', marginBottom:20,
-            display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:16
-          }}>
+          <div style={{background:'linear-gradient(135deg,#0d1a0d,#1a0d2a)',border:'1px solid #22c55e44',borderRadius:14,padding:'18px 22px',marginBottom:20,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:16}}>
             <div>
               <div style={{fontSize:11,color:'#6b7280',textTransform:'uppercase',letterSpacing:1,marginBottom:4}}>Total Revenue (All Time)</div>
               <div style={{display:'flex',alignItems:'baseline',gap:10,flexWrap:'wrap'}}>
@@ -773,30 +728,25 @@ export function RevenueSection({ userRank }) {
             </div>
           </div>
 
-          {/* Key stats grid */}
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(190px,1fr))',gap:12,marginBottom:20}}>
-            <BigStat label="Active Premium Now"    value={fmtNum(premiumActive)}                     color="#aa44ff" icon="fa-crown"         />
-            <BigStat label="Premium Today"         value={fmtNum(premiumToday)}                      color="#aa44ff" icon="fa-star"          sub={`+${fmtNum(premiumGoldToday)} gold`} />
-            <BigStat label="Premium This Month"    value={fmtNum(premiumMonth)}                      color="#3b82f6" icon="fa-calendar"      sub={`+${fmtNum(premiumGoldMonth)} gold`} />
-            <BigStat label="Total Premium Sold"    value={fmtNum(premiumCount)}                      color="#22c55e" icon="fa-receipt"       sub={`${fmtNum(premiumGoldTotal)} gold total`} />
-            <BigStat label="Ad Impressions Today"  value={fmtNum(adImpToday)}                        color="#f59e0b" icon="fa-eye"           />
-            <BigStat label="Ad Clicks Today"       value={fmtNum(adClicksToday)}                     color="#f59e0b" icon="fa-arrow-pointer" sub={adImpToday ? `${((adClicksToday/adImpToday)*100).toFixed(1)}% CTR` : ''} />
-            <BigStat label="Ad Revenue Today"      value={`$${adRevToday.toFixed(2)}`}               color="#f59e0b" icon="fa-dollar-sign"   />
-            <BigStat label="Ad Revenue This Month" value={`$${adRevMonth.toFixed(2)}`}               color="#ec4899" icon="fa-rectangle-ad"  />
-            <BigStat label="Total Members"         value={fmtNum(data.users?.total)}                 color="#60a5fa" icon="fa-users"         sub={`+${fmtNum(data.users?.newToday)} today`} />
-            <BigStat label="Guest Users"           value={fmtNum(data.users?.guests)}                color="#6b7280" icon="fa-user-secret"   />
+            <BigStat label="Active Premium Now"    value={fmtNum(premiumActive)}               color="#aa44ff" icon="fa-crown"         />
+            <BigStat label="Premium Today"         value={fmtNum(premiumToday)}                color="#aa44ff" icon="fa-star"          sub={`+${fmtNum(premiumGoldToday)} gold`} />
+            <BigStat label="Premium This Month"    value={fmtNum(premiumMonth)}                color="#3b82f6" icon="fa-calendar"      sub={`+${fmtNum(premiumGoldMonth)} gold`} />
+            <BigStat label="Total Premium Sold"    value={fmtNum(premiumCount)}                color="#22c55e" icon="fa-receipt"       sub={`${fmtNum(premiumGoldTotal)} gold total`} />
+            <BigStat label="Ad Impressions Today"  value={fmtNum(adImpToday)}                  color="#f59e0b" icon="fa-eye"           />
+            <BigStat label="Ad Clicks Today"       value={fmtNum(adClicksToday)}               color="#f59e0b" icon="fa-arrow-pointer" sub={adImpToday ? `${((adClicksToday/adImpToday)*100).toFixed(1)}% CTR` : ''} />
+            <BigStat label="Ad Revenue Today"      value={`$${adRevToday.toFixed(2)}`}         color="#f59e0b" icon="fa-dollar-sign"   />
+            <BigStat label="Ad Revenue This Month" value={`$${adRevMonth.toFixed(2)}`}         color="#ec4899" icon="fa-rectangle-ad"  />
+            <BigStat label="Total Members"         value={fmtNum(data.users?.total)}           color="#60a5fa" icon="fa-users"         sub={`+${fmtNum(data.users?.newToday)} today`} />
+            <BigStat label="Guest Users"           value={fmtNum(data.users?.guests)}          color="#6b7280" icon="fa-user-secret"   />
           </div>
 
-          {/* Plan breakdown */}
           {data.premium?.planBreakdown?.length > 0 && (
             <div className="ap-card" style={{marginBottom:16}}>
               <div className="ap-card-title">Plan Popularity</div>
               <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
                 {data.premium.planBreakdown.map(p => (
-                  <div key={p._id} style={{
-                    background:'#131624',border:'1px solid #1e2436',borderRadius:10,
-                    padding:'12px 16px',minWidth:130
-                  }}>
+                  <div key={p._id} style={{background:'#131624',border:'1px solid #1e2436',borderRadius:10,padding:'12px 16px',minWidth:130}}>
                     <div style={{color:'#aa44ff',fontWeight:700,fontSize:13}}>{p.label||p._id}</div>
                     <div style={{fontSize:24,fontWeight:900,marginTop:4}}>{fmtNum(p.count)}</div>
                     <div style={{fontSize:11,color:'#6b7280'}}>sold · {fmtNum(p.goldTotal)} gold</div>
@@ -806,7 +756,6 @@ export function RevenueSection({ userRank }) {
             </div>
           )}
 
-          {/* Last 7 days chart */}
           {data.premium?.last7Chart?.length > 0 && (
             <div className="ap-card">
               <div className="ap-card-title">Last 7 Days — Premium Purchases</div>
@@ -817,10 +766,7 @@ export function RevenueSection({ userRank }) {
                   return (
                     <div key={d._id} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:3}}>
                       <span style={{fontSize:10,color:'#aa44ff',fontWeight:700}}>{d.count}</span>
-                      <div style={{
-                        width:'100%',height:h,background:'linear-gradient(to top,#aa44ff,#7c3aed)',
-                        borderRadius:'4px 4px 0 0',transition:'height .3s'
-                      }}/>
+                      <div style={{width:'100%',height:h,background:'linear-gradient(to top,#aa44ff,#7c3aed)',borderRadius:'4px 4px 0 0',transition:'height .3s'}}/>
                       <span style={{fontSize:9,color:'#6b7280',whiteSpace:'nowrap'}}>
                         {d._id ? new Date(d._id).toLocaleDateString('en',{month:'short',day:'numeric'}) : '—'}
                       </span>
@@ -834,10 +780,8 @@ export function RevenueSection({ userRank }) {
         );
       })()}
 
-      {/* ── Premium Revenue Tab ── */}
       {tab === 'premium' && data && (
         <div>
-          {/* Stats */}
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))',gap:12,marginBottom:16}}>
             <BigStat label="Active Now"    value={fmtNum(data.premium?.activeNow)}   color="#aa44ff" icon="fa-crown"    />
             <BigStat label="Today"         value={fmtNum(data.premium?.today)}       color="#aa44ff" icon="fa-star"     />
@@ -847,7 +791,6 @@ export function RevenueSection({ userRank }) {
             <BigStat label="Gold Earned"   value={`${fmtNum(data.premium?.goldTotal)} 🪙`} color="#f59e0b" icon="fa-coins" />
           </div>
 
-          {/* Recent transactions */}
           <div className="ap-card">
             <div className="ap-card-title">Recent Premium Transactions</div>
             {(data.premium?.recentTransactions||[]).length === 0 ? (
@@ -863,10 +806,7 @@ export function RevenueSection({ userRank }) {
                       <tr key={t._id}>
                         <td style={{fontWeight:600}}>{t.username||'—'}</td>
                         <td style={{fontSize:12,color:'#aa44ff'}}>{t.planLabel}</td>
-                        <td><span style={{
-                          background:'#3b82f622',color:'#3b82f6',
-                          border:'1px solid #3b82f644',borderRadius:20,padding:'2px 8px',fontSize:11,fontWeight:700
-                        }}>{t.method}</span></td>
+                        <td><span style={{background:'#3b82f622',color:'#3b82f6',border:'1px solid #3b82f644',borderRadius:20,padding:'2px 8px',fontSize:11,fontWeight:700}}>{t.method}</span></td>
                         <td style={{color:'#f59e0b'}}>{t.goldSpent ? `${fmtNum(t.goldSpent)} 🪙` : '—'}</td>
                         <td style={{color:'#e11d48'}}>{t.rubySpent ? `${fmtNum(t.rubySpent)} 💎` : '—'}</td>
                         <td style={{color:'#22c55e'}}>+{fmtNum(t.goldBonus)}</td>
@@ -881,13 +821,11 @@ export function RevenueSection({ userRank }) {
         </div>
       )}
 
-      {/* ── Ads Revenue Tab ── */}
       {tab === 'ads' && (
         <div>
           <div className="ap-filter-bar">
             <span className="ap-muted">Show last</span>
             {[7,14,30,60,90].map(d => (
-              // FIX: removed setTimeout(loadAds, 50) — setAdDays triggers useEffect([adDays]) cleanly
               <button key={d} onClick={() => setAdDays(d)}
                 className={`ap-btn ap-btn--xs ${adDays===d?'ap-btn--primary':'ap-btn--ghost'}`}>
                 {d}d
@@ -895,11 +833,10 @@ export function RevenueSection({ userRank }) {
             ))}
           </div>
 
-          {/* Ad summary stats */}
           {data && (
             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))',gap:12,marginBottom:16}}>
-              <BigStat label="Impressions Today"  value={fmtNum(data.ads?.today?.impressions)}  color="#f59e0b" icon="fa-eye"          />
-              <BigStat label="Clicks Today"        value={fmtNum(data.ads?.today?.clicks)}       color="#f59e0b" icon="fa-arrow-pointer" />
+              <BigStat label="Impressions Today"  value={fmtNum(data.ads?.today?.impressions)}     color="#f59e0b" icon="fa-eye"          />
+              <BigStat label="Clicks Today"        value={fmtNum(data.ads?.today?.clicks)}          color="#f59e0b" icon="fa-arrow-pointer" />
               <BigStat label="Revenue Today"       value={`$${((data.ads?.today?.revenue||0)/100).toFixed(2)}`}       color="#22c55e" icon="fa-dollar-sign" />
               <BigStat label="Impressions Month"   value={fmtNum(data.ads?.thisMonth?.impressions)} color="#3b82f6" icon="fa-chart-bar" />
               <BigStat label="Revenue Month"       value={`$${((data.ads?.thisMonth?.revenue||0)/100).toFixed(2)}`}   color="#3b82f6" icon="fa-coins"       />
@@ -925,15 +862,9 @@ export function RevenueSection({ userRank }) {
                           <td>{fmtNum(r.impressions)}</td>
                           <td>{fmtNum(r.clicks)}</td>
                           <td>
-                            <span style={{
-                              background: +ctr > 2 ? '#22c55e22' : '#6b728022',
-                              color:      +ctr > 2 ? '#22c55e'   : '#6b7280',
-                              borderRadius:20,padding:'2px 7px',fontSize:11,fontWeight:700
-                            }}>{ctr}%</span>
+                            <span style={{background:+ctr>2?'#22c55e22':'#6b728022',color:+ctr>2?'#22c55e':'#6b7280',borderRadius:20,padding:'2px 7px',fontSize:11,fontWeight:700}}>{ctr}%</span>
                           </td>
-                          <td style={{color:'#22c55e',fontWeight:700}}>
-                            ${(r.revenue/100).toFixed(2)}
-                          </td>
+                          <td style={{color:'#22c55e',fontWeight:700}}>${(r.revenue/100).toFixed(2)}</td>
                         </tr>
                       );
                     })}
@@ -944,7 +875,7 @@ export function RevenueSection({ userRank }) {
           ) : (
             <div className="ap-card">
               <div className="ap-card-title">No Ad Data Yet</div>
-              <p className="ap-muted">Ad impressions will appear here once users start seeing ads. Log impressions via <code>POST /api/revenue/ads/log</code>.</p>
+              <p className="ap-muted">Ad impressions will appear here once users start seeing ads.</p>
             </div>
           )}
         </div>
@@ -954,7 +885,6 @@ export function RevenueSection({ userRank }) {
 }
 
 export const EXTRA_SECTIONS_CSS = `
-  /* Revenue / Premium extra styles */
   .rev-big-stat { transition: box-shadow .15s; }
   .rev-big-stat:hover { box-shadow: 0 0 0 1px rgba(255,255,255,.08); }
   .prem-plan-card { transition: border-color .15s; }
