@@ -2,9 +2,6 @@
 // ChatMessages.jsx — Fixed
 // FIX 2: Default Nunito font, transparent bubble default
 // FIX 1: System msgs not auto-shown on refresh (dedup logic)
-// FIX 2: Username ALWAYS visible — theme text color as fallback
-// FIX 2: Message text ALWAYS visible — auto-detect fg vs bg
-// FIX 2: Rank icons — correct 16px size matching public/icons/ranks
 // ============================================================
 import { useState } from 'react'
 import { API, R, RL, GBR, SYS_CFG, SYSTEM_SENDER, resolveNameColor } from './chatConstants.js'
