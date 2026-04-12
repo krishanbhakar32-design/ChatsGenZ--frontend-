@@ -172,6 +172,8 @@ function UserDetail({ u, onClose, onAction, setConfirmDialog }) {
             <div className="ap-detail-item"><span>Country</span><strong>{u.countryCode || '—'}</strong></div>
             <div className="ap-detail-item"><span>Banned</span><strong style={{ color: u.isBanned ? '#ef4444' : '#22c55e' }}>{u.isBanned ? 'Yes' : 'No'}</strong></div>
             <div className="ap-detail-item"><span>Online</span><strong style={{ color: u.isOnline ? '#22c55e' : '#888' }}>{u.isOnline ? 'Yes' : 'No'}</strong></div>
+            <div className="ap-detail-item"><span>IP Address</span><strong style={{ color: '#f59e0b', fontFamily: 'monospace', fontSize: '0.8rem' }}>{u.lastIP || u.ip || '—'}</strong></div>
+            <div className="ap-detail-item"><span>Reg. IP</span><strong style={{ color: '#888', fontFamily: 'monospace', fontSize: '0.8rem' }}>{u.registrationIP || u.regIP || '—'}</strong></div>
           </div>
 
           <div className="ap-action-group">
@@ -384,19 +386,40 @@ function Rooms({ socket }) {
 
       <div className="ap-list">
         {rooms.map(r => (
-          <div key={r._id} className="ap-list-item">
-            <div className="ap-list-info">
-              <strong>{r.name}</strong>
-              <span className="ap-muted">{r.description}</span>
-              <div>
-                {r.isPrivate && <span className="ap-badge ap-badge--warn">Private</span>}
-                {!r.isActive && <span className="ap-badge ap-badge--danger">Inactive</span>}
+          <div key={r._id} className="ap-list-item" style={{ flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', width: '100%', gap: 10 }}>
+              {r.image && <img src={r.image} alt="" style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover', flexShrink: 0, border: '1px solid rgba(255,255,255,0.1)' }} onError={e => e.target.style.display='none'} />}
+              <div className="ap-list-info" style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <strong style={{ fontSize: '0.9rem' }}>{r.name}</strong>
+                  {r.isPrivate && <span className="ap-badge ap-badge--warn">Private</span>}
+                  {!r.isActive && <span className="ap-badge ap-badge--danger">Inactive</span>}
+                  {r.isPinned && <span className="ap-badge" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)' }}>Pinned</span>}
+                  {r.type && r.type !== 'public' && <span className="ap-badge" style={{ background: 'rgba(139,92,246,0.15)', color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.3)' }}>{r.type}</span>}
+                </div>
+                {r.description && <span className="ap-muted" style={{ fontSize: '0.75rem' }}>{r.description}</span>}
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 3 }}>
+                  <span style={{ fontSize: '0.72rem', color: '#22c55e', display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <i className="fa-solid fa-user" style={{ fontSize: 10 }} /> {r.currentUsers || 0} online
+                  </span>
+                  <span style={{ fontSize: '0.72rem', color: '#888', display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <i className="fa-solid fa-users" style={{ fontSize: 10 }} /> {r.totalUsers || r.memberCount || 0} total
+                  </span>
+                  {r.category && <span style={{ fontSize: '0.72rem', color: '#03add8' }}>{r.category}</span>}
+                  {r.language && <span style={{ fontSize: '0.72rem', color: '#888' }}><i className="fa-solid fa-globe" style={{ fontSize: 9, marginRight: 3 }} />{r.language}</span>}
+                  {r.owner && <span style={{ fontSize: '0.72rem', color: '#f59e0b' }}><i className="fa-solid fa-crown" style={{ fontSize: 9, marginRight: 3 }} />{r.owner?.username || r.ownerUsername || 'Unknown'}</span>}
+                </div>
+                {(r.staff && r.staff.length > 0) && (
+                  <div style={{ fontSize: '0.7rem', color: '#888', marginTop: 2 }}>
+                    Staff: {r.staff.map(s => s.username || s).join(', ')}
+                  </div>
+                )}
               </div>
-            </div>
-            <div className="ap-list-actions">
-              <button className="ap-btn ap-btn--xs ap-btn--ghost" onClick={() => { setEditing(r._id); setForm({ name: r.name, description: r.description || '', isPrivate: r.isPrivate, isActive: r.isActive }); }}><i className="fa-solid fa-pen" /></button>
-              <button className="ap-btn ap-btn--xs ap-btn--warn" onClick={() => setConfirm({ msg: `Clear all messages in ${r.name}?`, cb: () => clearMsgs(r._id) })}><i className="fa-solid fa-broom" /></button>
-              <button className="ap-btn ap-btn--xs ap-btn--danger" onClick={() => setConfirm({ msg: `Delete room ${r.name}?`, cb: () => del(r._id) })}><i className="fa-solid fa-trash" /></button>
+              <div className="ap-list-actions">
+                <button className="ap-btn ap-btn--xs ap-btn--ghost" onClick={() => { setEditing(r._id); setForm({ name: r.name, description: r.description || '', isPrivate: r.isPrivate, isActive: r.isActive }); }} title="Edit"><i className="fa-solid fa-pen" /></button>
+                <button className="ap-btn ap-btn--xs ap-btn--warn" onClick={() => setConfirm({ msg: `Clear all messages in ${r.name}?`, cb: () => clearMsgs(r._id) })} title="Clear messages"><i className="fa-solid fa-broom" /></button>
+                <button className="ap-btn ap-btn--xs ap-btn--danger" onClick={() => setConfirm({ msg: `Delete room ${r.name}?`, cb: () => del(r._id) })} title="Delete"><i className="fa-solid fa-trash" /></button>
+              </div>
             </div>
           </div>
         ))}
@@ -6199,7 +6222,6 @@ const ADDONS_CSS = `
 
 const SECTIONS = [
   { id: 'dashboard',        label: 'Dashboard',         icon: null, img: '/dashboard.png' },
-  { id: 'active_rooms',     label: 'Active Rooms',      icon: 'fa-tower-broadcast' },
   { id: 'live_users',       label: 'Live Users / IPs',  icon: 'fa-satellite-dish' },
   { id: 'members',          label: 'Members',           icon: 'fa-users' },
   { id: 'rooms',            label: 'Rooms',             icon: 'fa-door-open' },
@@ -6312,7 +6334,7 @@ export default function AdminPanel() {
   const renderSection = () => {
     switch (active) {
       case 'dashboard':       return <Dashboard socket={socket} />;
-      case 'active_rooms':    return <ActiveRooms socket={socket} />;
+
       case 'live_users':       return <LiveUsers />;
       case 'members':         return <Members />;
       case 'rooms':           return <Rooms socket={socket} />;
