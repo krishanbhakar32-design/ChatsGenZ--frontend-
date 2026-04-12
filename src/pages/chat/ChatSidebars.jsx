@@ -11,9 +11,6 @@
 //  - UserList: status icons shown; invisible users hidden from list
 //  - Search: gender dropdown, rank dropdown, activity dropdown
 //  - Username change costs 500 gold coins (shown in UI)
-//  - Leaderboard has sub-menu (top XP, gold, gifts, likes, profile views)
-//  - Room list styled like lobby cards
-//  - System messages suppressed (no join/leave/announce in feed)
 // ============================================================
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { API, R, RL, GBR, RANKS, isStaff, isAdmin, resolveNameColor } from './chatConstants.js'
