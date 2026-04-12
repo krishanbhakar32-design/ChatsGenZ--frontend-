@@ -57,7 +57,22 @@ const daysLeft = d => d ? Math.max(0, Math.ceil((new Date(d)-Date.now())/8640000
 // ══════════════════════════════════════════════════════════════
 // THEME PERMISSIONS SECTION
 // ══════════════════════════════════════════════════════════════
+// All available themes with names (matches StyleModal.jsx THEMES)
+const THEME_LIST = [
+  {id:'Dark',name:'Dark'},{id:'Dark Purple',name:'Dark Purple'},{id:'Classic Blue',name:'Classic Blue'},
+  {id:'Midnight',name:'Midnight'},{id:'Ocean',name:'Ocean'},{id:'Forest',name:'Forest'},
+  {id:'Sunset',name:'Sunset'},{id:'Rose Gold',name:'Rose Gold'},{id:'Ice Blue',name:'Ice Blue'},
+  {id:'Emerald',name:'Emerald'},{id:'Crimson',name:'Crimson'},{id:'Amethyst',name:'Amethyst'},
+  {id:'Copper',name:'Copper'},{id:'Slate',name:'Slate'},{id:'Neon',name:'Neon'},
+  {id:'Pastel',name:'Pastel'},{id:'Carbon',name:'Carbon'},{id:'Gold',name:'Gold'},
+  {id:'Sakura',name:'Sakura'},{id:'Arctic',name:'Arctic'},{id:'Lava',name:'Lava'},
+  {id:'Nebula',name:'Nebula'},{id:'Matrix',name:'Matrix'},{id:'Vintage',name:'Vintage'},
+];
+
 export function ThemePermissionsSection() {
+  const [perms, setPerms]     = useState({});
+  const [saving, setSaving]   = useState('');
+  const [loading, setLoading] = useState(true);
   const [perms, setPerms]     = useState({});
   const [saving, setSaving]   = useState('');
   const [loading, setLoading] = useState(true);
@@ -104,7 +119,7 @@ export function ThemePermissionsSection() {
         Theme Permissions
       </h2>
       <p className="ap-muted" style={{marginBottom:18}}>
-        Control how many custom themes each rank can use. <strong>-1 = unlimited</strong>, <strong>0 = blocked</strong>, <strong>N = number of themes</strong>.
+        Control which themes each rank can access. Themes are identified by name. <strong>-1 = all themes</strong>, <strong>0 = blocked</strong>, <strong>N = up to N themes</strong>.
       </p>
 
       <div className="ap-card" style={{padding:0,overflow:'hidden'}}>
