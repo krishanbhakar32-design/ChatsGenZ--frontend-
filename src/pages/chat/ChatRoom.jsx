@@ -16,9 +16,10 @@ import { MiniCard, SelfProfileOverlay, ProfileModal }         from './ChatProfil
 import { Msg }                                                 from './ChatMessages.jsx'
 import { RightSidebar, LeftSidebar }                          from './ChatSidebars.jsx'
 import { RadioPanel }                                          from './ChatRadio.jsx'
-import { FriendReqPanel, NotifPanel, DMPanel }                from './ChatSocial.jsx'
+import { FriendReqPanel, NotifPanel, DMPanel, FloatNotif, ReportModal, ReportsPanel } from './ChatSocial.jsx'
 import { GiftPanel }                                           from './ChatGifts.jsx'
 import { ChatSettingsOverlay, AvatarDropdown, Footer }         from './ChatSettings.jsx'
+import { VoiceMicBtn }                                             from './ChatMedia.jsx'
 import { WebcamPanel, LiveCamBar }                             from './ChatWebcam.jsx'
 
 // ── Theme CSS loader — injects /public/themes/<id>/<id>.css dynamically
@@ -59,6 +60,9 @@ export default function ChatRoom() {
   const [showDiceAnim, setShowDiceAnim]= useState(false)
   const [diceRollVal,  setDiceRollVal] = useState(null)
   const [quotedMsg,    setQuotedMsg]   = useState(null)
+  const [showReports,  setShowReports] = useState(false)
+  const [reportTarget, setReportTarget]= useState(null)
+  const [floatNotifs,  setFloatNotifs] = useState([])
   const [showGif,      setShowGif]     = useState(false)
   const [showYT,       setShowYT]      = useState(false)
   const [showSpotify,  setShowSpotify] = useState(false)
@@ -79,7 +83,7 @@ export default function ChatRoom() {
   const [autoScroll,    setAutoScroll] = useState(false)
 
   const sockRef = useRef(null), bottomRef = useRef(null), inputRef = useRef(null)
-  const dmBtnRef = useRef(null), friendsBtnRef = useRef(null), notifBtnRef = useRef(null), emojiBtnRef = useRef(null)
+  const dmBtnRef = useRef(null), friendsBtnRef = useRef(null), notifBtnRef = useRef(null), emojiBtnRef = useRef(null), reportsBtnRef = useRef(null)
   const typingTimer = useRef(null), isTypingRef = useRef(false)
   const intentionalLeaveRef = useRef(false)
 
@@ -104,7 +108,20 @@ export default function ChatRoom() {
     return () => { if (!intentionalLeaveRef.current) sockRef.current?.disconnect() }
   }, [roomSlug])
 
-  useEffect(() => { if (autoScroll) bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, autoScroll])
+  // Auto-scroll: only scroll to bottom if user is already near bottom (within 150px)
+  const msgContainerRef = useRef(null)
+  useEffect(() => {
+    const el = msgContainerRef.current
+    if (!el) return
+    const threshold = 150
+    const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < threshold
+    if (isNearBottom || autoScroll) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [messages])
+  
+  // Manual autoScroll toggle scrolls to bottom immediately
+  useEffect(() => { if (autoScroll) bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [autoScroll])
 
   async function loadRoom() {
     setLoad(true); setErr('')
@@ -241,6 +258,8 @@ export default function ChatRoom() {
     s.on('camStopped',       ({ userId }) => setLiveCams(p => p.filter(c => c.userId !== userId)))
     s.on('camOffer',         ({ from, username, hostRank, offer }) => { if (offer === 'live') setLiveCams(p => p.find(c => c.userId === from) ? p : [...p, { userId: from, username, rank: hostRank || 'user' }]) })
     s.on('privateMessage',   () => { setNotif(p => ({ ...p, dm: p.dm + 1 })); Sounds.privateMsg?.() })
+    s.on('friendRequest',    () => { setNotif(p => ({ ...p, friends: p.friends + 1 })); Sounds.friendReq?.() })
+    s.on('newReport',        () => { setNotif(p => ({ ...p, reports: p.reports + 1 })) })
     s.on('pmError',          ({ error }) => toast?.show(error, 'error', 4000))
     // FIX 9: Whisper/echo — appears inline in chat feed, no popup box
     s.on('echoMessage', (payload) => {
@@ -294,6 +313,13 @@ export default function ChatRoom() {
   const handleMention  = useCallback((text) => { setInput(p => text + (p ? ' ' + p : '')); inputRef.current?.focus() }, [])
   const handleHide     = useCallback((id) => { setHidden(p => new Set([...p, id])) }, [])
   const handleMiniCard = useCallback((user, pos) => { setMiniCardData({ user, pos }) }, [])
+
+  // Float notification helper
+  const showFloat = (message, type='success') => {
+    const id = Date.now() + Math.random().toString(36).slice(2)
+    setFloatNotifs(p => [...p, { id, message, type }])
+    setTimeout(() => setFloatNotifs(p => p.filter(n => n.id !== id)), 4000)
+  }
 
   const myLevel     = RANKS[me?.rank]?.level || 1
   const isStaffRole = myLevel >= 11
@@ -364,10 +390,7 @@ export default function ChatRoom() {
           style={{ background: showLeft ? `${thAccent}22` : 'none', border: 'none', cursor: 'pointer', color: showLeft ? thAccent : 'rgba(255,255,255,0.55)', width: 34, height: 34, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0, transition: 'all .12s' }}
         ><i className="fa-solid fa-bars" /></button>
 
-        {/* Spacer */}
-        <div style={{ flex: 1, minWidth: 0 }} />
-
-        {/* Webcam toggle - uses webcam.svg from public folder */}
+        {/* Webcam — LEFT side, next to hamburger */}
         <button
           onClick={e => { e.stopPropagation(); setShowCam(p => !p) }}
           title="Webcam"
@@ -376,25 +399,31 @@ export default function ChatRoom() {
           <img src="/default_images/icons/webcam.svg" alt="Webcam" style={{ width: 18, height: 18, opacity: showCam ? 1 : 0.6, filter: showCam ? `drop-shadow(0 0 4px ${thAccent})` : 'none' }} onError={e => { e.target.style.display='none'; e.target.parentElement.innerHTML += '<i class="fa-solid fa-video" style="font-size:15px"></i>' }} />
         </button>
 
+        {/* Spacer */}
+        <div style={{ flex: 1, minWidth: 0 }} />
+
         {/* DM */}
         <div style={{ position: 'relative' }} ref={dmBtnRef}>
           <HBtn faIcon="fa-solid fa-envelope" title="Messages" badge={notif.dm} active={showDM} onClick={e => { e.stopPropagation(); setShowDM(p => !p); setShowNotif(false) }} tObj={tObj} />
-          {showDM && <div onClick={e => e.stopPropagation()}><DMPanel me={me} socket={sockRef.current} onClose={() => setShowDM(false)} onCount={n => setNotif(p => ({ ...p, dm: n }))} anchorRef={dmBtnRef} /></div>}
+          {showDM && <div onClick={e => e.stopPropagation()}><DMPanel me={me} socket={sockRef.current} onClose={() => setShowDM(false)} onCount={n => setNotif(p => ({ ...p, dm: n }))} anchorRef={dmBtnRef} tObj={tObj} /></div>}
         </div>
 
         {/* Friends */}
         <div style={{ position: 'relative' }} ref={friendsBtnRef}>
           <HBtn faIcon="fa-solid fa-user-plus" title="Friend Requests" badge={notif.friends} active={showFriends} onClick={e => { e.stopPropagation(); setShowFriends(p => !p); setShowDM(false); setShowNotif(false) }} tObj={tObj} />
-          {showFriends && <div onClick={e => e.stopPropagation()}><FriendReqPanel onClose={() => setShowFriends(false)} onCount={n => setNotif(p => ({ ...p, friends: n }))} anchorRef={friendsBtnRef} /></div>}
+          {showFriends && <div onClick={e => e.stopPropagation()}><FriendReqPanel onClose={() => setShowFriends(false)} onCount={n => setNotif(p => ({ ...p, friends: n }))} anchorRef={friendsBtnRef} tObj={tObj} /></div>}
         </div>
 
         {/* Notifications */}
         <div style={{ position: 'relative' }} ref={notifBtnRef}>
           <HBtn faIcon="fa-solid fa-bell" title="Notifications" badge={notif.notif} active={showNotif} onClick={e => { e.stopPropagation(); setShowNotif(p => !p); setShowDM(false) }} tObj={tObj} />
-          {showNotif && <div onClick={e => e.stopPropagation()}><NotifPanel onClose={() => setShowNotif(false)} onCount={n => setNotif(p => ({ ...p, notif: n }))} anchorRef={notifBtnRef} /></div>}
+          {showNotif && <div onClick={e => e.stopPropagation()}><NotifPanel onClose={() => setShowNotif(false)} onCount={n => setNotif(p => ({ ...p, notif: n }))} anchorRef={notifBtnRef} tObj={tObj} /></div>}
         </div>
 
-        {isStaffRole && <HBtn faIcon="fa-sharp fa-solid fa-flag" title="Reports" badge={notif.reports} tObj={tObj} />}
+        <div style={{ position: 'relative' }} ref={reportsBtnRef}>
+          <HBtn faIcon="fa-sharp fa-solid fa-flag" title="Reports" badge={notif.reports} active={showReports} onClick={e => { e.stopPropagation(); setShowReports(p => !p); setShowDM(false); setShowFriends(false); setShowNotif(false) }} tObj={tObj} />
+          {showReports && <div onClick={e => e.stopPropagation()}><ReportsPanel onClose={() => setShowReports(false)} onCount={n => setNotif(p => ({ ...p, reports: n }))} anchorRef={reportsBtnRef} tObj={tObj} /></div>}
+        </div>
 
         {/* FIX 3: Avatar dropdown — fully coded inside header */}
         <AvatarDropdown
@@ -444,14 +473,7 @@ export default function ChatRoom() {
         {/* ── MESSAGES COLUMN ── */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, background: thBg }}>
 
-          {/* Topic bar */}
-          {room?.topic && (
-            <div style={{ background: thHeader, borderBottom: `1px solid ${thBorder}22`, padding: '6px 12px', fontSize: '0.78rem', color: thText, flexShrink: 0, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-              <i className="fa-solid fa-circle-info" style={{ fontSize: 13, color: '#f59e0b', marginTop: 2, flexShrink: 0 }} />
-              <span style={{ flex: 1, lineHeight: 1.5 }}>{room.topic}</span>
-              <button onClick={() => setRoom(p => p ? { ...p, topic: '' } : p)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666', fontSize: 13, flexShrink: 0 }}>✕</button>
-            </div>
-          )}
+
 
           {/* FIX 4/7: Webcam panel — inside chat, not new page */}
           {showCam && (
@@ -463,7 +485,7 @@ export default function ChatRoom() {
           <LiveCamBar socket={sockRef.current} roomId={roomId} me={me} liveCams={liveCams} setLiveCams={setLiveCams} onOpenHostPanel={() => setShowCam(true)} />
 
           {/* Scrollable messages */}
-          <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '6px 0', minHeight: 0 }}>
+          <div ref={msgContainerRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '6px 0', minHeight: 0 }}>
             {messages.map((m, i) => {
               // Suppress join/leave/kick/mute/ban/mod from chat display entirely
               if (['join','leave','kick','mute','ban','mod'].includes(m.type)) return null
@@ -477,6 +499,7 @@ export default function ChatRoom() {
                   key={m._id || i} msg={m} myId={me?._id} myLevel={myLevel} tObj={tObj}
                   onMiniCard={handleMiniCard} onMention={handleMention} onHide={handleHide}
                   onIgnore={handleIgnore}
+                  onReport={target => setReportTarget(target)}
                   onWhisper={u => { setWhisper(u); inputRef.current?.focus() }}
                   onQuote={msg => { setQuotedMsg(msg); inputRef.current?.focus() }}
                   onYTMinimize={v => setMiniYT(v)}
@@ -498,6 +521,15 @@ export default function ChatRoom() {
             )}
             <div ref={bottomRef} />
           </div>
+
+          {/* Topic bar — above input bar as per MD point 48 */}
+          {room?.topic && (
+            <div style={{ background: thHeader, borderTop: `1px solid ${thBorder}22`, padding: '5px 10px', fontSize: '0.76rem', color: thText, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 7 }}>
+              <i className="fa-solid fa-circle-info" style={{ fontSize: 11, color: '#f59e0b', flexShrink: 0 }} />
+              <span style={{ flex: 1, lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{room.topic}</span>
+              <button onClick={() => setRoom(p => p ? { ...p, topic: '' } : p)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#555', fontSize: 12, flexShrink: 0, padding: 0 }}>✕</button>
+            </div>
+          )}
 
           {/* ════ INPUT BAR ════ */}
           <div style={{ borderTop: `1px solid ${thBorder}22`, padding: '5px 8px', background: thHeader, flexShrink: 0, position: 'relative', zIndex: 10 }}>
@@ -547,25 +579,22 @@ export default function ChatRoom() {
             {showPlus && (
               <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', bottom: 'calc(100% + 5px)', left: 6, background: thHeader, borderRadius: 12, padding: 8, display: 'flex', gap: 6, boxShadow: '0 4px 20px rgba(0,0,0,0.5)', zIndex: 200 }}>
                 {[
-                  { type: 'img',    icon: '/default_images/icons/upload.svg',  fallback: 'fa-solid fa-image',    label: 'Image',   action: () => { document.getElementById('cgz-img-input').click(); setShowPlus(false) } },
-                  { type: 'img',    icon: '/default_images/icons/giphy.svg',   fallback: 'fa-solid fa-image',    label: 'GIF',     action: () => { setShowGif(p => !p); setShowPlus(false) } },
-                  { type: 'emoji',  emoji: '🎨',                                label: 'Paint',                   action: () => { setShowPaint(true); setShowPlus(false) } },
-                  { type: 'img',    icon: '/default_images/icons/youtube.svg', fallback: 'fa-brands fa-youtube', label: 'YouTube', action: () => { setShowYT(p => !p); setShowPlus(false) } },
-                  { type: 'spotify',                                             label: 'Spotify',                 action: () => { setShowSpotify(p => !p); setShowPlus(false) }, active: showSpotify },
-                  { type: 'emoji',  emoji: '🎲',                                label: 'Dice',                    action: () => {
+                  { type: 'img',   icon: '/default_images/icons/upload.svg',  fallback: 'fa-solid fa-image',    title: 'Upload Image', action: () => { document.getElementById('cgz-img-input').click(); setShowPlus(false) } },
+                  { type: 'img',   icon: '/default_images/icons/giphy.svg',   fallback: 'fa-solid fa-images',   title: 'GIF',          action: () => { setShowGif(p => !p); setShowPlus(false) } },
+                  { type: 'emoji', emoji: '🎨',                                                                  title: 'Paint',        action: () => { setShowPaint(true); setShowPlus(false) } },
+                  { type: 'emoji', emoji: '🎲',                                                                  title: 'Dice (100 gold)', action: () => {
                     if ((me?.gold || 0) < 100) { toast?.show('🎲 Need 100 gold!', 'error', 3000); setShowPlus(false); return }
                     sockRef.current?.emit('rollDice', { roomId }); setShowPlus(false)
                   }},
                 ].map((b, i) => (
-                  <button key={i} onClick={b.action} title={b.label}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '7px 8px', background: b.active ? `${thAccent}22` : 'rgba(255,255,255,0.05)', border: 'none', borderRadius: 9, cursor: 'pointer', minWidth: 44, transition: 'all .15s' }}>
-                    {b.type === 'spotify'
-                      ? <svg width="22" height="22" viewBox="0 0 24 24" fill="#1DB954"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424a.623.623 0 0 1-.857.207c-2.348-1.435-5.304-1.76-8.785-.964a.623.623 0 1 1-.277-1.215c3.809-.87 7.076-.496 9.712 1.115a.623.623 0 0 1 .207.857zm1.223-2.722a.78.78 0 0 1-1.072.257c-2.687-1.652-6.785-2.131-9.965-1.166a.78.78 0 0 1-.973-.52.779.779 0 0 1 .52-.972c3.633-1.102 8.147-.568 11.234 1.329a.78.78 0 0 1 .256 1.072zm.105-2.835C14.69 8.95 9.375 8.775 6.297 9.71a.937.937 0 1 1-.543-1.795c3.528-1.068 9.393-.861 13.098 1.332a.937.937 0 0 1-.938 1.62z" /></svg>
-                      : b.type === 'emoji'
-                        ? <span style={{ fontSize: 20 }}>{b.emoji}</span>
-                        : <><img src={b.icon} alt={b.label} style={{ width: 20, height: 20, objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block' }} /><i className={b.fallback} style={{ display: 'none', fontSize: 18, color: '#666' }} /></>
+                  <button key={i} onClick={b.action} title={b.title}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: 9, cursor: 'pointer', width: 38, height: 38, transition: 'all .15s' }}
+                    onMouseEnter={e => e.currentTarget.style.background=`${thAccent}22`}
+                    onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,0.05)'}>
+                    {b.type === 'emoji'
+                      ? <span style={{ fontSize: 20 }}>{b.emoji}</span>
+                      : <><img src={b.icon} alt={b.title} style={{ width: 22, height: 22, objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block' }} /><i className={b.fallback} style={{ display: 'none', fontSize: 18, color: '#888' }} /></>
                     }
-                    <span style={{ fontSize: '0.6rem', fontWeight: 600, color: b.active ? thAccent : '#888' }}>{b.label}</span>
                   </button>
                 ))}
               </div>
@@ -618,6 +647,17 @@ export default function ChatRoom() {
                 }}
                 onFocus={e => e.target.style.borderColor = whisperTarget ? '#818cf8' : (thAccent || '#03add8')}
                 onBlur={e  => e.target.style.borderColor = whisperTarget ? 'rgba(99,102,241,0.5)' : (thBorder || '#222')}
+              />
+
+              {/* Voice message button */}
+              <VoiceMicBtn
+                connected={connected}
+                thAccent={thAccent}
+                thHeader={thHeader}
+                thBorder={thBorder}
+                onSend={(audioUrl) => {
+                  sockRef.current?.emit('sendMessage', { roomId, content: audioUrl, type: 'voice' })
+                }}
               />
 
               <button type="submit" disabled={!input.trim() || !connected}
@@ -686,13 +726,23 @@ export default function ChatRoom() {
           onClose={() => setMiniCardData(null)} onFull={() => { setProf(miniCardData.user); setMiniCardData(null) }}
           tObj={tObj} liveCamUsers={users.filter(u => u.isCamHost).map(u => u._id || u.userId)}
           onGift={u => { setGiftTgt(u); setMiniCardData(null) }}
+          onReport={target => setReportTarget(target)}
           onWhisper={u => { setWhisper(u); setMiniCardData(null); inputRef.current?.focus() }}
         />
       )}
 
+      {/* Float notifications */}
+      <FloatNotif notifs={floatNotifs} onDismiss={id => setFloatNotifs(p => p.filter(n => n.id !== id))} />
+
+      {/* Report modal */}
+      {reportTarget && (
+        <ReportModal target={reportTarget} roomId={roomId} roomName={room?.name} onClose={() => setReportTarget(null)}
+          onSuccess={() => { showFloat('Report submitted successfully', 'success'); sockRef.current?.emit('reportSubmitted', { roomId }) }} tObj={tObj} />
+      )}
+
       {giftTarget && (
         <GiftPanel targetUser={giftTarget} myGold={me?.gold || 0}
-          onClose={() => setGiftTgt(null)} onSent={() => setGiftTgt(null)}
+          onClose={() => setGiftTgt(null)} onSent={() => { setGiftTgt(null); showFloat('Gift sent successfully! 🎁', 'success') }}
           socket={sockRef.current} roomId={roomId}
           onGoldSpent={price => setMe(p => p ? { ...p, gold: Math.max(0, (p.gold || 0) - price) } : p)} />
       )}
