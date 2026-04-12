@@ -42,12 +42,6 @@
 //   Mains tab (admin+): Rank | Room Rank | Edit Profile
 //                       | Mute | Kick | Ban | IP Ban
 //   admin_user box items: Change Rank, Auth, Name, Color,
-//     Mood, Email, About, Password, Verify, Whitelist,
-//     Block, Delete
-//
-// "Actions" (☰) button in profile → opens getActions menu:
-//   Whisper | Gift | Wallet share | Ignore | Report
-//   + staff: Actions panel
 // ============================================================
 
 import { useState, useEffect, useRef, useCallback } from 'react'
