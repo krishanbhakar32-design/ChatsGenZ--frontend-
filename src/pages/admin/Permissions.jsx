@@ -19,7 +19,7 @@ import { useState, useEffect, useCallback } from 'react';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 // FIX: Safely read VITE_API_URL — fall back to localhost if env var missing
-const API = (import.meta.env.VITE_API_URL || 'https://chatsgenz-backend-production.up.railway.app').replace(/\/$/, '');
+const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 // FIX: token() always returns a string (never passes "Bearer null" to backend)
 const token = () => localStorage.getItem('cgz_token') || '';
 
