@@ -2,7 +2,6 @@
 // chatConstants.js — Shared constants and helpers for ChatRoom
 // ============================================================
 
-// API URL sourced from siteConfig — single source of truth
 export { API_URL as API } from '../../siteConfig'
 
 export const RANKS = {
