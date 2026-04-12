@@ -8,7 +8,7 @@ import { io } from 'socket.io-client';
 import Permissions, { PERMISSIONS_CSS } from './Permissions.jsx';
 import { PremiumSection, RevenueSection, ThemePermissionsSection, EXTRA_SECTIONS_CSS } from './PremiumRevenue.jsx';
 
-const API = (import.meta.env.VITE_API_URL || 'https://chatsgenz-backend-production.up.railway.app').replace(/\/$/, '');
+const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 // FIX: token() never returns null — avoids "Bearer null" being sent to the backend
 const token = () => localStorage.getItem('cgz_token') || '';
 
@@ -5303,7 +5303,7 @@ function BotsSection() {
   // Manual send form
   const [sendForm, setSendForm] = useState({ roomId:'', content:'' });
 
-  const API_BASE = import.meta.env.VITE_API_URL || 'https://chatsgenz-backend-production.up.railway.app';
+  const API_BASE = import.meta.env.VITE_API_URL || '';
   const tok = () => localStorage.getItem('cgz_token');
 
   const apiBot = async (path, opts = {}) => {
